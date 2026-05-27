@@ -542,6 +542,14 @@ audio{width:100%;margin:8px 0}
   </div>
   <button id="refreshMicBtn">マイク一覧を更新</button>
   <div id="micStatus" class="info">マイク：OFF（録音時に自動でONになります）</div>
+  <div class="mic-meter-panel">
+    <div class="mic-meter-top">
+      <strong>マイク入力チェック</strong>
+      <span id="micLivePill" class="mic-live-pill">OFF</span>
+    </div>
+    <canvas id="micLevelCanvas"></canvas>
+    <div id="micLevelText" class="small">マイクONにすると、声や音に反応して波形が動きます。</div>
+  </div>
   <div class="info">
     録音の頭切れを防ぎたい場合は、先に「マイクON」を押してから録音開始してください。<br>
     プライバシー重視の場合は、OFFのままでも録音開始時に自動でONになり、録音停止後に自動でOFFになります。
@@ -570,7 +578,7 @@ audio{width:100%;margin:8px 0}
     <option value="off">再生しない</option>
   </select>
 
-  <label>録音中の再生音量：<span id="karaokeMonitorVolumeLabel">100%</span></label>
+  <label>録音中のカラオケバッキング音量：<span id="karaokeMonitorVolumeLabel">100%</span></label>
   <input id="karaokeMonitorVolume" type="range" min="0" max="100" step="1" value="100">
 
   <div id="karaokeMonitorInfo" class="info">
@@ -834,6 +842,25 @@ audio{width:100%;margin:8px 0}
     <p class="small">コーラスもボーカルと同じように、カラオケ音源に対して前後へ動かせます。</p>
   </div>
 
+  <div class="mix-volume-panel">
+    <div class="nudge-title">
+      <strong>MIX音量</strong>
+      <span>最終MIX・確認再生に反映</span>
+    </div>
+    <div class="mix-volume-grid">
+      <label>カラオケ：<span id="mainMixVolumeLabel">100%</span>
+        <input id="mainMixVolume" type="range" min="0" max="150" step="1" value="100">
+      </label>
+      <label>ボーカル：<span id="takeMixVolumeLabel">100%</span>
+        <input id="takeMixVolume" type="range" min="0" max="150" step="1" value="100">
+      </label>
+      <label>コーラス：<span id="chorusMixVolumeLabel">100%</span>
+        <input id="chorusMixVolume" type="range" min="0" max="150" step="1" value="100">
+      </label>
+    </div>
+    <p class="small">スピーカー再生で録った場合は、録音トラックに伴奏が薄く入ることがあります。最終MIXで伴奏が二重に聞こえる時は、カラオケ音量を少し下げてください。</p>
+  </div>
+
   <div class="row">
     <button id="prependTakeBtn" disabled>ボーカルを前にくっつける</button>
     <button id="appendTakeBtn" disabled>ボーカルを後ろにくっつける</button>
@@ -891,6 +918,12 @@ let initialEditLabel = "";
 let takeOffsetMs = 0;
 let chorusOffsetMs = 0;
 let karaokePlaybackDuringRecord = null;
+let karaokeMonitorSource = null;
+let karaokeMonitorGainNode = null;
+let micAnalyser = null;
+let micAnalyserSource = null;
+let micLevelAnimationId = null;
+let micLevelData = null;
 
 const micSelect = document.getElementById("micSelect");
 const refreshMicBtn = document.getElementById("refreshMicBtn");
@@ -944,6 +977,16 @@ const karaokeMonitorMode = document.getElementById("karaokeMonitorMode");
 const karaokeMonitorVolume = document.getElementById("karaokeMonitorVolume");
 const karaokeMonitorVolumeLabel = document.getElementById("karaokeMonitorVolumeLabel");
 const karaokeMonitorInfo = document.getElementById("karaokeMonitorInfo");
+const micLevelCanvas = document.getElementById("micLevelCanvas");
+const micLevelCtx = micLevelCanvas ? micLevelCanvas.getContext("2d") : null;
+const micLivePill = document.getElementById("micLivePill");
+const micLevelText = document.getElementById("micLevelText");
+const mainMixVolume = document.getElementById("mainMixVolume");
+const takeMixVolume = document.getElementById("takeMixVolume");
+const chorusMixVolume = document.getElementById("chorusMixVolume");
+const mainMixVolumeLabel = document.getElementById("mainMixVolumeLabel");
+const takeMixVolumeLabel = document.getElementById("takeMixVolumeLabel");
+const chorusMixVolumeLabel = document.getElementById("chorusMixVolumeLabel");
 
 const gainSlider = document.getElementById("gainSlider");
 const reverbSlider = document.getElementById("reverbSlider");
@@ -1103,6 +1146,82 @@ window.addEventListener("resize",()=>{
   updateTimeLabel(activeBuffer());
 });
 
+
+function drawMicLevelIdle(){
+  if(!micLevelCanvas || !micLevelCtx) return;
+  const w = micLevelCanvas.width, h = micLevelCanvas.height;
+  micLevelCtx.clearRect(0,0,w,h);
+  micLevelCtx.fillStyle = "#020617";
+  micLevelCtx.fillRect(0,0,w,h);
+  micLevelCtx.strokeStyle = "rgba(148,163,184,.28)";
+  micLevelCtx.lineWidth = 1 * devicePixelRatio;
+  micLevelCtx.beginPath();
+  micLevelCtx.moveTo(0,h/2); micLevelCtx.lineTo(w,h/2); micLevelCtx.stroke();
+}
+
+function stopMicLevelMeter(){
+  if(micLevelAnimationId){
+    cancelAnimationFrame(micLevelAnimationId);
+    micLevelAnimationId = null;
+  }
+  try{ if(micAnalyserSource) micAnalyserSource.disconnect(); }catch(e){}
+  try{ if(micAnalyser) micAnalyser.disconnect(); }catch(e){}
+  micAnalyser = null;
+  micAnalyserSource = null;
+  micLevelData = null;
+  if(micLivePill){ micLivePill.textContent = "OFF"; micLivePill.classList.remove("on"); }
+  if(micLevelText) micLevelText.textContent = "マイクONにすると、声や音に反応して波形が動きます。";
+  drawMicLevelIdle();
+}
+
+function startMicLevelMeter(stream){
+  if(!micLevelCanvas || !micLevelCtx || !stream) return;
+  ensureAudioContext();
+  try{ if(micAnalyserSource) micAnalyserSource.disconnect(); }catch(e){}
+  try{ if(micAnalyser) micAnalyser.disconnect(); }catch(e){}
+  micAnalyserSource = audioContext.createMediaStreamSource(stream);
+  micAnalyser = audioContext.createAnalyser();
+  micAnalyser.fftSize = 1024;
+  micAnalyser.smoothingTimeConstant = 0.78;
+  micLevelData = new Uint8Array(micAnalyser.fftSize);
+  micAnalyserSource.connect(micAnalyser);
+  if(micLivePill){ micLivePill.textContent = "LIVE"; micLivePill.classList.add("on"); }
+  if(micLevelText) micLevelText.textContent = "声を出すと波形が動きます。動かない場合はマイク選択・端末権限を確認してください。";
+
+  const draw = ()=>{
+    if(!micAnalyser || !micLevelData) return;
+    micAnalyser.getByteTimeDomainData(micLevelData);
+    const w = micLevelCanvas.width, h = micLevelCanvas.height;
+    micLevelCtx.clearRect(0,0,w,h);
+    micLevelCtx.fillStyle = "#020617";
+    micLevelCtx.fillRect(0,0,w,h);
+    micLevelCtx.strokeStyle = "rgba(255,255,255,.10)";
+    micLevelCtx.lineWidth = 1 * devicePixelRatio;
+    for(let i=1;i<4;i++){
+      const y=h*i/4;
+      micLevelCtx.beginPath(); micLevelCtx.moveTo(0,y); micLevelCtx.lineTo(w,y); micLevelCtx.stroke();
+    }
+    micLevelCtx.strokeStyle = "#35e0a1";
+    micLevelCtx.lineWidth = 2 * devicePixelRatio;
+    micLevelCtx.beginPath();
+    let peak = 0;
+    for(let i=0;i<micLevelData.length;i++){
+      const v = (micLevelData[i]-128)/128;
+      peak = Math.max(peak, Math.abs(v));
+      const x = (i/(micLevelData.length-1))*w;
+      const y = h/2 + v * h * 0.42;
+      if(i===0) micLevelCtx.moveTo(x,y); else micLevelCtx.lineTo(x,y);
+    }
+    micLevelCtx.stroke();
+    const levelW = Math.min(w, w * peak * 3.2);
+    micLevelCtx.fillStyle = peak > .65 ? "rgba(239,68,68,.28)" : "rgba(53,224,161,.20)";
+    micLevelCtx.fillRect(0,h-7*devicePixelRatio,levelW,7*devicePixelRatio);
+    micLevelAnimationId = requestAnimationFrame(draw);
+  };
+  if(micLevelAnimationId) cancelAnimationFrame(micLevelAnimationId);
+  draw();
+}
+
 function updateMicStatus(isOn, message){
   if(!micStatus) return;
   micStatus.textContent = message || (isOn ? "マイク：ON" : "マイク：OFF（録音時に自動でONになります）");
@@ -1120,6 +1239,7 @@ function stopCurrentMicStream(){
     }
     currentStream = null;
   }
+  stopMicLevelMeter();
   updateMicStatus(false, "マイク：OFF（録音時に自動でONになります）");
 }
 
@@ -1147,6 +1267,7 @@ async function ensureMicStream(){
   updateMicStatus(false, "マイクを起動中...");
   currentStream = await navigator.mediaDevices.getUserMedia(constraints);
   updateMicStatus(true, "マイク：ON");
+  startMicLevelMeter(currentStream);
 
   // 権限取得後ならラベル付きで一覧を更新できる
   await loadMics(false).catch(()=>{});
@@ -1218,6 +1339,7 @@ refreshMicBtn.onclick = async()=>{
 window.addEventListener("load", ()=>{
   loadMics(false).catch(()=>{});
   updateMicStatus(false, "マイク：OFF（録音時に自動でONになります）");
+  drawMicLevelIdle();
 });
 
 
@@ -1290,6 +1412,52 @@ if(karaokeMonitorMode) karaokeMonitorMode.onchange = updateKaraokeMonitorUI;
 if(karaokeMonitorVolume) karaokeMonitorVolume.oninput = updateKaraokeMonitorUI;
 updateKaraokeMonitorUI();
 
+function updateMixVolumeLabels(){
+  if(mainMixVolumeLabel && mainMixVolume) mainMixVolumeLabel.textContent = `${mainMixVolume.value}%`;
+  if(takeMixVolumeLabel && takeMixVolume) takeMixVolumeLabel.textContent = `${takeMixVolume.value}%`;
+  if(chorusMixVolumeLabel && chorusMixVolume) chorusMixVolumeLabel.textContent = `${chorusMixVolume.value}%`;
+}
+function mixVolumeRatio(input){ return input ? Number(input.value) / 100 : 1; }
+[mainMixVolume,takeMixVolume,chorusMixVolume].forEach(el=>{
+  if(el) el.oninput = updateMixVolumeLabels;
+});
+updateMixVolumeLabels();
+
+function stopKaraokeMonitorPlayback(){
+  try{ if(karaokeMonitorSource) karaokeMonitorSource.stop(); }catch(e){}
+  try{ if(karaokeMonitorSource) karaokeMonitorSource.disconnect(); }catch(e){}
+  try{ if(karaokeMonitorGainNode) karaokeMonitorGainNode.disconnect(); }catch(e){}
+  karaokeMonitorSource = null;
+  karaokeMonitorGainNode = null;
+  karaokePlaybackDuringRecord = null;
+}
+
+async function startKaraokeMonitorPlayback(){
+  ensureAudioContext();
+  if(audioContext.state === "suspended"){
+    try{ await audioContext.resume(); }catch(e){}
+  }
+  stopKaraokeMonitorPlayback();
+  if(!mainBuffer) throw new Error("カラオケ音源がありません");
+  const src = audioContext.createBufferSource();
+  const gain = audioContext.createGain();
+  src.buffer = mainBuffer;
+  gain.gain.value = karaokeMonitorVolume ? Number(karaokeMonitorVolume.value) / 100 : 1;
+  src.connect(gain);
+  gain.connect(audioContext.destination);
+  src.onended = ()=>{
+    if(karaokeMonitorSource === src){
+      karaokeMonitorSource = null;
+      karaokeMonitorGainNode = null;
+    }
+  };
+  karaokeMonitorSource = src;
+  karaokeMonitorGainNode = gain;
+  src.start(0);
+  return src;
+}
+
+
 recordBtn.onclick = async()=>{
   ensureAudioContext();
   recordedChunks=[];
@@ -1357,22 +1525,19 @@ recordBtn.onclick = async()=>{
 
   // ボーカル/コーラス録音時は、カラオケ音源を同時再生できる。
   // イヤホンなら歌声だけを録りやすく、スピーカーなら伴奏が薄く入り波形合わせの目印になる場合があります。
-  karaokePlaybackDuringRecord = null;
+  stopKaraokeMonitorPlayback();
   if((recordTarget.value === "take" || recordTarget.value === "chorus") && mainBuffer && karaokeMonitorMode && karaokeMonitorMode.value !== "off"){
     try{
-      updateAudioElement(mainBuffer);
-      audioEl.currentTime = 0;
-      audioEl.volume = karaokeMonitorVolume ? Number(karaokeMonitorVolume.value) / 100 : 1;
-      karaokePlaybackDuringRecord = audioEl;
-      await audioEl.play();
+      await startKaraokeMonitorPlayback();
+      const volPct = karaokeMonitorVolume ? karaokeMonitorVolume.value : 100;
       if(karaokeMonitorMode.value === "speaker"){
-        fileStatus.innerHTML = `カラオケ音源をスピーカーで再生しながら録音中です。伴奏がマイクに薄く入る可能性があります。位置合わせの目印にはなりますが、最終MIXでは伴奏が二重に聞こえる場合があります。`;
+        fileStatus.innerHTML = `カラオケ音源をスピーカーで再生しながら録音中です。バッキング音量：${volPct}%<br>伴奏がマイクに薄く入る可能性があり、波形合わせの目印になる場合があります。`;
       }else{
-        fileStatus.innerHTML = `カラオケ音源を再生しながら録音中です。イヤホンで聴くと、マイクには基本的に歌声だけが録音されます。`;
+        fileStatus.innerHTML = `カラオケ音源を再生しながら録音中です。バッキング音量：${volPct}%<br>イヤホンで聴くと、マイクには基本的に歌声だけが録音されます。`;
       }
     }catch(playErr){
       console.warn("Karaoke playback during recording failed", playErr);
-      fileStatus.innerHTML = `録音は開始しましたが、カラオケ音源の自動再生に失敗しました。iPhoneの場合は音量・消音モード・再生許可を確認してください。`;
+      fileStatus.innerHTML = `録音は開始しましたが、カラオケ音源の再生に失敗しました。音源が読み込まれているか、iPhoneの音量・消音モード・Bluetooth出力先を確認してください。`;
     }
   }else if((recordTarget.value === "take" || recordTarget.value === "chorus") && (!karaokeMonitorMode || karaokeMonitorMode.value === "off")){
     fileStatus.innerHTML = `カラオケ音源を再生せずに録音中です。別端末や店内カラオケを聴きながら録る場合はこの設定で使えます。`;
@@ -1386,10 +1551,7 @@ recordBtn.onclick = async()=>{
 };
 
 stopBtn.onclick=()=>{
-  if(karaokePlaybackDuringRecord){
-    try{ karaokePlaybackDuringRecord.pause(); karaokePlaybackDuringRecord.currentTime = 0; }catch(e){}
-    karaokePlaybackDuringRecord = null;
-  }
+  stopKaraokeMonitorPlayback();
   if(mediaRecorder && mediaRecorder.state === "recording"){
     mediaRecorder.stop();
   }
@@ -2758,11 +2920,31 @@ appendTakeBtn.onclick=()=>{
   updateButtons();
 };
 
+
+function scaleBufferVolume(buffer, gain){
+  ensureAudioContext();
+  if(!buffer) return null;
+  const out = audioContext.createBuffer(buffer.numberOfChannels, buffer.length, buffer.sampleRate);
+  for(let ch=0; ch<buffer.numberOfChannels; ch++){
+    const src = buffer.getChannelData(ch);
+    const dst = out.getChannelData(ch);
+    for(let i=0;i<src.length;i++) dst[i] = Math.max(-1, Math.min(1, src[i] * gain));
+  }
+  return out;
+}
+
+function buildCurrentMixWithVolumes(){
+  if(!mainBuffer) return null;
+  let mixed = scaleBufferVolume(mainBuffer, mixVolumeRatio(mainMixVolume));
+  if(takeBuffer) mixed = mixBuffersWithOffset(mixed, scaleBufferVolume(takeBuffer, mixVolumeRatio(takeMixVolume)), takeOffsetMs / 1000, 1, 1);
+  if(chorusBuffer) mixed = mixBuffersWithOffset(mixed, scaleBufferVolume(chorusBuffer, mixVolumeRatio(chorusMixVolume)), chorusOffsetMs / 1000, 1, 1);
+  return mixed;
+}
+
 mixTakeBtn.onclick=()=>{
   if(!mainBuffer || (!takeBuffer && !chorusBuffer)) return;
-  let mixed = mainBuffer;
-  if(takeBuffer) mixed = mixBuffersWithOffset(mixed, takeBuffer, takeOffsetMs / 1000);
-  if(chorusBuffer) mixed = mixBuffersWithOffset(mixed, chorusBuffer, chorusOffsetMs / 1000);
+  let mixed = buildCurrentMixWithVolumes();
+  if(!mixed) return;
   mainBuffer = mixed;
   invalidateWaveformCache();
   mainFxBaked = false;
@@ -3727,9 +3909,8 @@ if(resetChorusOffsetBtn){
 if(previewMixBtn){
   previewMixBtn.onclick = async()=>{
     if(!mainBuffer || (!takeBuffer && !chorusBuffer)) return;
-    let mixed = mainBuffer;
-    if(takeBuffer) mixed = mixBuffersWithOffset(mixed, takeBuffer, takeOffsetMs / 1000);
-    if(chorusBuffer) mixed = mixBuffersWithOffset(mixed, chorusBuffer, chorusOffsetMs / 1000);
+    let mixed = buildCurrentMixWithVolumes();
+    if(!mixed) return;
     updateAudioElement(mixed);
     activeBufferType = "main";
     fileStatus.innerHTML = `補正込みMIXを一時プレビュー中です。確定する場合は「補正込みでカラオケ＋ボーカル＋コーラスをMIX」を押してください。<br>ボーカル補正：${takeOffsetMs} ms / コーラス補正：${chorusOffsetMs} ms`;
@@ -3738,7 +3919,31 @@ if(previewMixBtn){
   };
 }
 
-function mixBuffersWithOffset(a,b,offsetSec){
+
+
+if(trackStackPlayBtn){
+  trackStackPlayBtn.onclick = async()=>{
+    const mixed = buildCurrentMixWithVolumes();
+    if(!mixed && !mainBuffer && !takeBuffer && !chorusBuffer) return;
+    const preview = mixed || mainBuffer || takeBuffer || chorusBuffer;
+    updateAudioElement(preview);
+    audioEl.currentTime = 0;
+    audioEl.play().catch(()=>{});
+  };
+}
+if(trackStackStopBtn){
+  trackStackStopBtn.onclick = ()=>{
+    audioEl.pause();
+    stopKaraokeMonitorPlayback();
+  };
+}
+if(trackStackMixBtn){
+  trackStackMixBtn.onclick = ()=>{
+    if(mixTakeBtn && !mixTakeBtn.disabled) mixTakeBtn.click();
+  };
+}
+
+function mixBuffersWithOffset(a,b,offsetSec,aGain=0.82,bGain=0.92){
   ensureAudioContext();
   const channels = Math.max(a.numberOfChannels,b.numberOfChannels);
   const rate = a.sampleRate;
@@ -3752,11 +3957,11 @@ function mixBuffersWithOffset(a,b,offsetSec){
     const ad = a.getChannelData(Math.min(ch,a.numberOfChannels-1));
     const bd = b.getChannelData(Math.min(ch,b.numberOfChannels-1));
     for(let i=0;i<ad.length;i++){
-      od[startA+i] += ad[i] * 0.82;
+      od[startA+i] += ad[i] * aGain;
     }
     for(let i=0;i<bd.length;i++){
       const idx = startB+i;
-      od[idx] = Math.max(-1, Math.min(1, od[idx] + bd[i] * 0.92));
+      od[idx] = Math.max(-1, Math.min(1, od[idx] + bd[i] * bGain));
     }
   }
   return out;
