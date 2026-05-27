@@ -665,6 +665,52 @@ audio{width:100%;margin:8px 0}
   .track-mini-controls{grid-template-columns:1fr 1fr !important;}
 }
 
+/* ─── 新トラックUI ─── */
+.monitor-bar{
+  display:flex;align-items:center;flex-wrap:wrap;gap:6px;
+  padding:8px 10px;background:rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.07);border-radius:12px;margin-bottom:6px;
+}
+.monitor-bar-label{font-size:11px;color:var(--muted);white-space:nowrap;}
+.monitor-bar select{width:auto;padding:5px 8px;font-size:11px;border-radius:9px;margin:0;}
+.track-btns{display:flex;gap:4px;margin:5px 0 4px;flex-wrap:wrap;}
+.track-btn-load{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:5px 9px;border-radius:9px;font-size:11px;font-weight:800;color:#fff;cursor:pointer;
+  background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,0) 45%),linear-gradient(180deg,#334155,#1f2937);
+  border:1px solid rgba(255,255,255,.18);box-shadow:0 4px 0 rgba(0,0,0,.28);
+  -webkit-tap-highlight-color:transparent;user-select:none;
+}
+.track-btn-rec{
+  padding:5px 9px !important;margin:0 !important;font-size:11px !important;border-radius:9px !important;min-height:0 !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 45%),linear-gradient(180deg,#4ade80,#16a34a 60%,#15803d) !important;
+  border-color:rgba(134,239,172,.40) !important;box-shadow:0 4px 0 rgba(0,0,0,.22) !important;color:#fff !important;
+}
+.track-btn-stop-rec{padding:5px 9px !important;margin:0 !important;font-size:11px !important;border-radius:9px !important;min-height:0 !important;}
+.track-btn-delete{
+  padding:4px 8px !important;margin:3px 0 0 !important;font-size:10px !important;
+  border-radius:8px !important;min-height:0 !important;width:100% !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,0) 45%),linear-gradient(180deg,#3b3f50,#252936) !important;
+  color:rgba(248,113,113,.85) !important;border-color:rgba(248,113,113,.28) !important;
+}
+.track-play-row{display:flex;align-items:center;gap:5px;margin:2px 0;}
+.track-play-row .track-solo-btn{
+  padding:5px 10px !important;font-size:14px !important;min-height:0 !important;width:auto !important;flex-shrink:0;
+  background:linear-gradient(180deg,#60a5fa,#2563eb 60%,#1d4ed8) !important;
+  border-color:rgba(147,197,253,.50) !important;color:#fff !important;
+}
+.track-play-row .track-stop-inline{
+  padding:5px 10px !important;font-size:14px !important;min-height:0 !important;
+  width:auto !important;flex-shrink:0;color:#fff;
+  background:linear-gradient(180deg,#475569,#334155 60%,#1e293b);
+  border:1px solid rgba(255,255,255,.20);border-radius:9px !important;margin:0 !important;
+}
+.track-play-row input[type="range"]{flex:1;min-width:40px;}
+.track-vol-label{font-size:10px;color:var(--muted);min-width:32px;text-align:right;}
+#micSettingsBody{display:none;margin-top:8px;}
+#micSettingsBody.open{display:block;}
+#micSettingsToggle{margin-bottom:0;user-select:none;}
+
 </style>
 </head>
 <body>
@@ -676,187 +722,193 @@ audio{width:100%;margin:8px 0}
 
 <main>
 
+<!-- ═══ マイク設定（折りたたみ） ═══════════════════════════════ -->
 <section class="card">
-  <p class="section-title">Input <span class="pill">Mic</span></p>
-  <label>入力マイク</label>
-  <select id="micSelect"></select>
-  <div class="row">
-    <button id="micOnBtn" class="green">マイクON</button>
-    <button id="micOffBtn" class="red" disabled>マイクOFF</button>
-  </div>
-  <button id="refreshMicBtn">マイク一覧を更新</button>
-  <div id="micStatus" class="info">マイク：OFF（録音時に自動でONになります）</div>
-  <div class="mic-meter-wrap">
-    <div class="mic-meter-top">
-      <span>マイク入力チェック</span>
-      <span class="mic-meter-state" id="micLevelText">OFF</span>
+  <p class="section-title" id="micSettingsToggle" style="cursor:pointer">
+    🎙 マイク設定 <span class="pill" id="micStatusPill">OFF</span>
+    <span style="font-size:12px;color:var(--muted);font-weight:400">▼ タップで開閉</span>
+  </p>
+  <div id="micSettingsBody">
+    <label>入力マイク</label>
+    <select id="micSelect"></select>
+    <div class="row">
+      <button id="micOnBtn" class="green">マイクON</button>
+      <button id="micOffBtn" class="red" disabled>マイクOFF</button>
     </div>
-    <div class="mic-meter-bar"><div class="mic-meter-fill" id="micLevelFill"></div></div>
-    <canvas id="micLevelCanvas" class="mic-meter-canvas"></canvas>
-    <div class="small">マイクON後、声を出すとバーと波形が動きます。録音前に入力確認できます。</div>
-  </div>
-  <div class="info">
-    録音の頭切れを防ぎたい場合は、先に「マイクON」を押してから録音開始してください。<br>
-    プライバシー重視の場合は、OFFのままでも録音開始時に自動でONになり、録音停止後に自動でOFFになります。
-  </div>
-
-  <label>録音チャンネル</label>
-  <select id="channelSelect">
-    <option value="1">モノラル</option>
-    <option value="2" selected>ステレオ</option>
-  </select>
-
-  <label>音声出力先（再生・モニター用）</label>
-  <select id="audioOutputSelect">
-    <option value="">デフォルト（システム設定に従う）</option>
-  </select>
-  <div class="row">
-    <button id="refreshOutputBtn">出力デバイス一覧を更新</button>
-    <button id="applyOutputBtn" class="primary">出力先を適用</button>
-  </div>
-  <div id="outputStatus" class="info">MV7などUSB-Cマイクを接続するとスピーカー出力が切り替わる場合があります。ここでPCスピーカーなど出力先を固定できます。</div>
-</section>
-
-<section class="card">
-  <p class="section-title">Karaoke / Vocal <span class="pill" id="modeLabel">カラオケ録音</span></p>
-  <label>録音先</label>
-  <select id="recordTarget">
-    <option value="main">外部カラオケを録音してカラオケ音源にする</option>
-    <option value="take">メインボーカルを録音する</option>
-    <option value="chorus">コーラスを録音する</option>
-  </select>
-
-  <label>録音中のカラオケ再生</label>
-  <select id="karaokeMonitorMode">
-    <option value="headphones" selected>再生する：イヤホン向け（歌声だけ録りやすい）</option>
-    <option value="speaker">再生する：スピーカー可（伴奏が薄く入る可能性あり）</option>
-    <option value="off">再生しない</option>
-  </select>
-
-  <label>録音中の再生音量：<span id="karaokeMonitorVolumeLabel">100%</span></label>
-  <input id="karaokeMonitorVolume" type="range" min="0" max="100" step="1" value="100">
-
-  <label>カラオケバッキング音量（確認・MIX用）：<span id="karaokeBackingVolumeLabel">100%</span></label>
-  <input id="karaokeBackingVolume" type="range" min="0" max="150" step="1" value="100">
-
-  <div id="karaokeMonitorInfo" class="info">
-    カラオケ音源トラックがある場合、録音開始と同時に再生できます。イヤホンなら歌声だけを録りやすく、スピーカー再生なら伴奏がマイクに薄く入って波形合わせの目印になる場合があります。
-  </div>
-
-  <div class="row">
-    <button id="recordBtn" class="primary">録音開始</button>
-    <button id="stopBtn" disabled>録音停止</button>
-  </div>
-
-  <label>ファイル読み込み先</label>
-  <select id="fileTarget">
-    <option value="main" selected>カラオケ音源として読み込み・置き換え</option>
-    <option value="append">カラオケ音源の末尾に追加</option>
-    <option value="take">メインボーカルトラックとして読み込み</option>
-    <option value="chorus">コーラストラックとして読み込み</option>
-  </select>
-
-  <label>カラオケ音源・動画ファイル読み込み（WaveCut方式）</label>
-  <div class="file-row">
-    <input id="fileInput" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
-    <label for="fileInput" class="file-button">ファイルを選択</label>
-    <div id="selectedFileName" class="file-name">選択されていません</div>
-  </div>
-  <div id="fileStatus" class="info">カラオケ音源未選択。MP3 / WAV / M4A / MP4 / MOVなどを選べます。</div>
-  <div class="info">音源を持っていない場合は、上の録音先を「外部カラオケを録音」にして、店内カラオケや別端末で鳴らした音をマイク録音できます。</div>
-
-  <audio id="audio" controls></audio>
-  <video id="mediaProbe" playsinline muted style="display:none"></video>
-
-  <div class="row3">
-    <button id="deleteMainBtn" disabled class="red">カラオケ音源を削除</button>
-    <button id="deleteTakeBtn" disabled class="red">ボーカルを削除</button>
-    <button id="deleteChorusBtn" disabled class="red">コーラスを削除</button>
+    <button id="refreshMicBtn">マイク一覧を更新</button>
+    <div id="micStatus" class="info">マイク：OFF（各トラックの録音ボタンで自動ONになります）</div>
+    <div class="mic-meter-wrap">
+      <div class="mic-meter-top">
+        <span>入力レベル確認</span>
+        <span class="mic-meter-state" id="micLevelText">OFF</span>
+      </div>
+      <div class="mic-meter-bar"><div class="mic-meter-fill" id="micLevelFill"></div></div>
+      <canvas id="micLevelCanvas" class="mic-meter-canvas"></canvas>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div>
+        <label>録音チャンネル</label>
+        <select id="channelSelect">
+          <option value="1">モノラル</option>
+          <option value="2" selected>ステレオ</option>
+        </select>
+      </div>
+      <div>
+        <label>音声出力先</label>
+        <select id="audioOutputSelect">
+          <option value="">デフォルト</option>
+        </select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:4px">
+      <button id="refreshOutputBtn">出力デバイス更新</button>
+      <button id="applyOutputBtn" class="primary">出力先を適用</button>
+    </div>
+    <div id="outputStatus" class="info" style="margin-top:6px">MV7などUSB-Cマイク使用時、PCスピーカーに固定したい場合はここで選択して「適用」してください。</div>
   </div>
 </section>
 
-
+<!-- ═══ 3 Track ═══════════════════════════════════════════════ -->
 <section class="card track-stack-card">
-  <p class="section-title">3 Track Timeline <span class="pill" id="trackTimelineTotal">00:00</span></p>
-  <div class="track-stack-hint">
-    カラオケ・ボーカル・コーラスを上下に並べて表示します。各トラックの「▶ 〜だけ再生」で単独再生、「複数再生」にチェックして下のボタンで同時再生できます。
+  <p class="section-title">Tracks <span class="pill" id="trackTimelineTotal">00:00</span></p>
+
+  <!-- カラオケ録音中のモニター設定（1箇所だけ） -->
+  <div class="monitor-bar">
+    <span class="monitor-bar-label">録音中カラオケ再生：</span>
+    <select id="karaokeMonitorMode">
+      <option value="headphones" selected>イヤホンで聴く</option>
+      <option value="speaker">スピーカーで鳴らす（マイクに薄く入る可能性あり）</option>
+      <option value="off">再生しない</option>
+    </select>
+    <span class="monitor-bar-label" style="margin-left:8px">音量</span>
+    <input id="karaokeMonitorVolume" type="range" min="0" max="100" step="1" value="100" style="width:80px">
+    <span id="karaokeMonitorVolumeLabel" style="font-size:11px;color:var(--muted);min-width:34px">100%</span>
   </div>
+  <div id="karaokeMonitorInfo" class="info" style="margin-bottom:8px"></div>
+
   <div class="track-stack" id="trackStack">
+
+    <!-- Track 1: カラオケ -->
     <div class="track-lane" data-track="main" id="laneMain">
       <div class="track-lane-side">
-        <div>
-          <div class="track-lane-name">カラオケ音源</div>
-          <div class="track-lane-sub" id="laneMainInfo">未読み込み</div>
+        <div class="track-lane-name">🎵 カラオケ</div>
+        <div class="track-lane-sub" id="laneMainInfo">未読み込み</div>
+        <span class="track-rec-badge">● REC</span>
+        <div class="track-btns">
+          <input id="fileInputMain" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
+          <label for="fileInputMain" class="track-btn-load">📁 読込</label>
+          <button class="track-btn-rec" id="recMainBtn">⏺ 録音</button>
+          <button class="track-btn-stop-rec track-stop-rec" id="stopMainBtn" disabled>⏹</button>
         </div>
-        <span class="track-lane-pill" id="laneMainPill">Track 1</span>
-        <span class="track-rec-badge">REC</span>
-        <div class="track-action-row"><button class="track-solo-btn" id="playMainOnlyBtn" disabled>▶ カラオケだけ再生</button><button class="track-stop-inline" type="button">停止</button></div>
-        <div class="track-mixer">
-          <div class="track-mixer-row"><span>音量</span><input id="trackVolumeMain" type="range" min="0" max="150" step="1" value="100"><strong id="trackVolumeMainLabel">100%</strong></div>
-          <div class="track-select-row"><label><input id="trackSelectMain" type="checkbox" checked> 複数再生</label></div>
+        <div class="track-play-row">
+          <button class="track-solo-btn" id="playMainOnlyBtn" disabled>▶</button>
+          <button class="track-stop-inline" type="button">■</button>
+          <input id="trackVolumeMain" type="range" min="0" max="150" step="1" value="100" title="音量">
+          <strong id="trackVolumeMainLabel" class="track-vol-label">100%</strong>
         </div>
+        <div class="track-select-row"><label><input id="trackSelectMain" type="checkbox" checked> 全体再生に含む</label></div>
+        <button id="deleteMainBtn" disabled class="track-btn-delete">削除</button>
       </div>
       <div class="track-wave-wrap">
         <canvas class="track-wave-canvas" id="trackCanvasMain" data-track="main"></canvas>
-        <div class="track-empty">カラオケ音源を読み込む</div>
-        <div class="recording-wave-note">録音中の入力波形を表示中</div>
+        <div class="track-empty">📁 読込 または ⏺ 録音</div>
+        <div class="recording-wave-note">録音中…</div>
       </div>
     </div>
+
+    <!-- Track 2: ボーカル -->
     <div class="track-lane" data-track="take" id="laneTake">
       <div class="track-lane-side">
-        <div>
-          <div class="track-lane-name">メインボーカル</div>
-          <div class="track-lane-sub" id="laneTakeInfo">未録音</div>
+        <div class="track-lane-name">🎤 ボーカル</div>
+        <div class="track-lane-sub" id="laneTakeInfo">未録音</div>
+        <span class="track-rec-badge">● REC</span>
+        <div class="track-btns">
+          <input id="fileInputTake" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
+          <label for="fileInputTake" class="track-btn-load">📁 読込</label>
+          <button class="track-btn-rec" id="recTakeBtn">⏺ 録音</button>
+          <button class="track-btn-stop-rec track-stop-rec" id="stopTakeBtn" disabled>⏹</button>
         </div>
-        <span class="track-lane-pill" id="laneTakePill">Track 2</span>
-        <span class="track-rec-badge">REC</span>
-        <div class="track-action-row"><button class="track-solo-btn" id="playTakeOnlyBtn" disabled>▶ ボーカルだけ再生</button><button class="track-stop-inline" type="button">停止</button></div>
-        <div class="track-mixer">
-          <div class="track-mixer-row"><span>音量</span><input id="trackVolumeTake" type="range" min="0" max="150" step="1" value="100"><strong id="trackVolumeTakeLabel">100%</strong></div>
-          <div class="track-select-row"><label><input id="trackSelectTake" type="checkbox" checked> 複数再生</label></div>
+        <div class="track-play-row">
+          <button class="track-solo-btn" id="playTakeOnlyBtn" disabled>▶</button>
+          <button class="track-stop-inline" type="button">■</button>
+          <input id="trackVolumeTake" type="range" min="0" max="150" step="1" value="100" title="音量">
+          <strong id="trackVolumeTakeLabel" class="track-vol-label">100%</strong>
         </div>
+        <div class="track-select-row"><label><input id="trackSelectTake" type="checkbox" checked> 全体再生に含む</label></div>
+        <button id="deleteTakeBtn" disabled class="track-btn-delete">削除</button>
       </div>
       <div class="track-wave-wrap">
         <canvas class="track-wave-canvas" id="trackCanvasTake" data-track="take"></canvas>
-        <div class="track-empty">録音すると波形が出ます</div>
-        <div class="recording-wave-note">録音中の入力波形を表示中</div>
+        <div class="track-empty">⏺ 録音 または 📁 読込</div>
+        <div class="recording-wave-note">録音中…</div>
       </div>
     </div>
+
+    <!-- Track 3: コーラス -->
     <div class="track-lane" data-track="chorus" id="laneChorus">
       <div class="track-lane-side">
-        <div>
-          <div class="track-lane-name">コーラス</div>
-          <div class="track-lane-sub" id="laneChorusInfo">未録音</div>
+        <div class="track-lane-name">🎶 コーラス</div>
+        <div class="track-lane-sub" id="laneChorusInfo">未録音</div>
+        <span class="track-rec-badge">● REC</span>
+        <div class="track-btns">
+          <input id="fileInputChorus" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
+          <label for="fileInputChorus" class="track-btn-load">📁 読込</label>
+          <button class="track-btn-rec" id="recChorusBtn">⏺ 録音</button>
+          <button class="track-btn-stop-rec track-stop-rec" id="stopChorusBtn" disabled>⏹</button>
         </div>
-        <span class="track-lane-pill" id="laneChorusPill">Track 3</span>
-        <span class="track-rec-badge">REC</span>
-        <div class="track-action-row"><button class="track-solo-btn" id="playChorusOnlyBtn" disabled>▶ コーラスだけ再生</button><button class="track-stop-inline" type="button">停止</button></div>
-        <div class="track-mixer">
-          <div class="track-mixer-row"><span>音量</span><input id="trackVolumeChorus" type="range" min="0" max="150" step="1" value="100"><strong id="trackVolumeChorusLabel">100%</strong></div>
-          <div class="track-select-row"><label><input id="trackSelectChorus" type="checkbox" checked> 複数再生</label></div>
+        <div class="track-play-row">
+          <button class="track-solo-btn" id="playChorusOnlyBtn" disabled>▶</button>
+          <button class="track-stop-inline" type="button">■</button>
+          <input id="trackVolumeChorus" type="range" min="0" max="150" step="1" value="100" title="音量">
+          <strong id="trackVolumeChorusLabel" class="track-vol-label">100%</strong>
         </div>
+        <div class="track-select-row"><label><input id="trackSelectChorus" type="checkbox" checked> 全体再生に含む</label></div>
+        <button id="deleteChorusBtn" disabled class="track-btn-delete">削除</button>
       </div>
       <div class="track-wave-wrap">
         <canvas class="track-wave-canvas" id="trackCanvasChorus" data-track="chorus"></canvas>
-        <div class="track-empty">ハモリ・追加声を録音</div>
-        <div class="recording-wave-note">録音中の入力波形を表示中</div>
+        <div class="track-empty">⏺ 録音 または 📁 読込</div>
+        <div class="recording-wave-note">録音中…</div>
       </div>
     </div>
-  </div>
-  <div class="track-play-panel">
-    <div class="track-play-title">チェックしたトラックだけを同時再生できます。各トラックの音量スライダーは確認再生・MIX保存に反映されます。</div>
-    <div class="track-checks">
-      <label id="trackCheckLabelMain"><input id="multiPlayMain" type="checkbox" checked> カラオケ</label>
-      <label id="trackCheckLabelTake"><input id="multiPlayTake" type="checkbox" checked> ボーカル</label>
-      <label id="trackCheckLabelChorus"><input id="multiPlayChorus" type="checkbox" checked> コーラス</label>
-    </div>
+
+  </div><!-- /track-stack -->
+
+  <div id="fileStatus" class="info" style="margin-top:8px">トラックに音源を読み込むか録音してください。</div>
+  <div id="selectedFileName" class="file-name"></div>
+  <audio id="audio" controls style="display:none"></audio>
+  <video id="mediaProbe" playsinline muted style="display:none"></video>
+
+  <!-- 全体再生コントロール -->
+  <div class="track-checks" style="margin-top:10px">
+    <label id="trackCheckLabelMain"><input id="multiPlayMain" type="checkbox" checked> カラオケ</label>
+    <label id="trackCheckLabelTake"><input id="multiPlayTake" type="checkbox" checked> ボーカル</label>
+    <label id="trackCheckLabelChorus"><input id="multiPlayChorus" type="checkbox" checked> コーラス</label>
   </div>
   <div class="track-mini-controls">
-    <button id="trackStackPlayBtn" class="primary" disabled>▶ 選択トラック再生</button>
-    <button id="trackAllPlayBtn" disabled>▶ 全トラック再生</button>
-    <button id="trackStackStopBtn" disabled>停止</button>
+    <button id="trackStackPlayBtn" class="primary" disabled>▶ 選択再生</button>
+    <button id="trackAllPlayBtn" disabled>▶ 全曲再生</button>
+    <button id="trackStackStopBtn" disabled>■ 停止</button>
     <button id="trackStackMixBtn" class="green" disabled>MIX確定</button>
   </div>
+
+  <!-- 旧互換ダミー（JSが参照するが非表示） -->
+  <select id="recordTarget" style="display:none">
+    <option value="main">main</option>
+    <option value="take">take</option>
+    <option value="chorus">chorus</option>
+  </select>
+  <select id="fileTarget" style="display:none">
+    <option value="main" selected>main</option>
+    <option value="take">take</option>
+    <option value="chorus">chorus</option>
+  </select>
+  <input id="karaokeBackingVolume" type="range" min="0" max="150" step="1" value="100" style="display:none">
+  <span id="karaokeBackingVolumeLabel" style="display:none">100%</span>
+  <span id="modeLabel" style="display:none"></span>
+  <span id="laneMainPill" style="display:none"></span>
+  <span id="laneTakePill" style="display:none"></span>
+  <span id="laneChorusPill" style="display:none"></span>
 </section>
 
 <section class="card">
@@ -1117,9 +1169,27 @@ const recordTarget = document.getElementById("recordTarget");
 const fileTarget = document.getElementById("fileTarget");
 const modeLabel = document.getElementById("modeLabel");
 const timeLabel = document.getElementById("timeLabel");
-const recordBtn = document.getElementById("recordBtn");
-const stopBtn = document.getElementById("stopBtn");
-const fileInput = document.getElementById("fileInput");
+// 旧単一録音ボタン → ダミーオブジェクト（トラック別ボタンに置き換え済み）
+const recordBtn = { disabled:false, textContent:"", classList:{add:()=>{},remove:()=>{}} };
+const stopBtn   = { disabled:true };
+const fileInput = document.getElementById("fileInputMain") || {value:""};
+const fileStatus_dummy = null;
+// トラック別ファイル・録音ボタン
+const fileInputMain   = document.getElementById("fileInputMain");
+const fileInputTake   = document.getElementById("fileInputTake");
+const fileInputChorus = document.getElementById("fileInputChorus");
+const recMainBtn   = document.getElementById("recMainBtn");
+const recTakeBtn   = document.getElementById("recTakeBtn");
+const recChorusBtn = document.getElementById("recChorusBtn");
+const stopMainBtn   = document.getElementById("stopMainBtn");
+const stopTakeBtn   = document.getElementById("stopTakeBtn");
+const stopChorusBtn = document.getElementById("stopChorusBtn");
+// マイク設定折りたたみ
+const micSettingsToggle = document.getElementById("micSettingsToggle");
+const micSettingsBody   = document.getElementById("micSettingsBody");
+if(micSettingsToggle && micSettingsBody){
+  micSettingsToggle.onclick = ()=> micSettingsBody.classList.toggle("open");
+}
 const fileStatus = document.getElementById("fileStatus");
 const selectedFileName = document.getElementById("selectedFileName");
 const sourceStatus = document.getElementById("sourceStatus");
@@ -1861,109 +1931,95 @@ async function startKaraokePlaybackDuringRecord(){
   karaokePlaybackGain = gain;
 }
 
-recordBtn.onclick = async()=>{
+// ─── トラック別録音ロジック ───────────────────────────────────────
+async function startTrackRecording(track){
   ensureAudioContext();
-  recordedChunks=[];
-  selectedStart=null;
-  selectedEnd=null;
-  playheadRatio=0;
+  recordedChunks = [];
+  selectedStart = null;
+  selectedEnd = null;
+  playheadRatio = 0;
+  recordTarget.value = track;
 
   try{
     currentStream = await ensureMicStream();
   }catch(e){
-    alert("録音のためにマイクをONにできませんでした: " + e.message);
+    alert("マイクをONにできませんでした: " + e.message);
     stopCurrentMicStream();
     return;
   }
 
   mediaRecorder = new MediaRecorder(currentStream);
-
-  mediaRecorder.ondataavailable = e=>{
-    if(e.data.size>0) recordedChunks.push(e.data);
-  };
+  mediaRecorder.ondataavailable = e=>{ if(e.data.size>0) recordedChunks.push(e.data); };
 
   mediaRecorder.onstop = async()=>{
     try{
       const blob = new Blob(recordedChunks,{type:mediaRecorder.mimeType});
       const arrayBuffer = await blob.arrayBuffer();
       const decoded = await audioContext.decodeAudioData(arrayBuffer);
-
-      if(recordTarget.value === "take"){
-        takeBuffer = decoded;
-        takeOffsetMs = 0;
-        takeFxBaked = false;
-        takeFxBackup = null;
+      if(track === "take"){
+        takeBuffer = decoded; takeOffsetMs = 0; takeFxBaked = false; takeFxBackup = null;
         activeBufferType = "take";
-        fileStatus.textContent = `歌声トラックを録音しました / 長さ ${formatTime(decoded.duration)}`;
-      }else if(recordTarget.value === "chorus"){
-        chorusBuffer = decoded;
-        chorusOffsetMs = 0;
-        chorusFxBaked = false;
-        chorusFxBackup = null;
+        fileStatus.textContent = `ボーカル録音完了 / ${formatTime(decoded.duration)}`;
+      }else if(track === "chorus"){
+        chorusBuffer = decoded; chorusOffsetMs = 0; chorusFxBaked = false; chorusFxBackup = null;
         activeBufferType = "chorus";
-        fileStatus.textContent = `コーラストラックを録音しました / 長さ ${formatTime(decoded.duration)}`;
+        fileStatus.textContent = `コーラス録音完了 / ${formatTime(decoded.duration)}`;
       }else{
-        mainBuffer = decoded;
-        mainFxBaked = false;
-        mainFxBackup = null;
+        mainBuffer = decoded; mainFxBaked = false; mainFxBackup = null;
         activeBufferType = "main";
-        fileStatus.textContent = `カラオケ音源を録音しました / 長さ ${formatTime(decoded.duration)}`;
+        fileStatus.textContent = `カラオケ録音完了 / ${formatTime(decoded.duration)}`;
       }
-
-      invalidateWaveformCache();
-      playheadRatio=0;
-      saveInitialEditState(recordTarget.value === "take" ? "ボーカル録音直後" : (recordTarget.value === "chorus" ? "コーラス録音直後" : "カラオケ録音直後"));
-      resetFx();
-      refreshPreview();
-      updateButtons();
+      invalidateWaveformCache(); playheadRatio = 0;
+      saveInitialEditState(track==="take"?"ボーカル録音直後":track==="chorus"?"コーラス録音直後":"カラオケ録音直後");
+      resetFx(); refreshPreview(); updateButtons();
     }catch(err){
       alert("録音データの読み込みに失敗しました: " + err.message);
-      console.error(err);
     }finally{
       endLiveRecordingWave();
       stopCurrentMicStream();
+      setTrackRecordingUI(track, false);
     }
   };
 
   mediaRecorder.start();
-  beginLiveRecordingWave(recordTarget.value);
+  beginLiveRecordingWave(track);
+  setTrackRecordingUI(track, true);
 
-  // ボーカル/コーラス録音時は、カラオケ音源を同時再生できる。
-  // イヤホンなら歌声だけを録りやすく、スピーカーなら伴奏が薄く入り波形合わせの目印になる場合があります。
-  karaokePlaybackDuringRecord = null;
-  if((recordTarget.value === "take" || recordTarget.value === "chorus") && mainBuffer && karaokeMonitorMode && karaokeMonitorMode.value !== "off"){
+  // ボーカル/コーラス録音時はカラオケを同時再生
+  if((track === "take" || track === "chorus") && mainBuffer && karaokeMonitorMode && karaokeMonitorMode.value !== "off"){
     try{
       await startKaraokePlaybackDuringRecord();
-      if(karaokeMonitorMode.value === "speaker"){
-        fileStatus.innerHTML = `カラオケ音源をスピーカーで再生しながら録音中です。伴奏がマイクに薄く入る可能性があります。位置合わせの目印にはなりますが、最終MIXでは伴奏が二重に聞こえる場合があります。`;
-      }else{
-        fileStatus.innerHTML = `カラオケ音源を再生しながら録音中です。イヤホンで聴くと、マイクには基本的に歌声だけが録音されます。`;
-      }
-    }catch(playErr){
-      console.warn("Karaoke playback during recording failed", playErr);
-      fileStatus.innerHTML = `録音は開始しましたが、カラオケ音源の自動再生に失敗しました。iPhoneの場合は本体音量・消音モード・Bluetooth出力先・カラオケ再生音量を確認してください。`;
+      fileStatus.innerHTML = karaokeMonitorMode.value === "speaker"
+        ? `カラオケをスピーカーで鳴らしながら録音中（マイクに薄く入る可能性あり）`
+        : `カラオケをイヤホンで聴きながら録音中`;
+    }catch(e){
+      fileStatus.innerHTML = `録音中（カラオケ自動再生に失敗しました）`;
     }
-  }else if((recordTarget.value === "take" || recordTarget.value === "chorus") && (!karaokeMonitorMode || karaokeMonitorMode.value === "off")){
-    fileStatus.innerHTML = `カラオケ音源を再生せずに録音中です。別端末や店内カラオケを聴きながら録る場合はこの設定で使えます。`;
+  }else{
+    fileStatus.innerHTML = `録音中...`;
   }
-
-  recordBtn.disabled=true;
-  stopBtn.disabled=false;
-  recordBtn.textContent="録音中...";
-  recordBtn.classList.add("red");
   updateMicStatus(true, "マイク：ON / 録音中");
-};
+}
 
-stopBtn.onclick=()=>{
+function stopTrackRecording(track){
   stopKaraokePlaybackDuringRecord();
-  if(mediaRecorder && mediaRecorder.state === "recording"){
-    mediaRecorder.stop();
-  }
-  recordBtn.disabled=false;
-  stopBtn.disabled=true;
-  recordBtn.textContent="録音開始";
-  recordBtn.classList.remove("red");
-};
+  if(mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
+  setTrackRecordingUI(track, false);
+}
+
+function setTrackRecordingUI(track, isRec){
+  const recBtn  = track==="take"?recTakeBtn :track==="chorus"?recChorusBtn :recMainBtn;
+  const stopBtn_ = track==="take"?stopTakeBtn:track==="chorus"?stopChorusBtn:stopMainBtn;
+  if(recBtn)  recBtn.disabled  = isRec;
+  if(stopBtn_) stopBtn_.disabled = !isRec;
+}
+
+if(recMainBtn)   recMainBtn.onclick   = ()=> startTrackRecording("main");
+if(recTakeBtn)   recTakeBtn.onclick   = ()=> startTrackRecording("take");
+if(recChorusBtn) recChorusBtn.onclick = ()=> startTrackRecording("chorus");
+if(stopMainBtn)   stopMainBtn.onclick   = ()=> stopTrackRecording("main");
+if(stopTakeBtn)   stopTakeBtn.onclick   = ()=> stopTrackRecording("take");
+if(stopChorusBtn) stopChorusBtn.onclick = ()=> stopTrackRecording("chorus");
 
 
 
@@ -2853,7 +2909,45 @@ function extractAudioViaPlayableMedia(file, mediaInfo){
   });
 }
 
-fileInput.onchange = async(e)=>{
+// ─── トラック別ファイル読込 ──────────────────────────────────────
+async function loadFileToTrack(file, track){
+  if(!file) return;
+  if(selectedFileName) selectedFileName.textContent = file.name;
+  ensureAudioContext();
+  try{
+    fileStatus.classList.add("extracting");
+    fileStatus.innerHTML = `読み込み中... (${file.name})`;
+    const decoded = await decodeFileToAudioBuffer(file);
+    if(track === "take"){
+      takeBuffer = decoded; takeOffsetMs = 0; takeFxBaked = false; takeFxBackup = null;
+      activeBufferType = "take";
+      setFileStatus(file, "ボーカルトラックとして読み込み", decoded);
+    }else if(track === "chorus"){
+      chorusBuffer = decoded; chorusOffsetMs = 0; chorusFxBaked = false; chorusFxBackup = null;
+      activeBufferType = "chorus";
+      setFileStatus(file, "コーラストラックとして読み込み", decoded);
+    }else{
+      mainBuffer = decoded; mainFxBaked = false; mainFxBackup = null;
+      activeBufferType = "main";
+      setFileStatus(file, "カラオケトラックとして読み込み", decoded);
+    }
+    saveInitialEditState(track==="take"?"ボーカル読込直後":track==="chorus"?"コーラス読込直後":"カラオケ読込直後");
+    resetFx(); selectedStart=null; selectedEnd=null; playheadRatio=0; viewportStart=0;
+    clampViewport(); invalidateWaveformCache(); refreshPreview(); updateButtons();
+    fileStatus.classList.remove("extracting");
+  }catch(err){
+    fileStatus.classList.remove("extracting");
+    alert("音声を読み込めませんでした。形式・メモリ・SafariのHTTPS制限などを確認してください。");
+    console.error(err);
+  }
+}
+if(fileInputMain)   fileInputMain.onchange   = e=>{ loadFileToTrack(e.target.files[0],"main");   fileInputMain.value=""; };
+if(fileInputTake)   fileInputTake.onchange   = e=>{ loadFileToTrack(e.target.files[0],"take");   fileInputTake.value=""; };
+if(fileInputChorus) fileInputChorus.onchange = e=>{ loadFileToTrack(e.target.files[0],"chorus"); fileInputChorus.value=""; };
+
+// 旧 fileInput.onchange（ダミー、後方互換用に残す）
+const _dummyFileInput = document.getElementById("fileInputMain");
+if(_dummyFileInput && _dummyFileInput !== fileInputMain) _dummyFileInput.onchange = async(e)=>{
   const file = e.target.files[0];
   if(!file) return;
   selectedFileName.textContent = file.name;
@@ -2919,7 +3013,7 @@ fileInput.onchange = async(e)=>{
     console.error(err);
   }
 
-  fileInput.value = "";
+  if(_dummyFileInput) _dummyFileInput.value = "";
 };
 
 function updateButtons(){
