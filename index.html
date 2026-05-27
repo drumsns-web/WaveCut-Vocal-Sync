@@ -824,11 +824,15 @@ audio{width:100%;margin:8px 0}
   padding:0 !important;margin:0 !important;min-height:0 !important;
 }
 .track-btn-delete{
-  padding:2px 0 !important;margin:0 !important;font-size:9px !important;
+  padding:3px 0 !important;margin:0 !important;font-size:10px !important;font-weight:700 !important;
   border-radius:6px !important;min-height:0 !important;width:100% !important;
-  background:rgba(255,255,255,.05) !important;
-  color:rgba(248,113,113,.7) !important;
-  border-color:rgba(248,113,113,.2) !important;
+  background:rgba(220,38,38,.18) !important;
+  color:#fca5a5 !important;
+  border:1px solid rgba(248,113,113,.5) !important;
+}
+.track-btn-delete:not(:disabled):hover{
+  background:rgba(220,38,38,.35) !important;
+  color:#fff !important;
 }
 .track-vol-row{
   display:flex;align-items:center;gap:4px;
@@ -876,13 +880,18 @@ audio{width:100%;margin:8px 0}
 
 /* Wave Edit タブ */
 .wave-track-tab{
-  width:28px;height:22px;border-radius:7px;font-size:13px;
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12) !important;
-  color:#64748b;cursor:pointer;padding:0 !important;margin:0 !important;min-height:0 !important;
+  height:32px;padding:4px 10px !important;border-radius:9px;font-size:12px;font-weight:700;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18) !important;
+  color:#94a3b8;cursor:pointer;margin:0 !important;min-height:0 !important;
+  display:inline-flex;align-items:center;gap:3px;white-space:nowrap;
+  transition:all .15s;
 }
+.wave-track-tab:hover{ background:rgba(255,255,255,.12); color:#cbd5e1; }
 .wave-track-tab.active{
-  background:rgba(53,224,161,.15);color:#35e0a1;
-  border-color:rgba(53,224,161,.4) !important;
+  background:linear-gradient(180deg,rgba(53,224,161,.32),rgba(53,224,161,.15));
+  color:#35e0a1; font-weight:800;
+  border-color:rgba(53,224,161,.6) !important;
+  box-shadow:0 0 12px rgba(53,224,161,.25);
 }
 .section-title{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
 
@@ -924,6 +933,66 @@ audio{width:100%;margin:8px 0}
   background:rgba(255,255,255,.07) !important;
   border:1px solid rgba(255,255,255,.14) !important; color:#94a3b8 !important;
 }
+
+/* ─── オフセット調整の大きなボタン ─── */
+.offset-btns-big{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:4px;
+}
+.offset-big-btn{
+  padding:8px 4px !important;
+  margin:0 !important;
+  min-height:0 !important;
+  font-size:11px !important;
+  font-weight:800 !important;
+  border-radius:8px !important;
+  font-family:ui-monospace,monospace;
+  background:rgba(255,255,255,.07) !important;
+  border:1px solid rgba(255,255,255,.18) !important;
+  color:#cbd5e1 !important;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:all .08s;
+}
+.offset-big-btn.neg{
+  color:#fbbf24 !important;
+  border-color:rgba(251,191,36,.35) !important;
+}
+.offset-big-btn.pos{
+  color:#60a5fa !important;
+  border-color:rgba(96,165,250,.35) !important;
+}
+.offset-big-btn.rst{
+  color:#94a3b8 !important;
+  grid-column:span 7;
+  font-size:10px !important;
+  padding:5px !important;
+}
+.offset-big-btn:active{
+  transform:scale(0.92);
+  background:rgba(255,255,255,.18) !important;
+}
+.offset-big-btn.flash{
+  animation:offsetFlash .25s;
+}
+@keyframes offsetFlash{
+  0%{ background:rgba(53,224,161,.5) !important; transform:scale(1.08); }
+  100%{ background:rgba(255,255,255,.07) !important; transform:scale(1); }
+}
+
+/* タイミング補正ラベルを大きく */
+.track-offset-label{ font-size:11px !important; margin-bottom:6px !important; }
+.track-offset-label strong{
+  font-size:14px !important; font-family:ui-monospace,monospace;
+  padding:2px 8px; background:rgba(251,191,36,.15);
+  border-radius:6px; margin-left:4px;
+}
+
+/* edit-bar内の「最初に戻る」ボタン */
+.teb-btn.teb-restart{ color:#a78bfa; border-color:rgba(167,139,250,.3) !important; }
+
+/* 波形ストレージのタイムライングリッドはJS側で実装 */
 
 </style>
 </head>
@@ -1047,10 +1116,7 @@ audio{width:100%;margin:8px 0}
           <button class="teb-btn teb-copy"  id="tebCopyMain"  title="選択をコピー" disabled>⎘</button>
           <button class="teb-btn teb-paste" id="tebPasteMain" title="カーソル位置へ貼り付け" disabled>⎙</button>
           <span class="teb-sep"></span>
-          <button class="teb-btn teb-shift-l" data-track="main" data-ms="-100" title="-100ms">«</button>
-          <button class="teb-btn teb-shift-l" data-track="main" data-ms="-10"  title="-10ms">‹</button>
-          <button class="teb-btn teb-shift-r" data-track="main" data-ms="10"   title="+10ms">›</button>
-          <button class="teb-btn teb-shift-r" data-track="main" data-ms="100"  title="+100ms">»</button>
+          <button class="teb-btn teb-restart" id="tebRestartMain" data-track="main" title="最初に戻る">⏮</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-fx" id="fxToggleMain" title="エフェクト">FX</button>
           <button class="teb-btn teb-undo" id="tebUndoMain" title="元に戻す" disabled>↩</button>
@@ -1129,10 +1195,7 @@ audio{width:100%;margin:8px 0}
           <button class="teb-btn teb-copy"  id="tebCopyTake"  title="選択をコピー" disabled>⎘</button>
           <button class="teb-btn teb-paste" id="tebPasteTake" title="カーソル位置へ貼り付け" disabled>⎙</button>
           <span class="teb-sep"></span>
-          <button class="teb-btn teb-shift-l" data-track="take" data-ms="-100" title="-100ms">«</button>
-          <button class="teb-btn teb-shift-l" data-track="take" data-ms="-10"  title="-10ms">‹</button>
-          <button class="teb-btn teb-shift-r" data-track="take" data-ms="10"   title="+10ms">›</button>
-          <button class="teb-btn teb-shift-r" data-track="take" data-ms="100"  title="+100ms">»</button>
+          <button class="teb-btn teb-restart" id="tebRestartTake" data-track="take" title="最初に戻る">⏮</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-fx" id="fxToggleTake" title="エフェクト">FX</button>
           <button class="teb-btn teb-undo" id="tebUndoTake" title="元に戻す" disabled>↩</button>
@@ -1169,16 +1232,23 @@ audio{width:100%;margin:8px 0}
             <button class="teb-btn track-fx-reset" data-track="take" style="width:auto;padding:0 8px;font-size:10px;">リセット</button>
           </div>
           <div class="track-offset-row" id="takeOffsetPanel">
-            <div class="track-offset-label">タイミング補正：<strong id="takeOffsetLabel">0 ms</strong></div>
-            <div class="track-offset-btns">
-              <button class="teb-btn teb-shift-l" data-track="take" data-ms="-100">-100</button>
-              <button class="teb-btn teb-shift-l" data-track="take" data-ms="-10">-10</button>
-              <button class="teb-btn teb-shift-l" data-track="take" data-ms="-1">-1</button>
-              <button class="teb-btn teb-shift-r" data-track="take" data-ms="1">+1</button>
-              <button class="teb-btn teb-shift-r" data-track="take" data-ms="10">+10</button>
-              <button class="teb-btn teb-shift-r" data-track="take" data-ms="100">+100</button>
-              <button class="teb-btn" id="resetTakeOffsetBtn" style="font-size:9px;width:auto;padding:0 5px;">reset</button>
+            <div class="track-offset-label">タイミング補正（トラック全体を前後にずらす）：<strong id="takeOffsetLabel">0 ms</strong></div>
+            <div class="track-offset-btns offset-btns-big">
+              <button class="offset-big-btn neg" data-track="take" data-ms="-2000">-2s</button>
+              <button class="offset-big-btn neg" data-track="take" data-ms="-1000">-1s</button>
+              <button class="offset-big-btn neg" data-track="take" data-ms="-500">-500</button>
+              <button class="offset-big-btn neg" data-track="take" data-ms="-100">-100</button>
+              <button class="offset-big-btn neg" data-track="take" data-ms="-10">-10</button>
+              <button class="offset-big-btn neg" data-track="take" data-ms="-1">-1</button>
+              <button class="offset-big-btn pos" data-track="take" data-ms="1">+1</button>
+              <button class="offset-big-btn pos" data-track="take" data-ms="10">+10</button>
+              <button class="offset-big-btn pos" data-track="take" data-ms="100">+100</button>
+              <button class="offset-big-btn pos" data-track="take" data-ms="500">+500</button>
+              <button class="offset-big-btn pos" data-track="take" data-ms="1000">+1s</button>
+              <button class="offset-big-btn pos" data-track="take" data-ms="2000">+2s</button>
+              <button class="offset-big-btn rst" id="resetTakeOffsetBtn">reset</button>
             </div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px">単位はミリ秒(ms)。大きな数値で大胆に、小さな数値で微調整できます。</div>
           </div>
         </div>
       </div>
@@ -1223,10 +1293,7 @@ audio{width:100%;margin:8px 0}
           <button class="teb-btn teb-copy"  id="tebCopyChorus"  title="選択をコピー" disabled>⎘</button>
           <button class="teb-btn teb-paste" id="tebPasteChorus" title="カーソル位置へ貼り付け" disabled>⎙</button>
           <span class="teb-sep"></span>
-          <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-100" title="-100ms">«</button>
-          <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-10"  title="-10ms">‹</button>
-          <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="10"   title="+10ms">›</button>
-          <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="100"  title="+100ms">»</button>
+          <button class="teb-btn teb-restart" id="tebRestartChorus" data-track="chorus" title="最初に戻る">⏮</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-fx" id="fxToggleChorus" title="エフェクト">FX</button>
           <button class="teb-btn teb-undo" id="tebUndoChorus" title="元に戻す" disabled>↩</button>
@@ -1263,16 +1330,23 @@ audio{width:100%;margin:8px 0}
             <button class="teb-btn track-fx-reset" data-track="chorus" style="width:auto;padding:0 8px;font-size:10px;">リセット</button>
           </div>
           <div class="track-offset-row" id="chorusOffsetPanel">
-            <div class="track-offset-label">タイミング補正：<strong id="chorusOffsetLabel">0 ms</strong></div>
-            <div class="track-offset-btns">
-              <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-100">-100</button>
-              <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-10">-10</button>
-              <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-1">-1</button>
-              <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="1">+1</button>
-              <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="10">+10</button>
-              <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="100">+100</button>
-              <button class="teb-btn" id="resetChorusOffsetBtn" style="font-size:9px;width:auto;padding:0 5px;">reset</button>
+            <div class="track-offset-label">タイミング補正（トラック全体を前後にずらす）：<strong id="chorusOffsetLabel">0 ms</strong></div>
+            <div class="track-offset-btns offset-btns-big">
+              <button class="offset-big-btn neg" data-track="chorus" data-ms="-2000">-2s</button>
+              <button class="offset-big-btn neg" data-track="chorus" data-ms="-1000">-1s</button>
+              <button class="offset-big-btn neg" data-track="chorus" data-ms="-500">-500</button>
+              <button class="offset-big-btn neg" data-track="chorus" data-ms="-100">-100</button>
+              <button class="offset-big-btn neg" data-track="chorus" data-ms="-10">-10</button>
+              <button class="offset-big-btn neg" data-track="chorus" data-ms="-1">-1</button>
+              <button class="offset-big-btn pos" data-track="chorus" data-ms="1">+1</button>
+              <button class="offset-big-btn pos" data-track="chorus" data-ms="10">+10</button>
+              <button class="offset-big-btn pos" data-track="chorus" data-ms="100">+100</button>
+              <button class="offset-big-btn pos" data-track="chorus" data-ms="500">+500</button>
+              <button class="offset-big-btn pos" data-track="chorus" data-ms="1000">+1s</button>
+              <button class="offset-big-btn pos" data-track="chorus" data-ms="2000">+2s</button>
+              <button class="offset-big-btn rst" id="resetChorusOffsetBtn">reset</button>
             </div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px">単位はミリ秒(ms)。大きな数値で大胆に、小さな数値で微調整できます。</div>
           </div>
         </div>
       </div>
@@ -1309,10 +1383,11 @@ audio{width:100%;margin:8px 0}
 <section class="card">
   <p class="section-title">
     Wave Edit
-    <span style="display:flex;gap:5px;align-items:center">
-      <button class="wave-track-tab active" data-track="main">🎵</button>
-      <button class="wave-track-tab" data-track="take">🎤</button>
-      <button class="wave-track-tab" data-track="chorus">🎶</button>
+    <span style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:10px;color:var(--muted);white-space:nowrap">表示するトラック:</span>
+      <button class="wave-track-tab active" data-track="main">🎵 カラオケ</button>
+      <button class="wave-track-tab" data-track="take">🎤 ボーカル</button>
+      <button class="wave-track-tab" data-track="chorus">🎶 コーラス</button>
       <span class="pill" id="timeLabel">00:00 / 00:00</span>
     </span>
   </p>
@@ -5065,6 +5140,31 @@ drawMiniTrackWave = function(canvasEl, track, labelColor){
 
   const st = getTrackState(track);
 
+  // ── 縦グリッド（秒単位、表示範囲に応じて間隔自動調整） ──
+  const dpr = devicePixelRatio || 1;
+  let gridInterval;
+  if(viewDur > 120)      gridInterval = 30;
+  else if(viewDur > 60)  gridInterval = 10;
+  else if(viewDur > 20)  gridInterval = 5;
+  else if(viewDur > 10)  gridInterval = 2;
+  else if(viewDur > 4)   gridInterval = 1;
+  else                   gridInterval = 0.5;
+  const firstGrid = Math.ceil(viewStartSec / gridInterval) * gridInterval;
+  cctx.lineWidth = 1;
+  cctx.font = `${9*dpr}px ui-monospace,monospace`;
+  cctx.textBaseline = "top";
+  for(let t = firstGrid; t <= viewStartSec + viewDur; t += gridInterval){
+    const x = ((t - viewStartSec) / viewDur) * w;
+    // 主グリッド（10秒・5秒の倍数を強調）
+    const isMajor = (Math.abs(t % (gridInterval * 5)) < 0.01);
+    cctx.strokeStyle = isMajor ? "rgba(255,255,255,.13)" : "rgba(255,255,255,.06)";
+    cctx.beginPath(); cctx.moveTo(x, 0); cctx.lineTo(x, h); cctx.stroke();
+    // 時間ラベル（左上）
+    const label = formatGridTime(t);
+    cctx.fillStyle = isMajor ? "rgba(148,163,184,.85)" : "rgba(100,116,139,.6)";
+    cctx.fillText(label, x + 2*dpr, 2*dpr);
+  }
+
   // 選択ハイライト
   if(st.selStart !== null && st.selEnd !== null && st.selEnd > st.selStart){
     const s1sec = offsetSec + buf.duration * st.selStart;
@@ -5083,18 +5183,26 @@ drawMiniTrackWave = function(canvasEl, track, labelColor){
     if(phSec >= viewStartSec && phSec <= viewStartSec + viewDur){
       const px = ((phSec - viewStartSec) / viewDur) * w;
       cctx.strokeStyle = "rgba(255,255,255,.95)";
-      cctx.lineWidth = 2 * devicePixelRatio;
+      cctx.lineWidth = 2 * dpr;
       cctx.beginPath(); cctx.moveTo(px, 0); cctx.lineTo(px, h); cctx.stroke();
       // 三角マーカー
       cctx.fillStyle = "#fff";
       cctx.beginPath();
-      cctx.moveTo(px - 5*devicePixelRatio, 0);
-      cctx.lineTo(px + 5*devicePixelRatio, 0);
-      cctx.lineTo(px, 8*devicePixelRatio);
+      cctx.moveTo(px - 5*dpr, 0);
+      cctx.lineTo(px + 5*dpr, 0);
+      cctx.lineTo(px, 8*dpr);
       cctx.closePath(); cctx.fill();
     }
   }
 };
+
+// グリッド用時間フォーマット（短く）
+function formatGridTime(sec){
+  if(sec < 60) return sec.toFixed(sec < 10 ? 1 : 0) + "s";
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
 
 // ── edit-bar ボタン状態更新 ──────────────────────────────────────
 function updateTrackEditBar(track){
@@ -5219,9 +5327,11 @@ function setupTrackEditBar(track){
   if(undoBtn_) undoBtn_.onclick = ()=>{ trackUndo(track); };
 
   // «‹›» シフトボタン（トラック全体を前後に移動）
-  document.querySelectorAll(`.teb-shift-l[data-track="${track}"], .teb-shift-r[data-track="${track}"]`).forEach(btn=>{
+  // 旧.teb-shift-l/r と 新.offset-big-btn 両対応
+  document.querySelectorAll(`.teb-shift-l[data-track="${track}"], .teb-shift-r[data-track="${track}"], .offset-big-btn[data-track="${track}"]`).forEach(btn=>{
     btn.onclick = ()=>{
       const ms = Number(btn.dataset.ms);
+      if(!ms) return; // resetボタンには data-ms がない
       if(track === "take"){
         takeOffsetMs += ms;
         if(takeOffsetLabel) takeOffsetLabel.textContent = (takeOffsetMs>=0?"+":"")+takeOffsetMs+" ms";
@@ -5229,9 +5339,12 @@ function setupTrackEditBar(track){
         chorusOffsetMs += ms;
         if(chorusOffsetLabel) chorusOffsetLabel.textContent = (chorusOffsetMs>=0?"+":"")+chorusOffsetMs+" ms";
       }
-      // mainはオフセットなし（波形編集で先頭に無音を追加する代わりにカット/ペーストで対応）
+      // ボタンに視覚フィードバック
+      btn.classList.remove("flash"); void btn.offsetWidth; btn.classList.add("flash");
       invalidateWaveformCache(); drawStackedTimelines(); updateTrackEditBar(track);
-      fileStatus.textContent = `${track === "take" ? "ボーカル" : "コーラス"} オフセット: ${track==="take"?takeOffsetMs:chorusOffsetMs} ms`;
+      const cur = track==="take"?takeOffsetMs:chorusOffsetMs;
+      const sign = cur>=0?"+":"";
+      fileStatus.textContent = `${track === "take" ? "ボーカル" : "コーラス"} オフセット: ${sign}${cur} ms（${ms>0?"+":""}${ms}ms 適用）`;
     };
     // 長押しリピート
     let hold=null, rep=null;
@@ -5239,6 +5352,19 @@ function setupTrackEditBar(track){
     const clear=()=>{ clearTimeout(hold); clearInterval(rep); hold=rep=null; };
     btn.addEventListener("pointerup",clear); btn.addEventListener("pointerleave",clear); btn.addEventListener("pointercancel",clear);
   });
+
+  // ⏮ 最初に戻るボタン
+  const restartBtn = document.getElementById(`tebRestart${cap(track)}`);
+  if(restartBtn){
+    restartBtn.onclick = ()=>{
+      const st = getTrackState(track);
+      st.playheadRatio = 0;
+      drawMiniTrackWave(document.getElementById(`trackCanvas${cap(track)}`), track, trackColor(track));
+      updateTrackEditBar(track);
+      const names = {main:'カラオケ',take:'ボーカル',chorus:'コーラス'};
+      fileStatus.textContent = `${names[track]} を最初に戻しました`;
+    };
+  }
 }
 
 function setTrackBuffer(track, buf){
