@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>WaveCut Vocal Sync v4</title>
+<title>WaveCut Vocal Sync v7</title>
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <meta name="apple-mobile-web-app-title" content="WaveCut Vocal Sync">
@@ -25,11 +25,36 @@ button:disabled{opacity:.30!important;cursor:not-allowed!important;filter:graysc
 button:disabled::after{content:"";position:absolute;inset:0;border-radius:14px;background:rgba(2,6,23,.30);pointer-events:none}
 button.idle-disabled{opacity:.26!important;filter:grayscale(.4)!important}
 .capture-box{margin-top:8px;padding:10px;border-radius:14px;background:rgba(251,191,36,.10);border:1px solid rgba(251,191,36,.28);color:#fde68a}.capture-box video{width:100%;max-height:180px;margin:8px 0;border-radius:12px;background:#000}.capture-progress{height:14px;border-radius:999px;background:rgba(255,255,255,.10);overflow:hidden;border:1px solid rgba(255,255,255,.12);margin:8px 0}.capture-progress div{height:100%;width:0%;background:linear-gradient(90deg,#35e0a1,#4f8cff);transition:width .18s linear}
+
+/* v6: settings modal and optional count-in panel */
+.header-top{display:flex;align-items:center;justify-content:center;gap:10px;position:relative}
+.settings-open-btn{position:absolute;right:0;top:50%;transform:translateY(-50%);width:auto;min-height:38px;margin:0;padding:8px 12px;border-radius:12px;font-size:13px;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,0) 45%),linear-gradient(180deg,#273449,#172033);border-color:rgba(255,255,255,.22);box-shadow:0 4px 0 rgba(0,0,0,.25),0 10px 22px rgba(0,0,0,.22)}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:9998;padding:14px}
+.modal-backdrop.show{display:flex}
+.settings-modal{width:min(460px,100%);max-height:88vh;overflow:auto;background:linear-gradient(180deg,rgba(16,24,39,.98),rgba(12,20,35,.98));border:1px solid var(--line);border-radius:22px;box-shadow:0 26px 70px rgba(0,0,0,.55);padding:14px}
+.settings-modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.settings-modal-title{font-size:16px;font-weight:950;color:#dbeafe}
+.settings-close-btn{width:42px;height:42px;min-height:42px;padding:0;margin:0;border-radius:999px;background:linear-gradient(180deg,#f87171,#dc2626);border-color:rgba(252,165,165,.45);font-size:22px;line-height:1}
+.settings-section{border-top:1px solid rgba(255,255,255,.10);padding-top:12px;margin-top:12px}
+.settings-section:first-of-type{border-top:none;margin-top:0;padding-top:0}
+.settings-section-title{font-size:12px;font-weight:950;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.settings-row{display:grid;grid-template-columns:1fr 150px;gap:10px;align-items:center;margin:9px 0}
+.settings-row-text{font-size:13px;line-height:1.45;color:#e2e8f0;font-weight:800}
+.settings-row-sub{display:block;margin-top:2px;font-size:11px;color:var(--muted);font-weight:500}
+.settings-inline-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#countInSettingsPanel{display:none;margin-top:10px;padding:10px;border-radius:16px;background:rgba(79,140,255,.07);border:1px solid rgba(79,140,255,.20)}
+#countInSettingsPanel.show{display:block}
+.countin-status-inline{font-size:12px;color:var(--muted);line-height:1.45;margin-top:8px}
+@media(max-width:560px){.header-top{padding-right:74px;justify-content:flex-start}.settings-open-btn{right:0}.settings-row{grid-template-columns:1fr}.settings-inline-grid{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">Wave<span>Cut</span> Vocal Sync</div>
+  <div class="header-top">
+    <div class="logo">Wave<span>Cut</span> Vocal Sync</div>
+    <button id="settingsOpenBtn" class="settings-open-btn" type="button">⚙ 設定</button>
+  </div>
   <div class="sub">カラオケ音源を聴きながら歌録り → 波形でズレ補正 → MIX保存</div>
 </header>
 <main>
@@ -52,7 +77,7 @@ button.idle-disabled{opacity:.26!important;filter:grayscale(.4)!important}
 
   <section class="card">
     <p class="section-title">1. カラオケ音源 <span class="pill">Audio / Video</span></p>
-    <input id="fileInput" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.mp4,.mov,.webm" />
+    <input id="fileInput" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
     <label for="fileInput" class="file-button">カラオケ音源・動画を読み込む</label>
     <div id="fileName" class="file-name">未選択</div>
     <div class="sep"></div>
@@ -72,33 +97,44 @@ button.idle-disabled{opacity:.26!important;filter:grayscale(.4)!important}
     <p class="section-title">2. マイク・録音設定 <span class="pill warn">Mic OFF設計</span></p>
     <label>入力マイク</label>
     <select id="micSelect"></select>
-    <div class="grid2">
-      <button id="refreshMicBtn">マイク一覧更新</button>
-      <button id="micToggleBtn" class="green">マイクON</button>
-    </div>
     <div class="grid3">
-      <div>
-        <label>カウントイン</label>
-        <select id="countInSelect"><option value="0" selected>なし（推奨）</option><option value="2">2拍</option><option value="4">4拍</option></select>
+      <button id="refreshMicBtn">マイク一覧更新</button>
+      <button id="micOnBtn" class="green">マイクON</button>
+      <button id="micOffBtn" class="red" disabled>マイクOFF</button>
+    </div>
+    <div id="countInSettingsPanel">
+      <div class="section-title" style="margin-bottom:6px;">カウントイン設定 <span id="countInStatusPill" class="pill warn">非表示中</span></div>
+      <div class="grid3">
+        <div>
+          <label>カウントイン</label>
+          <select id="countInSelect"><option value="0" selected>なし（推奨）</option><option value="2">2拍</option><option value="4">4拍</option></select>
+        </div>
+        <div>
+          <label>カウント表示</label>
+          <select id="countDisplaySelect"><option value="show" selected>表示する</option><option value="hide">表示しない</option></select>
+        </div>
+        <div>
+          <label>BPM</label>
+          <input id="bpmInput" type="number" value="120" min="40" max="240" step="1" />
+        </div>
       </div>
-      <div>
-        <label>カウント表示</label>
-        <select id="countDisplaySelect"><option value="show" selected>表示する</option><option value="hide">表示しない</option></select>
-      </div>
-      <div>
-        <label>BPM</label>
-        <input id="bpmInput" type="number" value="120" min="40" max="240" step="1" />
-      </div>
+      <div class="countin-status-inline">カラオケ音源を聴きながら歌う用途では、カウントインは基本OFFで問題ありません。必要な時だけ表示して設定できます。</div>
+    </div>
+    <div class="grid2">
       <div>
         <label>録音後の初期補正</label>
         <select id="initialOffsetSelect"><option value="-80" selected>-80ms 推奨</option><option value="-120">-120ms</option><option value="-50">-50ms</option><option value="0">0ms</option></select>
+      </div>
+      <div>
+        <label>カウントイン設定</label>
+        <button id="showCountSettingsBtn" type="button">設定から表示</button>
       </div>
     </div>
     <div class="meters">
       <div><div class="small">マイク入力</div><div class="meter"><div id="micMeter"></div></div></div>
       <div><div class="small">MIX出力目安</div><div class="meter"><div id="mixMeter"></div></div></div>
     </div>
-    <div class="info">マイクはページ表示中に常時ONにしません。録音開始時にON、停止後にOFFへ戻します。</div>
+    <div class="info">マイクON/OFFは別ボタンです。ページ表示中に常時ONにはしません。録音開始時に必要ならON、停止後にOFFへ戻します。</div>
   </section>
 
   <section class="card">
@@ -179,17 +215,44 @@ button.idle-disabled{opacity:.26!important;filter:grayscale(.4)!important}
     </div>
   </section>
 </main>
+<div id="settingsModal" class="modal-backdrop" aria-hidden="true">
+  <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="settings-modal-head">
+      <div id="settingsTitle" class="settings-modal-title">設定</div>
+      <button id="settingsCloseBtn" class="settings-close-btn" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">Count-in</div>
+      <div class="settings-row">
+        <div class="settings-row-text">カウントイン項目をメイン画面に表示<span class="settings-row-sub">普段は非表示推奨。必要な時だけONにしてください。</span></div>
+        <select id="countPanelVisibilitySelect">
+          <option value="hide" selected>非表示</option>
+          <option value="show">表示</option>
+        </select>
+      </div>
+      <div class="settings-inline-grid">
+        <button id="countPanelShowBtn" type="button" class="primary">表示する</button>
+        <button id="countPanelHideBtn" type="button">非表示にする</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">現在のカウント設定</div>
+      <div class="info">設定を表示した後、メイン画面の「マイク・録音設定」内でカウントインの拍数・表示・BPMを変更できます。カラオケ音源を聴きながら歌う通常用途では「なし」のままで大丈夫です。</div>
+    </div>
+  </div>
+</div>
+
 <script>
 (() => {
 'use strict';
 const $ = id => document.getElementById(id);
 const els = {
-  fileInput:$('fileInput'), fileName:$('fileName'), sourceRecordBtn:$('sourceRecordBtn'), sourceStopBtn:$('sourceStopBtn'), sourceRecordNote:$('sourceRecordNote'), micSelect:$('micSelect'), refreshMicBtn:$('refreshMicBtn'), micToggleBtn:$('micToggleBtn'),
+  fileInput:$('fileInput'), fileName:$('fileName'), sourceRecordBtn:$('sourceRecordBtn'), sourceStopBtn:$('sourceStopBtn'), sourceRecordNote:$('sourceRecordNote'), micSelect:$('micSelect'), refreshMicBtn:$('refreshMicBtn'), micOnBtn:$('micOnBtn'), micOffBtn:$('micOffBtn'),
   recordBtn:$('recordBtn'), playMixBtn:$('playMixBtn'), playKaraokeBtn:$('playKaraokeBtn'), stopBtn:$('stopBtn'), exportBtn:$('exportBtn'), resetBtn:$('resetBtn'),
   statusText:$('statusText'), countText:$('countText'), timeText:$('timeText'), karaokeCanvas:$('karaokeCanvas'), vocalCanvas:$('vocalCanvas'),
   playhead1:$('playhead1'), playhead2:$('playhead2'), karaokeMeta:$('karaokeMeta'), vocalMeta:$('vocalMeta'), offsetText:$('offsetText'), offsetZeroBtn:$('offsetZeroBtn'),
   karaokeGain:$('karaokeGain'), vocalGain:$('vocalGain'), vocalFxPreset:$('vocalFxPreset'), reverbAmount:$('reverbAmount'), delayAmount:$('delayAmount'), exportFormat:$('exportFormat'), countInSelect:$('countInSelect'), countDisplaySelect:$('countDisplaySelect'), bpmInput:$('bpmInput'), initialOffsetSelect:$('initialOffsetSelect'),
-  presetDry:$('presetDry'), presetVocal:$('presetVocal'), saveVocalBtn:$('saveVocalBtn'), micMeter:$('micMeter'), mixMeter:$('mixMeter'), vocalWrap:$('vocalWrap'), selectionBox:$('selectionBox'), selectionText:$('selectionText'), moveModeBtn:$('moveModeBtn'), selectModeBtn:$('selectModeBtn'), cutBtn:$('cutBtn'), deleteBtn:$('deleteBtn'), copyBtn:$('copyBtn'), pasteBtn:$('pasteBtn'), duplicateBtn:$('duplicateBtn'), clearSelectionBtn:$('clearSelectionBtn'), rangeFxSelect:$('rangeFxSelect'), applyRangeFxBtn:$('applyRangeFxBtn')
+  presetDry:$('presetDry'), presetVocal:$('presetVocal'), saveVocalBtn:$('saveVocalBtn'), micMeter:$('micMeter'), mixMeter:$('mixMeter'), vocalWrap:$('vocalWrap'), selectionBox:$('selectionBox'), selectionText:$('selectionText'), moveModeBtn:$('moveModeBtn'), selectModeBtn:$('selectModeBtn'), cutBtn:$('cutBtn'), deleteBtn:$('deleteBtn'), copyBtn:$('copyBtn'), pasteBtn:$('pasteBtn'), duplicateBtn:$('duplicateBtn'), clearSelectionBtn:$('clearSelectionBtn'), rangeFxSelect:$('rangeFxSelect'), applyRangeFxBtn:$('applyRangeFxBtn'), settingsOpenBtn:$('settingsOpenBtn'), settingsModal:$('settingsModal'), settingsCloseBtn:$('settingsCloseBtn'), countInSettingsPanel:$('countInSettingsPanel'), countInStatusPill:$('countInStatusPill'), countPanelVisibilitySelect:$('countPanelVisibilitySelect'), countPanelShowBtn:$('countPanelShowBtn'), countPanelHideBtn:$('countPanelHideBtn'), showCountSettingsBtn:$('showCountSettingsBtn')
 };
 let audioCtx = null;
 let karaokeBuffer = null;
@@ -214,6 +277,20 @@ let micData = null;
 let meterRaf = null;
 let hasUserChanges = false;
 
+const COUNT_PANEL_KEY = 'wavecutVocalSync.countPanelVisible.v6';
+function setCountPanelVisible(visible){
+  if(els.countInSettingsPanel) els.countInSettingsPanel.classList.toggle('show', !!visible);
+  if(els.countPanelVisibilitySelect) els.countPanelVisibilitySelect.value = visible ? 'show' : 'hide';
+  if(els.countInStatusPill){
+    els.countInStatusPill.textContent = visible ? '表示中' : '非表示中';
+    els.countInStatusPill.classList.toggle('warn', !visible);
+    els.countInStatusPill.classList.toggle('blue', !!visible);
+  }
+  try{ localStorage.setItem(COUNT_PANEL_KEY, visible ? 'show' : 'hide'); }catch(e){}
+}
+function openSettings(){ if(els.settingsModal){ els.settingsModal.classList.add('show'); els.settingsModal.setAttribute('aria-hidden','false'); } }
+function closeSettings(){ if(els.settingsModal){ els.settingsModal.classList.remove('show'); els.settingsModal.setAttribute('aria-hidden','true'); } }
+
 function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
 function fmtTime(sec){ sec = Math.max(0, sec||0); const m=Math.floor(sec/60); const s=Math.floor(sec%60); const ms=Math.floor((sec%1)*1000); return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(ms).padStart(3,'0')}`; }
 function setStatus(msg, cls=''){ els.statusText.className = 'status ' + cls; els.statusText.innerHTML = msg; }
@@ -233,9 +310,34 @@ function updateButtons(){
   if(els.sourceStopBtn) els.sourceStopBtn.disabled=!sourceRecording;
   els.stopBtn.classList.toggle('idle-disabled', els.stopBtn.disabled);
   els.resetBtn.classList.toggle('idle-disabled', els.resetBtn.disabled);
+  updateMicButtons();
   [els.cutBtn,els.deleteBtn,els.copyBtn,els.duplicateBtn,els.applyRangeFxBtn,els.clearSelectionBtn].forEach(b=>b.disabled=!hasSel || recording || sourceRecording);
   els.pasteBtn.disabled=!(hasV&&hasClip) || recording || sourceRecording;
 }
+function updateMicButtons(){
+  const on=!!mediaStream;
+  if(els.micOnBtn){
+    els.micOnBtn.disabled=on;
+    els.micOnBtn.classList.toggle('idle-disabled', on);
+  }
+  if(els.micOffBtn){
+    els.micOffBtn.disabled=!on;
+    els.micOffBtn.classList.toggle('idle-disabled', !on);
+  }
+}
+function initSettingsUI(){
+  let initial = 'hide';
+  try{ initial = localStorage.getItem(COUNT_PANEL_KEY) || 'hide'; }catch(e){}
+  setCountPanelVisible(initial === 'show');
+  if(els.settingsOpenBtn) els.settingsOpenBtn.addEventListener('click', openSettings);
+  if(els.settingsCloseBtn) els.settingsCloseBtn.addEventListener('click', closeSettings);
+  if(els.settingsModal) els.settingsModal.addEventListener('click', e=>{ if(e.target===els.settingsModal) closeSettings(); });
+  if(els.countPanelVisibilitySelect) els.countPanelVisibilitySelect.addEventListener('change', ()=>setCountPanelVisible(els.countPanelVisibilitySelect.value==='show'));
+  if(els.countPanelShowBtn) els.countPanelShowBtn.addEventListener('click', ()=>{ setCountPanelVisible(true); closeSettings(); });
+  if(els.countPanelHideBtn) els.countPanelHideBtn.addEventListener('click', ()=>setCountPanelVisible(false));
+  if(els.showCountSettingsBtn) els.showCountSettingsBtn.addEventListener('click', ()=>openSettings());
+}
+
 async function loadMicDevices(){
   try{
     const devices = await navigator.mediaDevices.enumerateDevices();
@@ -257,7 +359,7 @@ async function getMicStream(){
 function stopMicStream(){
   if(mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; }
   micAnalyser=null; micData=null; els.micMeter.style.width='0%'; if(meterRaf) cancelAnimationFrame(meterRaf); meterRaf=null;
-  if(els.micToggleBtn){ els.micToggleBtn.textContent='マイクON'; els.micToggleBtn.className='green'; }
+  updateMicButtons();
 }
 function setupMicMeter(stream){
   const ctx=ensureAudio();
@@ -266,96 +368,363 @@ function setupMicMeter(stream){
   const loop=()=>{ if(!micAnalyser) return; micAnalyser.getByteTimeDomainData(micData); let sum=0; for(let i=0;i<micData.length;i++){ const v=(micData[i]-128)/128; sum+=v*v; } const rms=Math.sqrt(sum/micData.length); els.micMeter.style.width = Math.min(100, rms*420)+'%'; meterRaf=requestAnimationFrame(loop); };
   loop();
 }
-function isProbablyMovOrVideo(file){
-  const name=(file.name||'').toLowerCase();
-  const type=(file.type||'').toLowerCase();
-  return type.startsWith('video/') || type.includes('quicktime') || name.endsWith('.mov') || name.endsWith('.mp4') || name.endsWith('.m4v');
+
+let wavecutWakeLock = null;
+
+async function decodeBlobDirectly(blob){
+  const ctx = ensureAudio();
+  if(ctx.state === 'suspended'){
+    try{ await ctx.resume(); }catch(e){}
+  }
+  const arrayBuffer = await blob.arrayBuffer();
+  return await ctx.decodeAudioData(arrayBuffer.slice(0));
 }
-function isProbablyMov(file){
+
+function isProbablyMovFile(file){
   const name=(file.name||'').toLowerCase();
   const type=(file.type||'').toLowerCase();
   return type.includes('quicktime') || name.endsWith('.mov');
 }
-async function decodeFile(file){
-  const ctx=ensureAudio();
-  if(isProbablyMov(file)){
-    setStatus('MOVを検出しました。iPhoneカメラロール対策として、動画を再生しながら音声だけ取り込みます。');
-    return await extractAudioFromPlayableMedia(file);
-  }
-  const arr = await file.arrayBuffer();
-  try{ return await ctx.decodeAudioData(arr.slice(0)); }
-  catch(e){
-    if(isProbablyMovOrVideo(file)){
-      setStatus('動画を直接読み込めなかったため、WaveCut方式で音声を取り込みます。');
-      return await extractAudioFromPlayableMedia(file);
+
+function isProbablyVideoFile(file){
+  const name=(file.name||'').toLowerCase();
+  const type=(file.type||'').toLowerCase();
+  return type.startsWith('video/') || type.includes('quicktime') || name.endsWith('.mov') || name.endsWith('.mp4') || name.endsWith('.m4v') || name.endsWith('.webm');
+}
+
+function probeMediaFile(file){
+  return new Promise((resolve,reject)=>{
+    const url = URL.createObjectURL(file);
+    const isAudio = (file.type||'').startsWith('audio/');
+    const media = document.createElement(isAudio ? 'audio' : 'video');
+    media.preload = 'metadata';
+    media.playsInline = true;
+    media.muted = true;
+    media.src = url;
+    media.style.display = 'none';
+    document.body.appendChild(media);
+    const cleanup=()=>{ try{URL.revokeObjectURL(url)}catch(e){} try{media.remove()}catch(e){} };
+    const timer=setTimeout(()=>{ cleanup(); reject(new Error('media metadata timeout')); }, 12000);
+    media.onloadedmetadata=()=>{
+      clearTimeout(timer);
+      const duration = media.duration;
+      cleanup();
+      if(duration && isFinite(duration)) resolve({duration});
+      else reject(new Error('media duration unavailable'));
+    };
+    media.onerror=()=>{ clearTimeout(timer); cleanup(); reject(new Error('media element cannot read this file')); };
+  });
+}
+
+async function requestWavecutWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      wavecutWakeLock = await navigator.wakeLock.request('screen');
+      document.addEventListener('visibilitychange', reacquireWavecutWakeLock);
     }
-    throw new Error('このファイルはブラウザで音声として読み込めませんでした。別形式の音声ファイルに変換してから再読み込みしてください。');
+  }catch(e){ console.warn('Wake Lock unavailable', e); }
+}
+async function reacquireWavecutWakeLock(){
+  try{
+    if(wavecutWakeLock !== null && document.visibilityState === 'visible' && 'wakeLock' in navigator){
+      wavecutWakeLock = await navigator.wakeLock.request('screen');
+    }
+  }catch(e){}
+}
+function releaseWavecutWakeLock(){
+  try{
+    document.removeEventListener('visibilitychange', reacquireWavecutWakeLock);
+    if(wavecutWakeLock){ wavecutWakeLock.release(); wavecutWakeLock=null; }
+  }catch(e){}
+}
+
+async function decodeFile(file){
+  ensureAudio();
+  let mediaInfo=null;
+  try{ mediaInfo = await probeMediaFile(file); }catch(e){ console.warn('media probe failed', e); }
+
+  const isMov = isProbablyMovFile(file);
+
+  // WaveCut本体と同じ考え方：iPhoneカメラロールMOVは直接デコードより先に、再生しながら音声を取り込む。
+  if(isMov){
+    setStatus('MOVを検出しました。WaveCut方式で、動画を再生しながら音声だけを取り込みます。');
+    const captured = await extractAudioViaWaveCutCapture(file, mediaInfo);
+    captured._loadMethod = 'wavecut-mov-capture';
+    return captured;
+  }
+
+  // MP3 / WAV / M4A / AAC / 通常のMP4など、ブラウザが直接読めるものは先に通常読み込み。
+  try{
+    const decoded = await decodeBlobDirectly(file);
+    decoded._loadMethod = 'direct';
+    return decoded;
+  }catch(primaryError){
+    console.warn('Direct decode failed. Fallback to WaveCut capture.', primaryError);
+  }
+
+  // MP4など動画扱いのファイルは、WaveCut方式の再生キャプチャへフォールバック。
+  if(isProbablyVideoFile(file)){
+    setStatus('直接読み込みに失敗しました。WaveCut方式で、動画を再生しながら音声だけを取り込みます。');
+    const captured = await extractAudioViaWaveCutCapture(file, mediaInfo);
+    captured._loadMethod = 'wavecut-video-capture';
+    return captured;
+  }
+
+  // 最終フォールバック。音声ファイルでもブラウザ再生できる場合は音だけ拾う。
+  try{
+    const captured = await extractAudioViaWaveCutCapture(file, mediaInfo);
+    captured._loadMethod = 'wavecut-playable-capture';
+    return captured;
+  }catch(e){
+    throw new Error('このファイルはブラウザで音声として読み込めませんでした。MP3、WAV、M4A、MP4、MOVなどで再度お試しください。');
   }
 }
-function extractAudioFromPlayableMedia(file){
+
+function extractAudioViaWaveCutCapture(file, mediaInfo){
   return new Promise((resolve,reject)=>{
-    const ctx=ensureAudio();
-    const url=URL.createObjectURL(file);
+    const ctx = ensureAudio();
     const isAudio=(file.type||'').startsWith('audio/');
+    const url=URL.createObjectURL(file);
     const media=document.createElement(isAudio?'audio':'video');
-    media.src=url; media.preload='auto'; media.playsInline=true; media.crossOrigin='anonymous'; media.controls=true;
-    const box=document.createElement('div'); box.className='capture-box';
-    box.innerHTML='<b>動画から音声を取り込みます</b><br>iPhoneのMOV対策として、動画を実際に再生しながら音声だけを取り込みます。開始後は画面ロック・別アプリ移動をしないでください。';
-    const progress=document.createElement('div'); progress.className='capture-progress'; progress.innerHTML='<div></div>';
-    const readout=document.createElement('div'); readout.className='small'; readout.textContent='待機中';
-    const start=document.createElement('button'); start.className='green'; start.textContent='音声取り込みを開始';
-    const cancel=document.createElement('button'); cancel.className='red'; cancel.textContent='キャンセル';
-    box.appendChild(media); box.appendChild(progress); box.appendChild(readout); box.appendChild(start); box.appendChild(cancel);
-    els.statusText.className='status'; els.statusText.innerHTML=''; els.statusText.appendChild(box);
-    let source=null, processor=null, playGain=null, timer=null, done=false;
+    media.src=url;
+    media.preload='auto';
+    media.playsInline=true;
+    media.muted=false;
+    media.volume=1;
+    media.controls=false;
+    media.style.width='100%';
+    media.style.maxHeight='220px';
+    media.style.marginTop='10px';
+    media.style.borderRadius='14px';
+    media.style.background='#000';
+
+    let started=false, completed=false, finishingNow=false;
+    let listenDuringCapture=false;
+    let source=null, processor=null, playGain=null, progressTimer=null;
+    let lastKnownCurrent=0, lastKnownDuration=mediaInfo?.duration || 0;
     const channels=2, chunks=[[],[]];
-    const cleanup=()=>{ try{clearInterval(timer)}catch(e){} try{media.pause()}catch(e){} try{source&&source.disconnect()}catch(e){} try{processor&&processor.disconnect()}catch(e){} try{playGain&&playGain.disconnect()}catch(e){} try{URL.revokeObjectURL(url)}catch(e){} };
+    let lockedElements=[];
+
+    const box=document.createElement('div');
+    box.className='capture-box';
+    box.innerHTML = '<b>WaveCut方式で音声を取り込みます</b><br>' +
+      '動画を実際に再生しながら、音声だけをカラオケ音源として取り込みます。<br>' +
+      'MOV / MP4で通常読み込みできない場合も、この方式で取り込める可能性があります。';
+
+    const progress=document.createElement('div');
+    progress.className='capture-progress';
+    progress.innerHTML='<div></div>';
+
+    const readout=document.createElement('div');
+    readout.className='small';
+    readout.innerHTML='待機中：取り込み方式を選んでください。';
+
+    const modeRow=document.createElement('div');
+    modeRow.className='grid2';
+    modeRow.style.marginTop='8px';
+    const silentBtn=document.createElement('button');
+    silentBtn.type='button';
+    silentBtn.className='green';
+    silentBtn.textContent='✓ 無音で取り込む';
+    const listenBtn=document.createElement('button');
+    listenBtn.type='button';
+    listenBtn.textContent='聴きながら取り込む';
+    modeRow.appendChild(silentBtn); modeRow.appendChild(listenBtn);
+
+    const startBtn=document.createElement('button');
+    startBtn.type='button';
+    startBtn.className='green';
+    startBtn.textContent='最後まで取り込む';
+
+    const finishNowBtn=document.createElement('button');
+    finishNowBtn.type='button';
+    finishNowBtn.className='orange';
+    finishNowBtn.textContent='ここまでで抽出確定';
+    finishNowBtn.disabled=true;
+
+    const cancelBtn=document.createElement('button');
+    cancelBtn.type='button';
+    cancelBtn.className='red';
+    cancelBtn.textContent='キャンセル';
+
+    const note=document.createElement('div');
+    note.className='small warnText';
+    note.style.marginTop='8px';
+    note.innerHTML='開始後は、画面ロック・別アプリ移動・ページを閉じる操作をしないでください。長い動画は動画の長さに近い時間がかかります。';
+
+    box.appendChild(media);
+    box.appendChild(progress);
+    box.appendChild(readout);
+    box.appendChild(modeRow);
+    box.appendChild(startBtn);
+    box.appendChild(finishNowBtn);
+    box.appendChild(cancelBtn);
+    box.appendChild(note);
+    els.statusText.className='status';
+    els.statusText.innerHTML='';
+    els.statusText.appendChild(box);
+
+    const updateModeButtons=()=>{
+      if(listenDuringCapture){
+        silentBtn.className=''; silentBtn.textContent='無音で取り込む';
+        listenBtn.className='green'; listenBtn.textContent='✓ 聴きながら取り込む';
+      }else{
+        silentBtn.className='green'; silentBtn.textContent='✓ 無音で取り込む';
+        listenBtn.className=''; listenBtn.textContent='聴きながら取り込む';
+      }
+    };
+
+    const setAppLocked=(locked)=>{
+      if(locked){
+        lockedElements = Array.from(document.querySelectorAll('button,input,select,label.file-button'))
+          .filter(el => !box.contains(el));
+        lockedElements.forEach(el=>{
+          el.dataset.wcWasDisabled = el.disabled ? '1' : '0';
+          if('disabled' in el) el.disabled = true;
+          if(el.tagName === 'LABEL'){
+            el.dataset.wcOldPointer = el.style.pointerEvents || '';
+            el.dataset.wcOldOpacity = el.style.opacity || '';
+            el.style.pointerEvents='none'; el.style.opacity='.45';
+          }
+        });
+        window.onbeforeunload=(e)=>{ e.preventDefault(); e.returnValue='音声抽出中です。ページを離れると取り込みに失敗する可能性があります。'; return e.returnValue; };
+      }else{
+        lockedElements.forEach(el=>{
+          if('disabled' in el && el.dataset.wcWasDisabled==='0') el.disabled=false;
+          delete el.dataset.wcWasDisabled;
+          if(el.tagName === 'LABEL'){
+            el.style.pointerEvents=el.dataset.wcOldPointer || '';
+            el.style.opacity=el.dataset.wcOldOpacity || '';
+            delete el.dataset.wcOldPointer; delete el.dataset.wcOldOpacity;
+          }
+        });
+        lockedElements=[];
+        window.onbeforeunload=null;
+        updateButtons();
+      }
+    };
+
+    const updateProgress=(state='取り込み中')=>{
+      const duration = media.duration || lastKnownDuration || mediaInfo?.duration || 0;
+      const current = media.currentTime || lastKnownCurrent || 0;
+      if(duration && isFinite(duration)) lastKnownDuration=duration;
+      if(current && isFinite(current)) lastKnownCurrent=current;
+      const safeDuration=lastKnownDuration || 0;
+      const safeCurrent=safeDuration ? Math.min(safeDuration, current||0) : (current||0);
+      const pct=safeDuration ? Math.max(0,Math.min(100,Math.round((safeCurrent/safeDuration)*100))) : 0;
+      progress.firstElementChild.style.width=pct+'%';
+      const remain=safeDuration ? Math.max(0,safeDuration-safeCurrent) : 0;
+      readout.innerHTML = `${state}：${pct}%<br>${fmtTime(safeCurrent)} / ${safeDuration ? fmtTime(safeDuration) : '--:--'}　残り ${safeDuration ? fmtTime(remain) : '--:--'}<br>${listenDuringCapture ? '聴きながら抽出中' : '無音で抽出中'}`;
+    };
+    const startProgressTimer=()=>{ stopProgressTimer(); updateProgress('取り込み中'); progressTimer=setInterval(()=>updateProgress('取り込み中'),250); };
+    const stopProgressTimer=()=>{ if(progressTimer){ clearInterval(progressTimer); progressTimer=null; } };
+
     const buildBuffer=()=>{
-      const total=chunks[0].reduce((a,b)=>a+b.length,0);
+      const total=chunks[0].reduce((sum,arr)=>sum+arr.length,0);
       if(!total) throw new Error('動画から音声を取り込めませんでした。');
       const out=ctx.createBuffer(channels,total,ctx.sampleRate);
       for(let ch=0; ch<channels; ch++){
-        let pos=0; const data=out.getChannelData(ch);
+        const data=out.getChannelData(ch); let pos=0;
         for(const part of chunks[ch]){ data.set(part,pos); pos+=part.length; }
       }
+      if(finishingNow) out._captureWarning = `途中確定で取り込みました。確定位置：約${fmtTime(media.currentTime || out.duration)}。`;
       return out;
     };
-    const update=()=>{
-      const dur=media.duration||0, cur=media.currentTime||0;
-      const pct=dur?Math.max(0,Math.min(100,Math.round(cur/dur*100))):0;
-      progress.firstElementChild.style.width=pct+'%';
-      readout.textContent=dur?`${fmtTime(cur)} / ${fmtTime(dur)} 取り込み中 ${pct}%`:'取り込み中...';
+
+    const cleanup=()=>{
+      stopProgressTimer();
+      releaseWavecutWakeLock();
+      setAppLocked(false);
+      try{processor&&processor.disconnect()}catch(e){}
+      try{source&&source.disconnect()}catch(e){}
+      try{playGain&&playGain.disconnect()}catch(e){}
+      try{media.pause()}catch(e){}
+      try{URL.revokeObjectURL(url)}catch(e){}
     };
-    cancel.onclick=()=>{ if(done)return; done=true; cleanup(); reject(new Error('動画音声の取り込みをキャンセルしました。')); };
-    media.onerror=()=>{ if(done)return; done=true; cleanup(); reject(new Error('この動画をブラウザで再生できませんでした。')); };
-    media.onended=()=>{ if(done)return; done=true; try{ const buf=buildBuffer(); cleanup(); resolve(buf); }catch(err){ cleanup(); reject(err); } };
-    start.onclick=async()=>{
+
+    silentBtn.onclick=()=>{ if(started)return; listenDuringCapture=false; updateModeButtons(); };
+    listenBtn.onclick=()=>{ if(started)return; listenDuringCapture=true; updateModeButtons(); };
+    cancelBtn.onclick=()=>{ if(completed)return; completed=true; cleanup(); reject(new Error('動画音声の取り込みをキャンセルしました。')); };
+    media.onerror=()=>{ if(completed)return; completed=true; cleanup(); reject(new Error('この動画をブラウザで再生できませんでした。')); };
+
+    const finishCapture=()=>{
+      if(!started || completed) return;
+      finishingNow=true;
+      completed=true;
+      updateProgress('途中確定');
+      try{ const buf=buildBuffer(); cleanup(); resolve(buf); }
+      catch(err){ cleanup(); reject(err); }
+    };
+
+    finishNowBtn.onclick=()=>{
+      const ok=confirm('現在位置までの音声で抽出を確定します。\n\nこのあと後半部分は取り込まれません。\nここまでで確定してよろしいですか？');
+      if(ok) finishCapture();
+    };
+
+    startBtn.onclick=async()=>{
+      if(started) return;
+      const ok=confirm('動画の音声を取り込みます。\n\n開始後は、画面ロック・別アプリ移動・動画の一時停止をしないでください。\n電話着信や通知操作で失敗する可能性があります。\n\n開始しますか？');
+      if(!ok) return;
+      started=true;
+      setAppLocked(true);
+      await requestWavecutWakeLock();
+      startBtn.disabled=true; cancelBtn.disabled=true; silentBtn.disabled=true; listenBtn.disabled=true; finishNowBtn.disabled=false;
+      note.innerHTML='🔒 取り込み中です。この画面を開いたままお待ちください。必要なところまで来たら「ここまでで抽出確定」を押せます。';
       try{
-        start.disabled=true; cancel.disabled=true;
         if(ctx.state==='suspended') await ctx.resume();
-        source=ctx.createMediaElementSource(media);
-        processor=ctx.createScriptProcessor(4096,channels,channels);
-        playGain=ctx.createGain(); playGain.gain.value=0;
-        source.connect(processor); processor.connect(playGain); playGain.connect(ctx.destination);
-        processor.onaudioprocess=(ev)=>{
-          if(done) return;
-          const input=ev.inputBuffer;
-          for(let ch=0; ch<channels; ch++){
-            const srcCh=Math.min(ch,input.numberOfChannels-1);
-            chunks[ch].push(new Float32Array(input.getChannelData(srcCh)));
-          }
-          for(let ch=0; ch<ev.outputBuffer.numberOfChannels; ch++){
-            const srcCh=Math.min(ch,input.numberOfChannels-1);
-            ev.outputBuffer.getChannelData(ch).set(input.getChannelData(srcCh));
-          }
+        media.onloadedmetadata=async()=>{
+          try{
+            lastKnownDuration = media.duration || mediaInfo?.duration || 0;
+            source=ctx.createMediaElementSource(media);
+            processor=ctx.createScriptProcessor(4096,channels,channels);
+            playGain=ctx.createGain();
+            playGain.gain.value = listenDuringCapture ? 1 : 0;
+            source.connect(processor);
+            processor.connect(playGain);
+            playGain.connect(ctx.destination);
+            processor.onaudioprocess=(ev)=>{
+              if(completed) return;
+              const input=ev.inputBuffer;
+              for(let ch=0; ch<channels; ch++){
+                const sourceCh=Math.min(ch,input.numberOfChannels-1);
+                chunks[ch].push(new Float32Array(input.getChannelData(sourceCh)));
+              }
+              for(let ch=0; ch<ev.outputBuffer.numberOfChannels; ch++){
+                const sourceCh=Math.min(ch,input.numberOfChannels-1);
+                ev.outputBuffer.getChannelData(ch).set(input.getChannelData(sourceCh));
+              }
+              lastKnownCurrent=media.currentTime || lastKnownCurrent;
+            };
+            media.onpause=()=>{
+              const duration=media.duration || mediaInfo?.duration || 0;
+              const nearEnd=duration && media.currentTime >= duration - 0.4;
+              if(started && !completed && !nearEnd){
+                readout.innerHTML='⚠️ 再生が途中で停止しました。画面ロック・着信・誤操作などで取り込みが止まった可能性があります。';
+              }
+            };
+            media.onended=()=>{
+              if(completed) return;
+              completed=true;
+              updateProgress('完了');
+              try{ const buf=buildBuffer(); cleanup(); resolve(buf); }
+              catch(err){ cleanup(); reject(err); }
+            };
+            media.currentTime=0;
+            media.muted=false;
+            media.volume=1;
+            if(playGain) playGain.gain.value=listenDuringCapture ? 1 : 0;
+            startProgressTimer();
+            await media.play();
+          }catch(err){ completed=true; cleanup(); reject(err); }
         };
-        media.currentTime=0; media.muted=false; media.volume=1;
-        timer=setInterval(update,250); update();
-        await media.play();
-      }catch(err){ done=true; cleanup(); reject(err); }
+        media.load();
+      }catch(err){ completed=true; cleanup(); reject(err); }
     };
+
+    updateModeButtons();
   });
 }
+
 function resizeCanvas(canvas){ const dpr=window.devicePixelRatio||1; const rect=canvas.getBoundingClientRect(); canvas.width=Math.max(320,Math.floor(rect.width*dpr)); canvas.height=Math.max(90,Math.floor(rect.height*dpr)); }
 function drawWave(canvas, buffer, opts={}){
   resizeCanvas(canvas);
@@ -603,11 +972,12 @@ function stopKaraokeSourceRecording(){
 }
 
 // Events
-els.fileInput.addEventListener('change', async e=>{ const file=e.target.files && e.target.files[0]; if(!file)return; try{ stopAll(); setStatus('音源を読み込んでいます...'); karaokeBuffer=await decodeFile(file); hasUserChanges=true; els.fileName.textContent=`${file.name} / ${fmtTime(karaokeBuffer.duration)}`; updateButtons(); redraw(); setStatus('読み込み完了。イヤホンを付けて「歌を録音」を押してください。'); }catch(err){ updateButtons(); setStatus(escapeHtml(err.message)); } });
+els.fileInput.addEventListener('change', async e=>{ const file=e.target.files && e.target.files[0]; if(!file)return; try{ stopAll(); setStatus('音源を読み込んでいます...<br>MP4/MOVなどの動画は、必要に応じてWaveCut方式で音声だけ取り込みます。'); karaokeBuffer=await decodeFile(file); hasUserChanges=true; els.fileName.textContent=`${file.name} / ${fmtTime(karaokeBuffer.duration)}`; updateButtons(); redraw(); setStatus('読み込み完了。イヤホンを付けて「歌を録音」を押してください。'); }catch(err){ updateButtons(); setStatus(escapeHtml(err.message)); } });
 if(els.sourceRecordBtn) els.sourceRecordBtn.addEventListener('click', startKaraokeSourceRecording);
 if(els.sourceStopBtn) els.sourceStopBtn.addEventListener('click', stopKaraokeSourceRecording);
 els.refreshMicBtn.addEventListener('click', loadMicDevices);
-els.micToggleBtn.addEventListener('click', async()=>{ try{ if(mediaStream){ stopMicStream(); els.micToggleBtn.textContent='マイクON'; els.micToggleBtn.className='green'; setStatus('マイクをOFFにしました。'); updateButtons(); } else { await getMicStream(); els.micToggleBtn.textContent='マイクOFF'; els.micToggleBtn.className='red'; setStatus('マイクをONにしました。録音しない時はOFFにできます。'); updateButtons(); } }catch(e){ setStatus('マイクをONにできませんでした：'+escapeHtml(e.message)); } });
+els.micOnBtn.addEventListener('click', async()=>{ try{ if(mediaStream){ updateButtons(); return; } await getMicStream(); setStatus('マイクをONにしました。録音しない時はOFFにできます。'); updateButtons(); }catch(e){ setStatus('マイクをONにできませんでした：'+escapeHtml(e.message)); updateButtons(); } });
+els.micOffBtn.addEventListener('click', ()=>{ if(!mediaStream){ updateButtons(); return; } stopMicStream(); setStatus('マイクをOFFにしました。'); updateButtons(); });
 els.recordBtn.addEventListener('click',()=>{ if(recorder && recorder.state==='recording') stopRecording(); else startRecording(); });
 els.stopBtn.addEventListener('click',()=>{ if(els.stopBtn.disabled) return; if(sourceRecorder && sourceRecorder.state==='recording') stopKaraokeSourceRecording(); else if(recorder && recorder.state==='recording') stopRecording(); else stopAll(); });
 els.playMixBtn.addEventListener('click',()=>playMix(false));
@@ -647,7 +1017,7 @@ els.vocalWrap.addEventListener('pointermove',e=>{
 els.vocalWrap.addEventListener('pointerup',e=>{ drag.active=false; selectionDrag.active=false; normalizeSelection(); updateSelectionUI(); try{els.vocalWrap.releasePointerCapture(e.pointerId)}catch(_){} });
 els.vocalWrap.addEventListener('pointercancel',()=>{drag.active=false; selectionDrag.active=false;});
 window.addEventListener('resize',()=>redraw());
-loadMicDevices(); updateButtons(); redraw();
+initSettingsUI(); loadMicDevices(); updateButtons(); redraw();
 })();
 </script>
 </body>
