@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>WaveCut Vocal Sync</title>
+<title>WaveCut Vocal Sync v10</title>
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <meta name="apple-mobile-web-app-title" content="WaveCut Vocal Sync">
@@ -372,15 +372,15 @@ audio{width:100%;margin:8px 0}
 .nudge-btn.tiny{
   font-size:11px;
 }
-.vocal-offset-btn{
+.vocal-offset-btn,.chorus-offset-btn{
   padding:11px 4px;
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
   font-size:12px;
   border-radius:12px;
 }
-.vocal-offset-btn.minus{color:#fecaca;border-color:rgba(248,113,113,.45);}
-.vocal-offset-btn.plus{color:#bbf7d0;border-color:rgba(74,222,128,.45);}
-.vocal-offset-btn.tiny{font-size:11px;}
+.vocal-offset-btn.minus,.chorus-offset-btn.minus{color:#fecaca;border-color:rgba(248,113,113,.45);}
+.vocal-offset-btn.plus,.chorus-offset-btn.plus{color:#bbf7d0;border-color:rgba(74,222,128,.45);}
+.vocal-offset-btn.tiny,.chorus-offset-btn.tiny{font-size:11px;}
 
 
 .pill{
@@ -518,8 +518,15 @@ audio{width:100%;margin:8px 0}
   <label>録音先</label>
   <select id="recordTarget">
     <option value="main">外部カラオケを録音してカラオケ音源にする</option>
-    <option value="take">イヤホンで聴きながら歌声を録音する</option>
+    <option value="take">イヤホンで聴きながらメインボーカルを録音する</option>
+    <option value="chorus">イヤホンで聴きながらコーラスを録音する</option>
   </select>
+
+  <label style="display:flex;align-items:center;gap:8px;margin:10px 0;color:#cbd5e1;">
+    <input id="playKaraokeWhileRecording" type="checkbox" checked style="width:auto;accent-color:var(--green);">
+    カラオケ音源を聴きながら録音する（イヤホン推奨）
+  </label>
+  <div class="info">カラオケ音源トラックがある場合、録音開始と同時に再生します。イヤホンで聴けば、マイクには基本的に歌声だけを録音できます。</div>
 
   <div class="row">
     <button id="recordBtn" class="primary">録音開始</button>
@@ -530,7 +537,8 @@ audio{width:100%;margin:8px 0}
   <select id="fileTarget">
     <option value="main" selected>カラオケ音源として読み込み・置き換え</option>
     <option value="append">カラオケ音源の末尾に追加</option>
-    <option value="take">歌声トラックとして読み込み</option>
+    <option value="take">メインボーカルトラックとして読み込み</option>
+    <option value="chorus">コーラストラックとして読み込み</option>
   </select>
 
   <label>カラオケ音源・動画ファイル読み込み（WaveCut方式）</label>
@@ -545,9 +553,10 @@ audio{width:100%;margin:8px 0}
   <audio id="audio" controls></audio>
   <video id="mediaProbe" playsinline muted style="display:none"></video>
 
-  <div class="row">
-    <button id="deleteMainBtn" disabled class="red">メイン音源を削除</button>
-    <button id="deleteTakeBtn" disabled class="red">追加録音を削除</button>
+  <div class="row3">
+    <button id="deleteMainBtn" disabled class="red">カラオケ音源を削除</button>
+    <button id="deleteTakeBtn" disabled class="red">ボーカルを削除</button>
+    <button id="deleteChorusBtn" disabled class="red">コーラスを削除</button>
   </div>
 </section>
 
@@ -675,9 +684,10 @@ audio{width:100%;margin:8px 0}
 
 <section class="card">
   <p class="section-title">Vocal Sync / Mix <span class="pill">ズレ補正</span></p>
-  <div class="row">
+  <div class="row3">
     <button id="selectMainBtn" class="green" disabled>カラオケ波形を表示</button>
-    <button id="selectTakeBtn" disabled>歌声波形を表示</button>
+    <button id="selectTakeBtn" disabled>ボーカル波形を表示</button>
+    <button id="selectChorusBtn" disabled>コーラス波形を表示</button>
   </div>
 
   <div class="nudge-panel">
@@ -702,12 +712,31 @@ audio{width:100%;margin:8px 0}
     <p class="small">歌声が遅れて聞こえる場合はマイナス方向、歌声が早い場合はプラス方向に動かします。MIX時にもこの補正値を反映します。</p>
   </div>
 
-  <div class="row">
-    <button id="prependTakeBtn" disabled>歌声を前にくっつける</button>
-    <button id="appendTakeBtn" disabled>歌声を後ろにくっつける</button>
+  <div class="nudge-panel">
+    <div class="nudge-title">
+      <strong>コーラストラックのズレ補正</strong>
+      <span id="chorusOffsetLabel">0 ms</span>
+    </div>
+    <div class="nudge-grid">
+      <button class="chorus-offset-btn minus" data-offset-ms="-100">-100ms</button>
+      <button class="chorus-offset-btn minus" data-offset-ms="-50">-50ms</button>
+      <button class="chorus-offset-btn minus tiny" data-offset-ms="-10">-10ms</button>
+      <button class="chorus-offset-btn minus tiny" data-offset-ms="-1">-1ms</button>
+      <button class="chorus-offset-btn plus tiny" data-offset-ms="1">+1ms</button>
+      <button class="chorus-offset-btn plus tiny" data-offset-ms="10">+10ms</button>
+      <button class="chorus-offset-btn plus" data-offset-ms="50">+50ms</button>
+      <button class="chorus-offset-btn plus" data-offset-ms="100">+100ms</button>
+    </div>
+    <button id="resetChorusOffsetBtn" disabled>コーラス補正を0に戻す</button>
+    <p class="small">コーラスもボーカルと同じように、カラオケ音源に対して前後へ動かせます。</p>
   </div>
-  <button id="mixTakeBtn" disabled class="primary">補正込みでカラオケ＋歌声をMIX</button>
-  <p class="small">基本は、カラオケをメイン音源、歌声を追加録音として扱います。最終的に補正込みでMIXし、WAV / MP3で保存できます。</p>
+
+  <div class="row">
+    <button id="prependTakeBtn" disabled>ボーカルを前にくっつける</button>
+    <button id="appendTakeBtn" disabled>ボーカルを後ろにくっつける</button>
+  </div>
+  <button id="mixTakeBtn" disabled class="primary">補正込みでカラオケ＋ボーカル＋コーラスをMIX</button>
+  <p class="small">基本は、カラオケ音源・メインボーカル・コーラスの3トラック構成です。最終的に補正込みでMIXし、WAV / MP3で保存できます。</p>
 </section>
 
 <section class="card">
@@ -730,11 +759,14 @@ let mediaRecorder;
 let recordedChunks = [];
 let mainBuffer = null;
 let takeBuffer = null;
+let chorusBuffer = null;
 let activeBufferType = "main";
 let mainFxBaked = false;
 let takeFxBaked = false;
+let chorusFxBaked = false;
 let mainFxBackup = null;
 let takeFxBackup = null;
+let chorusFxBackup = null;
 let selectedStart = null;
 let selectedEnd = null;
 let playheadRatio = 0;
@@ -754,6 +786,8 @@ const MAX_UNDO_STEPS = 15;
 let initialEditState = null;
 let initialEditLabel = "";
 let takeOffsetMs = 0;
+let chorusOffsetMs = 0;
+let karaokePlaybackDuringRecord = null;
 
 const micSelect = document.getElementById("micSelect");
 const refreshMicBtn = document.getElementById("refreshMicBtn");
@@ -776,6 +810,7 @@ const viewScroll = document.getElementById("viewScroll");
 const viewPositionLabel = document.getElementById("viewPositionLabel");
 const deleteMainBtn = document.getElementById("deleteMainBtn");
 const deleteTakeBtn = document.getElementById("deleteTakeBtn");
+const deleteChorusBtn = document.getElementById("deleteChorusBtn");
 const setStartBtn = document.getElementById("setStartBtn");
 const setEndBtn = document.getElementById("setEndBtn");
 const cutBtn = document.getElementById("cutBtn");
@@ -793,12 +828,16 @@ const applyFxBtn = document.getElementById("applyFxBtn");
 const resetFxBtn = document.getElementById("resetFxBtn");
 const selectMainBtn = document.getElementById("selectMainBtn");
 const selectTakeBtn = document.getElementById("selectTakeBtn");
+const selectChorusBtn = document.getElementById("selectChorusBtn");
 const prependTakeBtn = document.getElementById("prependTakeBtn");
 const appendTakeBtn = document.getElementById("appendTakeBtn");
 const mixTakeBtn = document.getElementById("mixTakeBtn");
 const takeOffsetLabel = document.getElementById("takeOffsetLabel");
 const resetTakeOffsetBtn = document.getElementById("resetTakeOffsetBtn");
 const previewMixBtn = document.getElementById("previewMixBtn");
+const chorusOffsetLabel = document.getElementById("chorusOffsetLabel");
+const resetChorusOffsetBtn = document.getElementById("resetChorusOffsetBtn");
+const playKaraokeWhileRecording = document.getElementById("playKaraokeWhileRecording");
 
 const gainSlider = document.getElementById("gainSlider");
 const reverbSlider = document.getElementById("reverbSlider");
@@ -829,34 +868,44 @@ function ensureAudioContext(){
 }
 
 function activeBuffer(){
-  return activeBufferType === "take" ? takeBuffer : mainBuffer;
+  if(activeBufferType === "take") return takeBuffer;
+  if(activeBufferType === "chorus") return chorusBuffer;
+  return mainBuffer;
 }
 function setActiveBuffer(buffer){
   if(activeBufferType === "take") takeBuffer = buffer;
+  else if(activeBufferType === "chorus") chorusBuffer = buffer;
   else mainBuffer = buffer;
   invalidateWaveformCache();
 }
 
 function isActiveFxBaked(){
-  return activeBufferType === "take" ? takeFxBaked : mainFxBaked;
+  if(activeBufferType === "take") return takeFxBaked;
+  if(activeBufferType === "chorus") return chorusFxBaked;
+  return mainFxBaked;
 }
 
 function setActiveFxBaked(value){
   if(activeBufferType === "take") takeFxBaked = value;
+  else if(activeBufferType === "chorus") chorusFxBaked = value;
   else mainFxBaked = value;
 }
 
 function getActiveFxBackup(){
-  return activeBufferType === "take" ? takeFxBackup : mainFxBackup;
+  if(activeBufferType === "take") return takeFxBackup;
+  if(activeBufferType === "chorus") return chorusFxBackup;
+  return mainFxBackup;
 }
 
 function setActiveFxBackup(buffer){
   if(activeBufferType === "take") takeFxBackup = buffer;
+  else if(activeBufferType === "chorus") chorusFxBackup = buffer;
   else mainFxBackup = buffer;
 }
 
 function clearActiveFxBackup(){
   if(activeBufferType === "take") takeFxBackup = null;
+  else if(activeBufferType === "chorus") chorusFxBackup = null;
   else mainFxBackup = null;
 }
 
@@ -1093,7 +1142,9 @@ deleteTakeBtn.onclick = ()=>{
 };
 
 recordTarget.onchange=()=>{
-  modeLabel.textContent = recordTarget.value === "take" ? "歌声録音" : "カラオケ録音";
+  if(recordTarget.value === "take") modeLabel.textContent = "ボーカル録音";
+  else if(recordTarget.value === "chorus") modeLabel.textContent = "コーラス録音";
+  else modeLabel.textContent = "カラオケ録音";
 };
 
 recordBtn.onclick = async()=>{
@@ -1140,7 +1191,7 @@ recordBtn.onclick = async()=>{
 
       invalidateWaveformCache();
       playheadRatio=0;
-      saveInitialEditState(recordTarget.value === "take" ? "歌声録音直後" : "カラオケ録音直後");
+      saveInitialEditState(recordTarget.value === "take" ? "ボーカル録音直後" : (recordTarget.value === "chorus" ? "コーラス録音直後" : "カラオケ録音直後"));
       resetFx();
       refreshPreview();
       updateButtons();
@@ -1153,6 +1204,23 @@ recordBtn.onclick = async()=>{
   };
 
   mediaRecorder.start();
+
+  // ボーカル/コーラス録音時は、カラオケ音源をイヤホンで聴きながら録音できるように同時再生する。
+  // iPhoneでは有線イヤホンまたは低遅延のイヤホン推奨。スピーカー再生だと伴奏がマイクに回り込みます。
+  karaokePlaybackDuringRecord = null;
+  if((recordTarget.value === "take" || recordTarget.value === "chorus") && mainBuffer && playKaraokeWhileRecording && playKaraokeWhileRecording.checked){
+    try{
+      updateAudioElement(mainBuffer);
+      audioEl.currentTime = 0;
+      karaokePlaybackDuringRecord = audioEl;
+      await audioEl.play();
+      fileStatus.innerHTML = `カラオケ音源を再生しながら録音中です。イヤホンで聴くと、マイクには基本的に歌声だけが録音されます。`;
+    }catch(playErr){
+      console.warn("Karaoke playback during recording failed", playErr);
+      fileStatus.innerHTML = `録音は開始しましたが、カラオケ音源の自動再生に失敗しました。iPhoneの場合は音量・消音モード・再生許可を確認してください。`;
+    }
+  }
+
   recordBtn.disabled=true;
   stopBtn.disabled=false;
   recordBtn.textContent="録音中...";
@@ -1161,6 +1229,10 @@ recordBtn.onclick = async()=>{
 };
 
 stopBtn.onclick=()=>{
+  if(karaokePlaybackDuringRecord){
+    try{ karaokePlaybackDuringRecord.pause(); karaokePlaybackDuringRecord.currentTime = 0; }catch(e){}
+    karaokePlaybackDuringRecord = null;
+  }
   if(mediaRecorder && mediaRecorder.state === "recording"){
     mediaRecorder.stop();
   }
@@ -2089,7 +2161,14 @@ fileInput.onchange = async(e)=>{
       takeFxBaked = false;
       takeFxBackup = null;
       activeBufferType = "take";
-      targetText = "追加音源として読み込み";
+      targetText = "ボーカルトラックとして読み込み";
+    }else if(fileTarget.value === "chorus"){
+      chorusBuffer = decoded;
+      chorusOffsetMs = 0;
+      chorusFxBaked = false;
+      chorusFxBackup = null;
+      activeBufferType = "chorus";
+      targetText = "コーラストラックとして読み込み";
     }else{
       mainBuffer = decoded;
       mainFxBaked = false;
@@ -2143,21 +2222,25 @@ function updateButtons(){
   saveMp3Btn.disabled = !mainBuffer;
   deleteMainBtn.disabled = !mainBuffer;
   deleteTakeBtn.disabled = !takeBuffer;
+  if(deleteChorusBtn) deleteChorusBtn.disabled = !chorusBuffer;
   applyFxBtn.disabled = !hasActive;
   resetFxBtn.disabled = !hasActive;
   selectMainBtn.disabled = !mainBuffer;
   selectTakeBtn.disabled = !takeBuffer;
+  if(selectChorusBtn) selectChorusBtn.disabled = !chorusBuffer;
   prependTakeBtn.disabled = !(mainBuffer && takeBuffer);
   appendTakeBtn.disabled = !(mainBuffer && takeBuffer);
-  mixTakeBtn.disabled = !(mainBuffer && takeBuffer);
+  mixTakeBtn.disabled = !(mainBuffer && (takeBuffer || chorusBuffer));
   if(resetTakeOffsetBtn) resetTakeOffsetBtn.disabled = !(mainBuffer && takeBuffer) || takeOffsetMs === 0;
-  if(previewMixBtn) previewMixBtn.disabled = !(mainBuffer && takeBuffer);
+  if(resetChorusOffsetBtn) resetChorusOffsetBtn.disabled = !(mainBuffer && chorusBuffer) || chorusOffsetMs === 0;
+  if(previewMixBtn) previewMixBtn.disabled = !(mainBuffer && (takeBuffer || chorusBuffer));
   if(applySelectionFxBtn) applySelectionFxBtn.disabled = !hasRange;
   updateTakeOffsetLabel();
+  updateChorusOffsetLabel();
 }
 
 function updateSourceStatus(){
-  const current = activeBufferType === "take" ? "歌声トラック" : "カラオケ音源";
+  const current = activeBufferType === "take" ? "ボーカルトラック" : (activeBufferType === "chorus" ? "コーラストラック" : "カラオケ音源");
   const buffer = activeBuffer();
 
   if(!buffer){
@@ -2479,6 +2562,9 @@ resetFxBtn.onclick = async()=>{
 
 selectMainBtn.onclick=()=>{activeBufferType="main"; selectedStart=null; selectedEnd=null; playheadRatio=0; invalidateWaveformCache(); resetFx(); refreshPreview(); updateButtons();};
 selectTakeBtn.onclick=()=>{activeBufferType="take"; selectedStart=null; selectedEnd=null; playheadRatio=0; invalidateWaveformCache(); resetFx(); refreshPreview(); updateButtons();};
+if(selectChorusBtn){
+  selectChorusBtn.onclick=()=>{activeBufferType="chorus"; selectedStart=null; selectedEnd=null; playheadRatio=0; invalidateWaveformCache(); resetFx(); refreshPreview(); updateButtons();};
+}
 
 prependTakeBtn.onclick=()=>{
   if(!mainBuffer || !takeBuffer) return;
@@ -2515,16 +2601,23 @@ appendTakeBtn.onclick=()=>{
 };
 
 mixTakeBtn.onclick=()=>{
-  if(!mainBuffer || !takeBuffer) return;
-  mainBuffer = mixBuffersWithOffset(mainBuffer, takeBuffer, takeOffsetMs / 1000);
+  if(!mainBuffer || (!takeBuffer && !chorusBuffer)) return;
+  let mixed = mainBuffer;
+  if(takeBuffer) mixed = mixBuffersWithOffset(mixed, takeBuffer, takeOffsetMs / 1000);
+  if(chorusBuffer) mixed = mixBuffersWithOffset(mixed, chorusBuffer, chorusOffsetMs / 1000);
+  mainBuffer = mixed;
   invalidateWaveformCache();
   mainFxBaked = false;
   takeFxBaked = false;
+  chorusFxBaked = false;
   mainFxBackup = null;
   takeFxBackup = null;
+  chorusFxBackup = null;
   activeBufferType="main";
   takeBuffer=null;
+  chorusBuffer=null;
   takeOffsetMs=0;
+  chorusOffsetMs=0;
   playheadRatio=0;
   resetFx();
   refreshPreview();
@@ -3001,6 +3094,7 @@ function createEditSnapshot(label="編集"){
     label,
     mainBuffer: mainBuffer ? cloneBuffer(mainBuffer) : null,
     takeBuffer: takeBuffer ? cloneBuffer(takeBuffer) : null,
+    chorusBuffer: chorusBuffer ? cloneBuffer(chorusBuffer) : null,
     activeBufferType,
     selectedStart,
     selectedEnd,
@@ -3008,8 +3102,10 @@ function createEditSnapshot(label="編集"){
     viewportStart,
     mainFxBaked,
     takeFxBaked,
+    chorusFxBaked,
     mainFxBackup: mainFxBackup ? cloneBuffer(mainFxBackup) : null,
     takeFxBackup: takeFxBackup ? cloneBuffer(takeFxBackup) : null,
+    chorusFxBackup: chorusFxBackup ? cloneBuffer(chorusFxBackup) : null,
     clipboardBuffer: clipboardBuffer ? cloneBuffer(clipboardBuffer) : null,
     clipboardSourceLabel
   };
@@ -3028,17 +3124,22 @@ function restoreUndoState(){
   const state = undoStack.pop();
   mainBuffer = state.mainBuffer ? cloneBuffer(state.mainBuffer) : null;
   takeBuffer = state.takeBuffer ? cloneBuffer(state.takeBuffer) : null;
+  chorusBuffer = state.chorusBuffer ? cloneBuffer(state.chorusBuffer) : null;
   activeBufferType = state.activeBufferType || "main";
-  if(activeBufferType === "take" && !takeBuffer) activeBufferType = "main";
+  if(activeBufferType === "take" && !takeBuffer) activeBufferType = mainBuffer ? "main" : (chorusBuffer ? "chorus" : "main");
+  if(activeBufferType === "chorus" && !chorusBuffer) activeBufferType = mainBuffer ? "main" : (takeBuffer ? "take" : "main");
   if(activeBufferType === "main" && !mainBuffer && takeBuffer) activeBufferType = "take";
+  if(activeBufferType === "main" && !mainBuffer && !takeBuffer && chorusBuffer) activeBufferType = "chorus";
   selectedStart = state.selectedStart;
   selectedEnd = state.selectedEnd;
   playheadRatio = state.playheadRatio || 0;
   viewportStart = state.viewportStart || 0;
   mainFxBaked = !!state.mainFxBaked;
   takeFxBaked = !!state.takeFxBaked;
+  chorusFxBaked = !!state.chorusFxBaked;
   mainFxBackup = state.mainFxBackup ? cloneBuffer(state.mainFxBackup) : null;
   takeFxBackup = state.takeFxBackup ? cloneBuffer(state.takeFxBackup) : null;
+  chorusFxBackup = state.chorusFxBackup ? cloneBuffer(state.chorusFxBackup) : null;
   clipboardBuffer = state.clipboardBuffer ? cloneBuffer(state.clipboardBuffer) : null;
   clipboardSourceLabel = state.clipboardSourceLabel || "";
   clampViewport();
@@ -3054,9 +3155,11 @@ function saveInitialEditState(label="読み込み直後"){
   initialEditState = {
     mainBuffer: mainBuffer ? cloneBuffer(mainBuffer) : null,
     takeBuffer: takeBuffer ? cloneBuffer(takeBuffer) : null,
+    chorusBuffer: chorusBuffer ? cloneBuffer(chorusBuffer) : null,
     activeBufferType,
     mainFxBaked,
     takeFxBaked,
+    chorusFxBaked,
     mainFxBackup: mainFxBackup ? cloneBuffer(mainFxBackup) : null,
     takeFxBackup: takeFxBackup ? cloneBuffer(takeFxBackup) : null
   };
@@ -3077,14 +3180,19 @@ function resetToInitialEditState(){
 
   mainBuffer = initialEditState.mainBuffer ? cloneBuffer(initialEditState.mainBuffer) : null;
   takeBuffer = initialEditState.takeBuffer ? cloneBuffer(initialEditState.takeBuffer) : null;
-  activeBufferType = initialEditState.activeBufferType || (mainBuffer ? "main" : "take");
-  if(activeBufferType === "take" && !takeBuffer) activeBufferType = "main";
+  chorusBuffer = initialEditState.chorusBuffer ? cloneBuffer(initialEditState.chorusBuffer) : null;
+  activeBufferType = initialEditState.activeBufferType || (mainBuffer ? "main" : (takeBuffer ? "take" : "chorus"));
+  if(activeBufferType === "take" && !takeBuffer) activeBufferType = mainBuffer ? "main" : (chorusBuffer ? "chorus" : "main");
+  if(activeBufferType === "chorus" && !chorusBuffer) activeBufferType = mainBuffer ? "main" : (takeBuffer ? "take" : "main");
   if(activeBufferType === "main" && !mainBuffer && takeBuffer) activeBufferType = "take";
+  if(activeBufferType === "main" && !mainBuffer && !takeBuffer && chorusBuffer) activeBufferType = "chorus";
 
   mainFxBaked = !!initialEditState.mainFxBaked;
   takeFxBaked = !!initialEditState.takeFxBaked;
+  chorusFxBaked = !!initialEditState.chorusFxBaked;
   mainFxBackup = initialEditState.mainFxBackup ? cloneBuffer(initialEditState.mainFxBackup) : null;
   takeFxBackup = initialEditState.takeFxBackup ? cloneBuffer(initialEditState.takeFxBackup) : null;
+  chorusFxBackup = initialEditState.chorusFxBackup ? cloneBuffer(initialEditState.chorusFxBackup) : null;
 
   selectedStart = null;
   selectedEnd = null;
@@ -3260,12 +3368,28 @@ function updateTakeOffsetLabel(){
   takeOffsetLabel.textContent = `${sign}${takeOffsetMs} ms`;
 }
 
+function updateChorusOffsetLabel(){
+  if(!chorusOffsetLabel) return;
+  const sign = chorusOffsetMs > 0 ? "+" : "";
+  chorusOffsetLabel.textContent = `${sign}${chorusOffsetMs} ms`;
+}
+
 document.querySelectorAll(".vocal-offset-btn").forEach(btn=>{
   btn.onclick = ()=>{
     if(!mainBuffer || !takeBuffer) return;
     takeOffsetMs += Number(btn.dataset.offsetMs || 0);
     takeOffsetMs = Math.round(takeOffsetMs);
     updateTakeOffsetLabel();
+    updateButtons();
+  };
+});
+
+document.querySelectorAll(".chorus-offset-btn").forEach(btn=>{
+  btn.onclick = ()=>{
+    if(!mainBuffer || !chorusBuffer) return;
+    chorusOffsetMs += Number(btn.dataset.offsetMs || 0);
+    chorusOffsetMs = Math.round(chorusOffsetMs);
+    updateChorusOffsetLabel();
     updateButtons();
   };
 });
@@ -3278,13 +3402,23 @@ if(resetTakeOffsetBtn){
   };
 }
 
+if(resetChorusOffsetBtn){
+  resetChorusOffsetBtn.onclick = ()=>{
+    chorusOffsetMs = 0;
+    updateChorusOffsetLabel();
+    updateButtons();
+  };
+}
+
 if(previewMixBtn){
   previewMixBtn.onclick = async()=>{
-    if(!mainBuffer || !takeBuffer) return;
-    const mixed = mixBuffersWithOffset(mainBuffer, takeBuffer, takeOffsetMs / 1000);
+    if(!mainBuffer || (!takeBuffer && !chorusBuffer)) return;
+    let mixed = mainBuffer;
+    if(takeBuffer) mixed = mixBuffersWithOffset(mixed, takeBuffer, takeOffsetMs / 1000);
+    if(chorusBuffer) mixed = mixBuffersWithOffset(mixed, chorusBuffer, chorusOffsetMs / 1000);
     updateAudioElement(mixed);
     activeBufferType = "main";
-    fileStatus.innerHTML = `補正込みMIXを一時プレビュー中です。確定する場合は「補正込みでカラオケ＋歌声をMIX」を押してください。<br>現在の歌声補正：${takeOffsetMs} ms`;
+    fileStatus.innerHTML = `補正込みMIXを一時プレビュー中です。確定する場合は「補正込みでカラオケ＋ボーカル＋コーラスをMIX」を押してください。<br>ボーカル補正：${takeOffsetMs} ms / コーラス補正：${chorusOffsetMs} ms`;
     audioEl.currentTime = 0;
     audioEl.play().catch(()=>{});
   };
