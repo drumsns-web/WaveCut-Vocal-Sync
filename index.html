@@ -6083,7 +6083,14 @@ document.addEventListener("keydown", (e) => {
     if(trackPlaybackGains && trackPlaybackGains[currentTrack] && audioContext){
       try{
         const g = trackPlaybackGains[currentTrack];
-        g.gain.setTargetAtTime(v/100, audioContext.currentTime, 0.015);
+        const target = v/100;
+        if(target === 0){
+          // 完全ミュート：即座に0へ
+          g.gain.cancelScheduledValues(audioContext.currentTime);
+          g.gain.setValueAtTime(0, audioContext.currentTime);
+        } else {
+          g.gain.setTargetAtTime(target, audioContext.currentTime, 0.015);
+        }
       }catch(e){}
     }
   });
@@ -6290,6 +6297,8 @@ function switchActiveBufferTo(track){
     const startAt = audioContext.currentTime + 0.05;
     src.start(startAt, startInBuf);
     trackPlaybackNodes = [src];
+    trackPlaybackGains = { main:null, take:null, chorus:null };
+    trackPlaybackGains[track] = gain;
     trackPlaybackStartAt = startAt;
     trackPlaybackDuration = buf.duration - startInBuf;
     // プレイヘッドアニメーション開始（このトラックだけ）
