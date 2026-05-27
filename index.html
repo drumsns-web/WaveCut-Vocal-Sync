@@ -1840,6 +1840,13 @@ function updateMicStatus(isOn, message){
   micStatus.style.color = isOn ? "var(--green)" : "var(--muted)";
   if(micOnBtn) micOnBtn.disabled = isOn;
   if(micOffBtn) micOffBtn.disabled = !isOn;
+  const pill = document.getElementById("micStatusPill");
+  if(pill){
+    pill.textContent = isOn ? "ON" : "OFF";
+    pill.style.background = isOn ? "rgba(53,224,161,.18)" : "";
+    pill.style.color = isOn ? "#35e0a1" : "";
+    pill.style.borderColor = isOn ? "rgba(53,224,161,.5)" : "";
+  }
 }
 
 function stopCurrentMicStream(){
