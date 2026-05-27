@@ -683,8 +683,11 @@ audio{width:100%;margin:8px 0}
 }
 .track-btn-rec{
   padding:5px 9px !important;margin:0 !important;font-size:11px !important;border-radius:9px !important;min-height:0 !important;
-  background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 45%),linear-gradient(180deg,#4ade80,#16a34a 60%,#15803d) !important;
-  border-color:rgba(134,239,172,.40) !important;box-shadow:0 4px 0 rgba(0,0,0,.22) !important;color:#fff !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 45%),linear-gradient(180deg,#f87171,#dc2626 60%,#991b1b) !important;
+  border-color:rgba(252,165,165,.40) !important;box-shadow:0 4px 0 rgba(0,0,0,.22) !important;color:#fff !important;
+}
+.track-btn-rec:disabled{
+  opacity:.4 !important;
 }
 .track-btn-stop-rec{padding:5px 9px !important;margin:0 !important;font-size:11px !important;border-radius:9px !important;min-height:0 !important;}
 .track-btn-delete{
@@ -765,6 +768,73 @@ audio{width:100%;margin:8px 0}
 }
 /* 選択ハイライト */
 .track-wave-canvas.has-selection{ cursor:text; }
+
+/* ─── 音量ポップアップ ─── */
+.vol-btn{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:4px 8px !important;margin:0 !important;
+  font-size:11px !important;border-radius:9px !important;min-height:0 !important;
+  background:rgba(255,255,255,.07) !important;
+  border:1px solid rgba(255,255,255,.15) !important;
+  color:#cbd5e1 !important;cursor:pointer;flex-shrink:0;
+  font-weight:700;
+}
+.vol-btn:hover{ background:rgba(255,255,255,.13) !important; }
+.vol-popup{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  z-index:999;
+  background:linear-gradient(180deg,#111827,#0f172a);
+  border-top:1px solid rgba(255,255,255,.12);
+  border-radius:22px 22px 0 0;
+  padding:18px 16px 32px;
+  box-shadow:0 -8px 40px rgba(0,0,0,.5);
+  max-height:80vh;
+  overflow-y:auto;
+}
+.vol-popup-title{
+  font-size:14px;font-weight:800;color:#f8fafc;
+  margin-bottom:14px;text-align:center;
+  letter-spacing:.04em;
+}
+.vol-popup-slots{
+  display:grid;
+  grid-template-columns:repeat(10,1fr);
+  gap:5px;
+  margin-bottom:14px;
+}
+.vol-slot{
+  aspect-ratio:1;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.05);
+  color:#64748b;
+  cursor:pointer;
+  transition:background .1s,color .1s,border-color .1s;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.vol-slot:hover,.vol-slot:active{
+  background:rgba(79,140,255,.22);
+  color:#93c5fd;
+  border-color:rgba(79,140,255,.45);
+}
+.vol-slot.active{
+  background:linear-gradient(180deg,rgba(53,224,161,.28),rgba(53,224,161,.14));
+  color:#35e0a1;
+  border-color:rgba(53,224,161,.55);
+  font-size:12px;
+}
+.vol-popup-close{
+  width:100%;padding:12px !important;margin:0 !important;
+  font-size:13px !important;border-radius:12px !important;
+  background:rgba(255,255,255,.06) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  color:#94a3b8 !important;
+}
 
 </style>
 </head>
@@ -858,8 +928,8 @@ audio{width:100%;margin:8px 0}
         <div class="track-play-row">
           <button class="track-solo-btn" id="playMainOnlyBtn" disabled>▶</button>
           <button class="track-stop-inline" type="button">■</button>
-          <input id="trackVolumeMain" type="range" min="0" max="150" step="1" value="100" title="音量">
-          <strong id="trackVolumeMainLabel" class="track-vol-label">100%</strong>
+          <button class="vol-btn" id="volBtnMain" data-track="main">🔊 <span id="trackVolumeMainLabel">100</span></button>
+          <input id="trackVolumeMain" type="hidden" value="100">
         </div>
         <div class="track-select-row"><label><input id="trackSelectMain" type="checkbox" checked> 全体再生に含む</label></div>
         <button id="deleteMainBtn" disabled class="track-btn-delete">削除</button>
@@ -903,8 +973,8 @@ audio{width:100%;margin:8px 0}
         <div class="track-play-row">
           <button class="track-solo-btn" id="playTakeOnlyBtn" disabled>▶</button>
           <button class="track-stop-inline" type="button">■</button>
-          <input id="trackVolumeTake" type="range" min="0" max="150" step="1" value="100" title="音量">
-          <strong id="trackVolumeTakeLabel" class="track-vol-label">100%</strong>
+          <button class="vol-btn" id="volBtnTake" data-track="take">🔊 <span id="trackVolumeTakeLabel">100</span></button>
+          <input id="trackVolumeTake" type="hidden" value="100">
         </div>
         <div class="track-select-row"><label><input id="trackSelectTake" type="checkbox" checked> 全体再生に含む</label></div>
         <button id="deleteTakeBtn" disabled class="track-btn-delete">削除</button>
@@ -948,8 +1018,8 @@ audio{width:100%;margin:8px 0}
         <div class="track-play-row">
           <button class="track-solo-btn" id="playChorusOnlyBtn" disabled>▶</button>
           <button class="track-stop-inline" type="button">■</button>
-          <input id="trackVolumeChorus" type="range" min="0" max="150" step="1" value="100" title="音量">
-          <strong id="trackVolumeChorusLabel" class="track-vol-label">100%</strong>
+          <button class="vol-btn" id="volBtnChorus" data-track="chorus">🔊 <span id="trackVolumeChorusLabel">100</span></button>
+          <input id="trackVolumeChorus" type="hidden" value="100">
         </div>
         <div class="track-select-row"><label><input id="trackSelectChorus" type="checkbox" checked> 全体再生に含む</label></div>
         <button id="deleteChorusBtn" disabled class="track-btn-delete">削除</button>
@@ -1209,6 +1279,14 @@ audio{width:100%;margin:8px 0}
 </section>
 
 </main>
+
+<!-- 音量ポップアップ -->
+<div id="volPopup" class="vol-popup" style="display:none">
+  <div class="vol-popup-title">音量 <span id="volPopupTrackName"></span></div>
+  <div class="vol-popup-slots" id="volPopupSlots"></div>
+  <button class="vol-popup-close" id="volPopupClose">✕ 閉じる</button>
+</div>
+<div id="volPopupOverlay" style="display:none;position:fixed;inset:0;z-index:998;background:rgba(0,0,0,.45);" id="volPopupOverlay2"></div>
 
 <script>
 let audioContext;
@@ -1599,13 +1677,10 @@ function getTrackVolume(track){
   return 1;
 }
 function updateTrackVolumeLabels(){
-  if(trackVolumeMainLabel && trackVolumeMain) trackVolumeMainLabel.textContent = `${trackVolumeMain.value}%`;
-  if(trackVolumeTakeLabel && trackVolumeTake) trackVolumeTakeLabel.textContent = `${trackVolumeTake.value}%`;
-  if(trackVolumeChorusLabel && trackVolumeChorus) trackVolumeChorusLabel.textContent = `${trackVolumeChorus.value}%`;
-  if(karaokeBackingVolume && trackVolumeMain && Number(karaokeBackingVolume.value) !== Number(trackVolumeMain.value)){
-    karaokeBackingVolume.value = trackVolumeMain.value;
-    if(karaokeBackingVolumeLabel) karaokeBackingVolumeLabel.textContent = `${karaokeBackingVolume.value}%`;
-  }
+  // hidden input から値を読んでラベル更新（ポップアップ方式対応）
+  if(trackVolumeMainLabel && trackVolumeMain) trackVolumeMainLabel.textContent = `${trackVolumeMain.value}`;
+  if(trackVolumeTakeLabel && trackVolumeTake) trackVolumeTakeLabel.textContent = `${trackVolumeTake.value}`;
+  if(trackVolumeChorusLabel && trackVolumeChorus) trackVolumeChorusLabel.textContent = `${trackVolumeChorus.value}`;
 }
 function syncTrackAndMultiChecks(){
   if(multiPlayMain && trackSelectMain) multiPlayMain.checked = trackSelectMain.checked;
@@ -5422,6 +5497,105 @@ document.addEventListener("keydown", (e) => {
     return;
   }
 });
+
+
+// ════════════════════════════════════════════════════════════════
+// ── 音量ポップアップ ────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+(function(){
+  const popup    = document.getElementById("volPopup");
+  const overlay  = document.getElementById("volPopupOverlay");
+  const slotsEl  = document.getElementById("volPopupSlots");
+  const titleEl  = document.getElementById("volPopupTrackName");
+  const closeBtn = document.getElementById("volPopupClose");
+  if(!popup) return;
+
+  const TRACK_NAMES = { main:"カラオケ", take:"ボーカル", chorus:"コーラス" };
+  let currentTrack = null;
+
+  // スロット値：10,20,…,100,110,120,130,140,150 の15値
+  // 通常使いは10～100、+α で最大150まで
+  const SLOTS = [];
+  for(let v=10;v<=150;v+=10) SLOTS.push(v);
+  // 先頭に 5 も追加（ミュートに近い小音量）
+  SLOTS.unshift(5);
+
+  function buildSlots(track){
+    const hiddenInput = document.getElementById("trackVolume" + cap(track));
+    const current = hiddenInput ? Number(hiddenInput.value) : 100;
+    slotsEl.innerHTML = "";
+    SLOTS.forEach(v=>{
+      const btn = document.createElement("button");
+      btn.className = "vol-slot" + (v === current ? " active" : "");
+      btn.textContent = v;
+      btn.onclick = ()=>{
+        selectVol(track, v);
+      };
+      slotsEl.appendChild(btn);
+    });
+  }
+
+  function selectVol(track, v){
+    // hidden input 更新
+    const hiddenInput = document.getElementById("trackVolume" + cap(track));
+    const label = document.getElementById("trackVolume" + cap(track) + "Label");
+    if(hiddenInput) hiddenInput.value = v;
+    if(label) label.textContent = v;
+    // アクティブスロットを更新
+    slotsEl.querySelectorAll(".vol-slot").forEach(btn=>{
+      btn.classList.toggle("active", Number(btn.textContent) === v);
+    });
+    // ボタン表示更新
+    const volBtn = document.getElementById("volBtn" + cap(track));
+    if(volBtn){
+      const span = volBtn.querySelector("span");
+      if(span) span.textContent = v;
+    }
+    // 再生中なら即座にゲインにも反映
+    if(trackPlaybackNodes && trackPlaybackNodes.length > 0){
+      // 次回再生時に反映されるため、即時反映はしない（シンプルに）
+    }
+    // trackVolumeLabels更新
+    if(typeof updateTrackVolumeLabels === "function") updateTrackVolumeLabels();
+  }
+
+  function open(track){
+    currentTrack = track;
+    titleEl.textContent = TRACK_NAMES[track] || track;
+    buildSlots(track);
+    popup.style.display = "block";
+    overlay.style.display = "block";
+  }
+  function close(){
+    popup.style.display = "none";
+    overlay.style.display = "none";
+    currentTrack = null;
+  }
+
+  // 各トラックの音量ボタンにイベント設定
+  ["main","take","chorus"].forEach(track=>{
+    const btn = document.getElementById("volBtn" + cap(track));
+    if(btn) btn.onclick = (e)=>{ e.stopPropagation(); open(track); };
+  });
+
+  closeBtn.onclick = close;
+  overlay.onclick  = close;
+
+  function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  // getTrackVolume を hidden input から読めるようにオーバーライド
+  // （元の getTrackVolume は range input を参照しているため）
+  const _origGetTrackVolume = typeof getTrackVolume === "function" ? getTrackVolume : null;
+  if(_origGetTrackVolume){
+    window.getTrackVolume = function(track){
+      const el = track === "take" ? document.getElementById("trackVolumeTake")
+               : track === "chorus" ? document.getElementById("trackVolumeChorus")
+               : document.getElementById("trackVolumeMain");
+      if(el) return Number(el.value) / 100;
+      return _origGetTrackVolume(track);
+    };
+  }
+})();
 
 </script>
 </body>
