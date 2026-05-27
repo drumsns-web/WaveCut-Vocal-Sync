@@ -769,71 +769,77 @@ audio{width:100%;margin:8px 0}
 /* 選択ハイライト */
 .track-wave-canvas.has-selection{ cursor:text; }
 
-/* ─── 音量ポップアップ ─── */
+/* ─── 音量スライダーポップアップ ─── */
 .vol-btn{
   display:inline-flex;align-items:center;gap:4px;
   padding:4px 8px !important;margin:0 !important;
   font-size:11px !important;border-radius:9px !important;min-height:0 !important;
   background:rgba(255,255,255,.07) !important;
   border:1px solid rgba(255,255,255,.15) !important;
-  color:#cbd5e1 !important;cursor:pointer;flex-shrink:0;
-  font-weight:700;
+  color:#cbd5e1 !important;cursor:pointer;flex-shrink:0;font-weight:700;
 }
-.vol-btn:hover{ background:rgba(255,255,255,.13) !important; }
+.vol-btn:hover,.vol-btn:active{ background:rgba(255,255,255,.14) !important; }
 .vol-popup{
   position:fixed;
-  bottom:0;left:0;right:0;
+  bottom:0;left:50%;transform:translateX(-50%);
+  width:min(480px,100%);
   z-index:999;
-  background:linear-gradient(180deg,#111827,#0f172a);
-  border-top:1px solid rgba(255,255,255,.12);
+  background:linear-gradient(180deg,#1e2940,#111827);
+  border:1px solid rgba(255,255,255,.12);
+  border-bottom:none;
   border-radius:22px 22px 0 0;
-  padding:18px 16px 32px;
-  box-shadow:0 -8px 40px rgba(0,0,0,.5);
-  max-height:80vh;
-  overflow-y:auto;
+  padding:20px 24px 36px;
+  box-shadow:0 -12px 48px rgba(0,0,0,.6);
+}
+.vol-popup-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:20px;
 }
 .vol-popup-title{
-  font-size:14px;font-weight:800;color:#f8fafc;
-  margin-bottom:14px;text-align:center;
-  letter-spacing:.04em;
-}
-.vol-popup-slots{
-  display:grid;
-  grid-template-columns:repeat(10,1fr);
-  gap:5px;
-  margin-bottom:14px;
-}
-.vol-slot{
-  aspect-ratio:1;
-  display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:700;
-  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-  border-radius:8px;
-  border:1px solid rgba(255,255,255,.08);
-  background:rgba(255,255,255,.05);
-  color:#64748b;
-  cursor:pointer;
-  transition:background .1s,color .1s,border-color .1s;
-  -webkit-tap-highlight-color:transparent;
-  user-select:none;
-}
-.vol-slot:hover,.vol-slot:active{
-  background:rgba(79,140,255,.22);
-  color:#93c5fd;
-  border-color:rgba(79,140,255,.45);
-}
-.vol-slot.active{
-  background:linear-gradient(180deg,rgba(53,224,161,.28),rgba(53,224,161,.14));
-  color:#35e0a1;
-  border-color:rgba(53,224,161,.55);
-  font-size:12px;
+  font-size:15px;font-weight:800;color:#f8fafc;letter-spacing:.03em;
 }
 .vol-popup-close{
-  width:100%;padding:12px !important;margin:0 !important;
-  font-size:13px !important;border-radius:12px !important;
-  background:rgba(255,255,255,.06) !important;
-  border:1px solid rgba(255,255,255,.12) !important;
+  width:32px !important;height:32px !important;padding:0 !important;margin:0 !important;
+  border-radius:50% !important;font-size:14px !important;
+  background:rgba(255,255,255,.08) !important;
+  border:1px solid rgba(255,255,255,.14) !important;
   color:#94a3b8 !important;
+}
+.vol-popup-body{ display:flex;flex-direction:column;align-items:center;gap:16px; }
+.vol-big-value{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:52px;font-weight:900;color:#35e0a1;
+  line-height:1;letter-spacing:-.02em;
+  text-shadow:0 0 24px rgba(53,224,161,.4);
+  min-width:100px;text-align:center;
+}
+.vol-big-slider{
+  width:100%;height:8px;
+  accent-color:#35e0a1;
+  cursor:pointer;
+  -webkit-appearance:none;appearance:none;
+  border-radius:4px;
+  background:rgba(255,255,255,.08);
+  outline:none;
+}
+.vol-big-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:28px;height:28px;
+  border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,#fff,#35e0a1);
+  box-shadow:0 0 0 3px rgba(53,224,161,.3),0 4px 12px rgba(0,0,0,.4);
+  cursor:pointer;
+}
+.vol-big-slider::-moz-range-thumb{
+  width:28px;height:28px;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,#fff,#35e0a1);
+  box-shadow:0 0 0 3px rgba(53,224,161,.3),0 4px 12px rgba(0,0,0,.4);
+  border:none;cursor:pointer;
+}
+.vol-marks{
+  width:100%;display:flex;justify-content:space-between;
+  font-size:10px;font-family:ui-monospace,monospace;color:#475569;
+  padding:0 2px;
 }
 
 </style>
@@ -1280,13 +1286,21 @@ audio{width:100%;margin:8px 0}
 
 </main>
 
-<!-- 音量ポップアップ -->
+<!-- 音量スライダーポップアップ -->
+<div id="volOverlay" style="display:none;position:fixed;inset:0;z-index:998;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);"></div>
 <div id="volPopup" class="vol-popup" style="display:none">
-  <div class="vol-popup-title">音量 <span id="volPopupTrackName"></span></div>
-  <div class="vol-popup-slots" id="volPopupSlots"></div>
-  <button class="vol-popup-close" id="volPopupClose">✕ 閉じる</button>
+  <div class="vol-popup-header">
+    <span class="vol-popup-title">🔊 <span id="volPopupTrackName"></span> 音量</span>
+    <button class="vol-popup-close" id="volPopupClose">✕</button>
+  </div>
+  <div class="vol-popup-body">
+    <div class="vol-big-value" id="volBigValue">100</div>
+    <input class="vol-big-slider" id="volBigSlider" type="range" min="0" max="150" step="1" value="100">
+    <div class="vol-marks">
+      <span>0</span><span>50</span><span>100</span><span>150</span>
+    </div>
+  </div>
 </div>
-<div id="volPopupOverlay" style="display:none;position:fixed;inset:0;z-index:998;background:rgba(0,0,0,.45);" id="volPopupOverlay2"></div>
 
 <script>
 let audioContext;
@@ -5500,99 +5514,75 @@ document.addEventListener("keydown", (e) => {
 
 
 // ════════════════════════════════════════════════════════════════
-// ── 音量ポップアップ ────────────────────────────────────────────
+// ── 音量スライダーポップアップ ──────────────────────────────────
 // ════════════════════════════════════════════════════════════════
 (function(){
+  const overlay  = document.getElementById("volOverlay");
   const popup    = document.getElementById("volPopup");
-  const overlay  = document.getElementById("volPopupOverlay");
-  const slotsEl  = document.getElementById("volPopupSlots");
+  const slider   = document.getElementById("volBigSlider");
+  const bigVal   = document.getElementById("volBigValue");
   const titleEl  = document.getElementById("volPopupTrackName");
   const closeBtn = document.getElementById("volPopupClose");
-  if(!popup) return;
+  if(!popup || !slider) return;
 
-  const TRACK_NAMES = { main:"カラオケ", take:"ボーカル", chorus:"コーラス" };
+  const NAMES = { main:"カラオケ", take:"ボーカル", chorus:"コーラス" };
   let currentTrack = null;
 
-  // スロット値：10,20,…,100,110,120,130,140,150 の15値
-  // 通常使いは10～100、+α で最大150まで
-  const SLOTS = [];
-  for(let v=10;v<=150;v+=10) SLOTS.push(v);
-  // 先頭に 5 も追加（ミュートに近い小音量）
-  SLOTS.unshift(5);
-
-  function buildSlots(track){
-    const hiddenInput = document.getElementById("trackVolume" + cap(track));
-    const current = hiddenInput ? Number(hiddenInput.value) : 100;
-    slotsEl.innerHTML = "";
-    SLOTS.forEach(v=>{
-      const btn = document.createElement("button");
-      btn.className = "vol-slot" + (v === current ? " active" : "");
-      btn.textContent = v;
-      btn.onclick = ()=>{
-        selectVol(track, v);
-      };
-      slotsEl.appendChild(btn);
-    });
-  }
-
-  function selectVol(track, v){
-    // hidden input 更新
-    const hiddenInput = document.getElementById("trackVolume" + cap(track));
-    const label = document.getElementById("trackVolume" + cap(track) + "Label");
-    if(hiddenInput) hiddenInput.value = v;
-    if(label) label.textContent = v;
-    // アクティブスロットを更新
-    slotsEl.querySelectorAll(".vol-slot").forEach(btn=>{
-      btn.classList.toggle("active", Number(btn.textContent) === v);
-    });
-    // ボタン表示更新
-    const volBtn = document.getElementById("volBtn" + cap(track));
-    if(volBtn){
-      const span = volBtn.querySelector("span");
-      if(span) span.textContent = v;
-    }
-    // 再生中なら即座にゲインにも反映
-    if(trackPlaybackNodes && trackPlaybackNodes.length > 0){
-      // 次回再生時に反映されるため、即時反映はしない（シンプルに）
-    }
-    // trackVolumeLabels更新
-    if(typeof updateTrackVolumeLabels === "function") updateTrackVolumeLabels();
-  }
+  function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
 
   function open(track){
     currentTrack = track;
-    titleEl.textContent = TRACK_NAMES[track] || track;
-    buildSlots(track);
-    popup.style.display = "block";
+    titleEl.textContent = NAMES[track] || track;
+    const inp = document.getElementById("trackVolume"+cap(track));
+    const val = inp ? Number(inp.value) : 100;
+    slider.value = val;
+    bigVal.textContent = val;
+    popup.style.display  = "block";
     overlay.style.display = "block";
-  }
-  function close(){
-    popup.style.display = "none";
-    overlay.style.display = "none";
-    currentTrack = null;
+    // アニメーション
+    popup.style.transition = "transform .25s cubic-bezier(.22,1,.36,1)";
+    popup.style.transform  = "translateX(-50%) translateY(100%)";
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      popup.style.transform = "translateX(-50%) translateY(0)";
+    }));
   }
 
-  // 各トラックの音量ボタンにイベント設定
+  function close(){
+    popup.style.transform = "translateX(-50%) translateY(100%)";
+    setTimeout(()=>{
+      popup.style.display  = "none";
+      overlay.style.display = "none";
+      currentTrack = null;
+    }, 220);
+  }
+
+  slider.addEventListener("input", ()=>{
+    const v = Number(slider.value);
+    bigVal.textContent = v;
+    if(!currentTrack) return;
+    const inp   = document.getElementById("trackVolume"+cap(currentTrack));
+    const label = document.getElementById("trackVolume"+cap(currentTrack)+"Label");
+    const btn   = document.getElementById("volBtn"+cap(currentTrack));
+    if(inp)   inp.value = v;
+    if(label) label.textContent = v;
+    if(btn){ const sp=btn.querySelector("span"); if(sp) sp.textContent=v; }
+  });
+
   ["main","take","chorus"].forEach(track=>{
-    const btn = document.getElementById("volBtn" + cap(track));
-    if(btn) btn.onclick = (e)=>{ e.stopPropagation(); open(track); };
+    const btn = document.getElementById("volBtn"+cap(track));
+    if(btn) btn.onclick = e=>{ e.stopPropagation(); open(track); };
   });
 
   closeBtn.onclick = close;
   overlay.onclick  = close;
 
-  function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
-
-  // getTrackVolume を hidden input から読めるようにオーバーライド
-  // （元の getTrackVolume は range input を参照しているため）
-  const _origGetTrackVolume = typeof getTrackVolume === "function" ? getTrackVolume : null;
-  if(_origGetTrackVolume){
+  // getTrackVolume を hidden input から読むようオーバーライド
+  const _orig = typeof getTrackVolume === "function" ? getTrackVolume : null;
+  if(_orig){
     window.getTrackVolume = function(track){
-      const el = track === "take" ? document.getElementById("trackVolumeTake")
-               : track === "chorus" ? document.getElementById("trackVolumeChorus")
-               : document.getElementById("trackVolumeMain");
-      if(el) return Number(el.value) / 100;
-      return _origGetTrackVolume(track);
+      const el = document.getElementById("trackVolume"+cap(track));
+      if(el) return Number(el.value)/100;
+      return _orig(track);
     };
   }
 })();
