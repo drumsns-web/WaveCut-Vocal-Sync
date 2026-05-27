@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>WaveCut Vocal Sync v7</title>
+<title>WaveCut Vocal Sync v8</title>
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <meta name="apple-mobile-web-app-title" content="WaveCut Vocal Sync">
@@ -80,6 +80,7 @@ button.idle-disabled{opacity:.26!important;filter:grayscale(.4)!important}
     <input id="fileInput" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
     <label for="fileInput" class="file-button">カラオケ音源・動画を読み込む</label>
     <div id="fileName" class="file-name">未選択</div>
+    <div id="loadStatus" class="status" style="display:none;margin-top:8px;">ファイル未選択</div>
     <div class="sep"></div>
     <div class="section-title">音源を持っていない場合 <span class="pill warn">Mic Capture</span></div>
     <div class="grid2">
@@ -247,7 +248,7 @@ button.idle-disabled{opacity:.26!important;filter:grayscale(.4)!important}
 'use strict';
 const $ = id => document.getElementById(id);
 const els = {
-  fileInput:$('fileInput'), fileName:$('fileName'), sourceRecordBtn:$('sourceRecordBtn'), sourceStopBtn:$('sourceStopBtn'), sourceRecordNote:$('sourceRecordNote'), micSelect:$('micSelect'), refreshMicBtn:$('refreshMicBtn'), micOnBtn:$('micOnBtn'), micOffBtn:$('micOffBtn'),
+  fileInput:$('fileInput'), fileName:$('fileName'), loadStatus:$('loadStatus'), sourceRecordBtn:$('sourceRecordBtn'), sourceStopBtn:$('sourceStopBtn'), sourceRecordNote:$('sourceRecordNote'), micSelect:$('micSelect'), refreshMicBtn:$('refreshMicBtn'), micOnBtn:$('micOnBtn'), micOffBtn:$('micOffBtn'),
   recordBtn:$('recordBtn'), playMixBtn:$('playMixBtn'), playKaraokeBtn:$('playKaraokeBtn'), stopBtn:$('stopBtn'), exportBtn:$('exportBtn'), resetBtn:$('resetBtn'),
   statusText:$('statusText'), countText:$('countText'), timeText:$('timeText'), karaokeCanvas:$('karaokeCanvas'), vocalCanvas:$('vocalCanvas'),
   playhead1:$('playhead1'), playhead2:$('playhead2'), karaokeMeta:$('karaokeMeta'), vocalMeta:$('vocalMeta'), offsetText:$('offsetText'), offsetZeroBtn:$('offsetZeroBtn'),
@@ -443,18 +444,23 @@ async function decodeFile(file){
   let mediaInfo=null;
   try{ mediaInfo = await probeMediaFile(file); }catch(e){ console.warn('media probe failed', e); }
 
-  const isMov = isProbablyMovFile(file);
+  const type=(file.type||'').toLowerCase();
+  const name=(file.name||'').toLowerCase();
+  const isVideo = isProbablyVideoFile(file);
+  const isAudio = type.startsWith('audio/') || /\.(mp3|wav|m4a|aac|flac|ogg)$/i.test(name);
 
-  // WaveCut本体と同じ考え方：iPhoneカメラロールMOVは直接デコードより先に、再生しながら音声を取り込む。
-  if(isMov){
-    setStatus('MOVを検出しました。WaveCut方式で、動画を再生しながら音声だけを取り込みます。');
+  // v8: WaveCut本体と同じ考え方に寄せるため、動画ファイルは「動画を再生しながら音声取り込み」へ直接進める。
+  // これにより、MP4/MOV選択後に何も変化しない・大きいMP4で固まる問題を避ける。
+  if(isVideo && !isAudio){
+    setLoadStatus('動画ファイルを検出しました。<br>WaveCut方式で、動画を再生しながら音声だけを取り込みます。<br>下に表示される「最後まで取り込む」を押してください。');
     const captured = await extractAudioViaWaveCutCapture(file, mediaInfo);
-    captured._loadMethod = 'wavecut-mov-capture';
+    captured._loadMethod = isProbablyMovFile(file) ? 'wavecut-mov-capture' : 'wavecut-video-capture';
     return captured;
   }
 
-  // MP3 / WAV / M4A / AAC / 通常のMP4など、ブラウザが直接読めるものは先に通常読み込み。
+  // 音声ファイルはまず通常のAudioBuffer読み込み。
   try{
+    setLoadStatus('音声ファイルを通常読み込み中です...');
     const decoded = await decodeBlobDirectly(file);
     decoded._loadMethod = 'direct';
     return decoded;
@@ -462,15 +468,8 @@ async function decodeFile(file){
     console.warn('Direct decode failed. Fallback to WaveCut capture.', primaryError);
   }
 
-  // MP4など動画扱いのファイルは、WaveCut方式の再生キャプチャへフォールバック。
-  if(isProbablyVideoFile(file)){
-    setStatus('直接読み込みに失敗しました。WaveCut方式で、動画を再生しながら音声だけを取り込みます。');
-    const captured = await extractAudioViaWaveCutCapture(file, mediaInfo);
-    captured._loadMethod = 'wavecut-video-capture';
-    return captured;
-  }
-
-  // 最終フォールバック。音声ファイルでもブラウザ再生できる場合は音だけ拾う。
+  // 音声ファイルでも端末側で直接デコードできない場合は、再生しながら音声取り込みへフォールバック。
+  setLoadStatus('通常読み込みに失敗しました。<br>WaveCut方式で、再生しながら音声だけを取り込みます。<br>下に表示される「最後まで取り込む」を押してください。');
   try{
     const captured = await extractAudioViaWaveCutCapture(file, mediaInfo);
     captured._loadMethod = 'wavecut-playable-capture';
@@ -560,9 +559,13 @@ function extractAudioViaWaveCutCapture(file, mediaInfo){
     box.appendChild(finishNowBtn);
     box.appendChild(cancelBtn);
     box.appendChild(note);
+    const targetStatus = els.loadStatus || els.statusText;
+    targetStatus.style.display='block';
+    targetStatus.className='status';
+    targetStatus.innerHTML='';
+    targetStatus.appendChild(box);
     els.statusText.className='status';
-    els.statusText.innerHTML='';
-    els.statusText.appendChild(box);
+    els.statusText.innerHTML='動画音声取り込みの準備ができました。カラオケ音源セクションの操作パネルで開始してください。';
 
     const updateModeButtons=()=>{
       if(listenDuringCapture){
@@ -972,7 +975,27 @@ function stopKaraokeSourceRecording(){
 }
 
 // Events
-els.fileInput.addEventListener('change', async e=>{ const file=e.target.files && e.target.files[0]; if(!file)return; try{ stopAll(); setStatus('音源を読み込んでいます...<br>MP4/MOVなどの動画は、必要に応じてWaveCut方式で音声だけ取り込みます。'); karaokeBuffer=await decodeFile(file); hasUserChanges=true; els.fileName.textContent=`${file.name} / ${fmtTime(karaokeBuffer.duration)}`; updateButtons(); redraw(); setStatus('読み込み完了。イヤホンを付けて「歌を録音」を押してください。'); }catch(err){ updateButtons(); setStatus(escapeHtml(err.message)); } });
+els.fileInput.addEventListener('change', async e=>{
+  const file=e.target.files && e.target.files[0];
+  if(!file) return;
+  stopAll();
+  els.fileName.textContent=`選択済み：${file.name}`;
+  setLoadStatus('ファイルを選択しました。読み込み準備中です...<br>動画ファイルの場合は、WaveCut方式の取り込み操作が下に表示されます。');
+  try{
+    karaokeBuffer=await decodeFile(file);
+    hasUserChanges=true;
+    els.fileName.textContent=`${file.name} / ${fmtTime(karaokeBuffer.duration)}`;
+    updateButtons();
+    redraw();
+    setLoadStatus('読み込み完了。イヤホンを付けて「歌を録音」を押してください。','');
+  }catch(err){
+    console.error(err);
+    updateButtons();
+    setLoadStatus('読み込みに失敗しました：<br>'+escapeHtml(err.message),'');
+  }finally{
+    els.fileInput.value='';
+  }
+});
 if(els.sourceRecordBtn) els.sourceRecordBtn.addEventListener('click', startKaraokeSourceRecording);
 if(els.sourceStopBtn) els.sourceStopBtn.addEventListener('click', stopKaraokeSourceRecording);
 els.refreshMicBtn.addEventListener('click', loadMicDevices);
