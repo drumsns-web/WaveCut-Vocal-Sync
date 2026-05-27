@@ -543,29 +543,7 @@ audio{width:100%;margin:8px 0}
 }
 .monitor-bar-label{font-size:11px;color:var(--muted);white-space:nowrap;}
 .monitor-bar select{width:auto;padding:5px 8px;font-size:11px;border-radius:9px;margin:0;}
-.track-btns{display:flex;gap:4px;margin:5px 0 4px;flex-wrap:wrap;}
-.track-btn-load{
-  display:inline-flex;align-items:center;justify-content:center;
-  padding:5px 9px;border-radius:9px;font-size:11px;font-weight:800;color:#fff;cursor:pointer;
-  background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,0) 45%),linear-gradient(180deg,#334155,#1f2937);
-  border:1px solid rgba(255,255,255,.18);box-shadow:0 4px 0 rgba(0,0,0,.28);
-  -webkit-tap-highlight-color:transparent;user-select:none;
-}
-.track-btn-rec{
-  padding:5px 9px !important;margin:0 !important;font-size:11px !important;border-radius:9px !important;min-height:0 !important;
-  background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 45%),linear-gradient(180deg,#f87171,#dc2626 60%,#991b1b) !important;
-  border-color:rgba(252,165,165,.40) !important;box-shadow:0 4px 0 rgba(0,0,0,.22) !important;color:#fff !important;
-}
-.track-btn-rec:disabled{
-  opacity:.4 !important;
-}
-.track-btn-stop-rec{padding:5px 9px !important;margin:0 !important;font-size:11px !important;border-radius:9px !important;min-height:0 !important;}
-.track-btn-delete{
-  padding:4px 8px !important;margin:3px 0 0 !important;font-size:10px !important;
-  border-radius:8px !important;min-height:0 !important;width:100% !important;
-  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,0) 45%),linear-gradient(180deg,#3b3f50,#252936) !important;
-  color:rgba(248,113,113,.85) !important;border-color:rgba(248,113,113,.28) !important;
-}
+/* 旧トラックボタンCSSは新定義に統合のため削除 */
 .track-play-row{display:flex;align-items:center;gap:5px;margin:2px 0;}
 .track-play-row .track-solo-btn{
   padding:5px 10px !important;font-size:14px !important;min-height:0 !important;width:auto !important;flex-shrink:0;
@@ -715,7 +693,7 @@ audio{width:100%;margin:8px 0}
 /* ─── トラック新レイアウト ─── */
 .track-lane{
   display:grid;
-  grid-template-columns:96px 1fr !important; /* サイド左・波形右 */
+  grid-template-columns:96px 1fr !important; /* サイド左96px・波形右 */
   gap:0 !important;
   padding:0 !important;
   border-radius:14px;
@@ -806,20 +784,25 @@ audio{width:100%;margin:8px 0}
 .track-lane.recording .track-rec-badge{opacity:1;animation:recblink 1s infinite;}
 @keyframes recblink{0%,100%{opacity:1}50%{opacity:.2}}
 .track-lane-sub{font-size:9px;color:var(--muted);line-height:1.2;word-break:break-all;}
-.track-btns{display:flex;gap:3px;flex-wrap:wrap;}
+.track-btns{display:flex;gap:6px;flex-wrap:nowrap;justify-content:center;align-items:center;width:100%;}
 .track-btn-load{
   display:inline-flex;align-items:center;justify-content:center;
-  width:34px;height:34px;border-radius:9px;font-size:18px;cursor:pointer;
+  width:34px;height:34px;box-sizing:border-box;
+  border-radius:9px;font-size:18px;line-height:1;cursor:pointer;
+  padding:0 !important;margin:0 !important;min-height:0 !important;
   background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.04));
   border:1px solid rgba(255,255,255,.22);
   color:#facc15;-webkit-tap-highlight-color:transparent;user-select:none;
-  font-weight:700;
+  font-weight:700;flex-shrink:0;
 }
 .track-btn-rec{
-  width:34px;height:34px;border-radius:9px;font-size:14px;padding:0 !important;
-  margin:0 !important;min-height:0 !important;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:34px;height:34px;box-sizing:border-box;
+  border-radius:9px;font-size:18px;line-height:1;cursor:pointer;
+  padding:0 !important;margin:0 !important;min-height:0 !important;
   background:linear-gradient(180deg,#f87171,#dc2626 60%,#991b1b) !important;
-  border-color:rgba(252,165,165,.4) !important;color:#fff !important;
+  border:1px solid rgba(252,165,165,.4) !important;color:#fff !important;
+  font-weight:700;flex-shrink:0;
 }
 .track-btn-stop-rec{
   width:34px;height:34px;border-radius:9px;font-size:14px;
@@ -1028,6 +1011,18 @@ audio{width:100%;margin:8px 0}
 }
 [data-track="main"].teb-quick-label{ opacity:.32; }
 
+/* 録音ボタンが録音中は停止ボタンに変身 */
+.track-btn-rec.recording{
+  background:linear-gradient(180deg,#fca5a5,#ef4444 60%,#b91c1c) !important;
+  animation:recPulse 1s ease-in-out infinite;
+  box-shadow:0 0 0 0 rgba(239,68,68,.6) !important;
+}
+@keyframes recPulse{
+  0%   { box-shadow:0 0 0 0 rgba(239,68,68,.7); }
+  70%  { box-shadow:0 0 0 8px rgba(239,68,68,0); }
+  100% { box-shadow:0 0 0 0 rgba(239,68,68,0); }
+}
+
 </style>
 </head>
 <body>
@@ -1122,7 +1117,6 @@ audio{width:100%;margin:8px 0}
           <input id="fileInputMain" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
           <label for="fileInputMain" class="track-btn-load">📁</label>
           <button class="track-btn-rec" id="recMainBtn" title="録音開始">⏺</button>
-          <button class="track-btn-stop-rec" id="stopMainBtn" disabled title="録音停止">⏹</button>
         </div>
         <div class="track-vol-row">
           <button class="vol-btn" id="volBtnMain" data-track="main">🔊<span id="trackVolumeMainLabel">100</span></button>
@@ -1207,7 +1201,6 @@ audio{width:100%;margin:8px 0}
           <input id="fileInputTake" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
           <label for="fileInputTake" class="track-btn-load">📁</label>
           <button class="track-btn-rec" id="recTakeBtn" title="録音開始">⏺</button>
-          <button class="track-btn-stop-rec" id="stopTakeBtn" disabled title="録音停止">⏹</button>
         </div>
         <div class="track-vol-row">
           <button class="vol-btn" id="volBtnTake" data-track="take">🔊<span id="trackVolumeTakeLabel">100</span></button>
@@ -1311,7 +1304,6 @@ audio{width:100%;margin:8px 0}
           <input id="fileInputChorus" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
           <label for="fileInputChorus" class="track-btn-load">📁</label>
           <button class="track-btn-rec" id="recChorusBtn" title="録音開始">⏺</button>
-          <button class="track-btn-stop-rec" id="stopChorusBtn" disabled title="録音停止">⏹</button>
         </div>
         <div class="track-vol-row">
           <button class="vol-btn" id="volBtnChorus" data-track="chorus">🔊<span id="trackVolumeChorusLabel">100</span></button>
@@ -2593,18 +2585,36 @@ function stopTrackRecording(track){
 }
 
 function setTrackRecordingUI(track, isRec){
-  const recBtn  = track==="take"?recTakeBtn :track==="chorus"?recChorusBtn :recMainBtn;
-  const stopBtn_ = track==="take"?stopTakeBtn:track==="chorus"?stopChorusBtn:stopMainBtn;
-  if(recBtn)  recBtn.disabled  = isRec;
-  if(stopBtn_) stopBtn_.disabled = !isRec;
+  const recBtn = track==="take"?recTakeBtn :track==="chorus"?recChorusBtn :recMainBtn;
+  if(!recBtn) return;
+  // 録音中：⏹（停止アイコン）に変身、グレー系の色＋脈動アニメーション
+  // 停止中：⏺（録音アイコン）に戻す
+  recBtn.innerHTML = isRec ? "⏹" : "⏺";
+  recBtn.title = isRec ? "録音停止" : "録音開始";
+  recBtn.classList.toggle("recording", isRec);
+  // ボタン自体は常に有効（録音中は停止アクションになる）
+  recBtn.disabled = false;
+  // レーン全体にも recording-live クラスを付与/解除
+  const lane = document.getElementById("lane" + (track.charAt(0).toUpperCase()+track.slice(1)));
+  if(lane){
+    lane.classList.toggle("recording", isRec);
+    lane.classList.toggle("recording-live", isRec);
+  }
 }
 
-if(recMainBtn)   recMainBtn.onclick   = ()=> startTrackRecording("main");
-if(recTakeBtn)   recTakeBtn.onclick   = ()=> startTrackRecording("take");
-if(recChorusBtn) recChorusBtn.onclick = ()=> startTrackRecording("chorus");
-if(stopMainBtn)   stopMainBtn.onclick   = ()=> stopTrackRecording("main");
-if(stopTakeBtn)   stopTakeBtn.onclick   = ()=> stopTrackRecording("take");
-if(stopChorusBtn) stopChorusBtn.onclick = ()=> stopTrackRecording("chorus");
+function toggleTrackRecording(track){
+  // 録音中なら停止、そうでなければ開始
+  if(mediaRecorder && mediaRecorder.state === "recording"){
+    stopTrackRecording(track);
+  } else {
+    startTrackRecording(track);
+  }
+}
+if(recMainBtn)   recMainBtn.onclick   = ()=> toggleTrackRecording("main");
+if(recTakeBtn)   recTakeBtn.onclick   = ()=> toggleTrackRecording("take");
+if(recChorusBtn) recChorusBtn.onclick = ()=> toggleTrackRecording("chorus");
+// 旧stopBtn参照は無効化（HTMLから削除済み）
+// stopChorusBtn 廃止
 
 
 
@@ -5464,13 +5474,27 @@ function stopTrackPlayback(){
   drawStackedTimelines();
 }
 
-function startTrackPlaybackHeadAnimation(){
+function startTrackPlaybackHeadAnimation(trackHint){
   if(trackPlaybackRaf) cancelAnimationFrame(trackPlaybackRaf);
+  // 再生開始時の各トラックの初期 playheadRatio を記録
+  const initial = {
+    main:   trackState.main   ? trackState.main.playheadRatio   : 0,
+    take:   trackState.take   ? trackState.take.playheadRatio   : 0,
+    chorus: trackState.chorus ? trackState.chorus.playheadRatio : 0,
+  };
   const tick = ()=>{
     if(!audioContext || trackPlaybackNodes.length === 0) return;
     const elapsed = audioContext.currentTime - trackPlaybackStartAt;
-    // ミニ波形のプレイヘッドを更新するためdrawStackedTimelinesを呼ぶ
-    // playheadRatio相当をtrackPlayback専用で更新
+    // 各トラックのプレイヘッドを進める（バッファがあるトラック分だけ）
+    ['main','take','chorus'].forEach(tr=>{
+      const buf = bufferForTrack(tr);
+      if(!buf) return;
+      const st = getTrackState(tr);
+      // trackHintが指定されていればそのトラックだけ更新（単独再生用）
+      if(trackHint && tr !== trackHint) return;
+      const newRatio = Math.min(1, initial[tr] + (elapsed / buf.duration));
+      st.playheadRatio = newRatio;
+    });
     drawStackedTimelines();
     if(elapsed < trackPlaybackDuration + 0.15){
       trackPlaybackRaf = requestAnimationFrame(tick);
@@ -6233,6 +6257,8 @@ function switchActiveBufferTo(track){
     trackPlaybackNodes = [src];
     trackPlaybackStartAt = startAt;
     trackPlaybackDuration = buf.duration - startInBuf;
+    // プレイヘッドアニメーション開始（このトラックだけ）
+    startTrackPlaybackHeadAnimation(track);
     if(fileStatus) fileStatus.textContent = `▶ ${track==='main'?'カラオケ':track==='take'?'ボーカル':'コーラス'} 再生中...`;
     const remain = (buf.duration - startInBuf + 0.25) * 1000;
     setTimeout(()=>{
