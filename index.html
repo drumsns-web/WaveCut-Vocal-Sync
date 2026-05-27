@@ -686,8 +686,15 @@ audio{width:100%;margin:8px 0}
 }
 .vol-marks{
   width:100%;display:flex;justify-content:space-between;
-  font-size:10px;font-family:ui-monospace,monospace;color:#475569;
+  font-size:10px;font-family:ui-monospace,monospace;color:#64748b;
   padding:0 2px;
+}
+.vol-marks .sub{ color:#334155; font-size:9px; }
+.vol-marks .bold{ color:#35e0a1; font-weight:700; }
+/* スナップ中の数値表示 */
+.vol-big-value.snap{
+  color:#fbbf24;
+  text-shadow:0 0 28px rgba(251,191,36,.55);
 }
 
 /* ─── トラック新レイアウト ─── */
@@ -1563,7 +1570,7 @@ audio{width:100%;margin:8px 0}
     <div class="vol-big-value" id="volBigValue">100</div>
     <input class="vol-big-slider" id="volBigSlider" type="range" min="0" max="150" step="1" value="100">
     <div class="vol-marks">
-      <span>0</span><span>50</span><span>100</span><span>150</span>
+      <span>0</span><span class="sub">25</span><span>50</span><span class="sub">75</span><span class="bold">100</span><span class="sub">125</span><span>150</span>
     </div>
   </div>
 </div>
@@ -1610,6 +1617,8 @@ let trackPlaybackNodes = [];
 let trackPlaybackRaf = null;
 let trackPlaybackStartAt = 0;
 let trackPlaybackDuration = 0;
+// 再生中のゲインノードを track別に保持 → 音量スライダーでリアルタイム反映
+let trackPlaybackGains = { main:null, take:null, chorus:null };
 let micAnalyser = null;
 let micLevelSource = null;
 let micLevelAnimationId = null;
@@ -5334,6 +5343,8 @@ function setupTrackEditBar(track){
     const startAt = audioContext.currentTime + 0.05;
     src.start(startAt, startInBuf);
     trackPlaybackNodes = [src];
+    trackPlaybackGains = { main:null, take:null, chorus:null };
+    trackPlaybackGains[track] = gain;
     trackPlaybackStartAt = startAt;
     trackPlaybackDuration = buf.duration - startInBuf;
     fileStatus.textContent = `▶ ${track === "main" ? "カラオケ" : track === "take" ? "ボーカル" : "コーラス"} 再生中...`;
@@ -5469,8 +5480,8 @@ function setTrackBuffer(track, buf){
 function stopTrackPlayback(){
   trackPlaybackNodes.forEach(n=>{ try{ n.stop(); }catch(_){} });
   trackPlaybackNodes = [];
+  trackPlaybackGains = { main:null, take:null, chorus:null };
   if(trackPlaybackRaf){ cancelAnimationFrame(trackPlaybackRaf); trackPlaybackRaf = null; }
-  // ミニ波形のプレイヘッドをリセット
   drawStackedTimelines();
 }
 
@@ -5527,6 +5538,7 @@ async function playBuffersDirectly(trackDefs, label){
   const baseAt = audioContext.currentTime + 0.08;
   let maxDur = 0;
   const nodes = [];
+  trackPlaybackGains = { main:null, take:null, chorus:null };
 
   for(const def of trackDefs){
     if(!def.buffer) continue;
@@ -5543,6 +5555,8 @@ async function playBuffersDirectly(trackDefs, label){
     src.connect(gain);
     src.start(startAt, startOffset);
     nodes.push(src);
+    // track識別子があればgainを保存（リアルタイム反映用）
+    if(def.track) trackPlaybackGains[def.track] = gain;
 
     const endTime = offsetSec + def.buffer.duration;
     if(endTime > maxDur) maxDur = endTime;
@@ -5593,11 +5607,11 @@ if(trackStackPlayBtn){
     syncMultiAndTrackChecks();
     const defs = [];
     if(trackSelectMain && trackSelectMain.checked && mainBuffer)
-      defs.push({buffer: mainBuffer, volume: getTrackVolume("main"), offsetMs: 0});
+      defs.push({track:"main", buffer: mainBuffer, volume: getTrackVolume("main"), offsetMs: 0});
     if(trackSelectTake && trackSelectTake.checked && takeBuffer)
-      defs.push({buffer: takeBuffer, volume: getTrackVolume("take"), offsetMs: takeOffsetMs});
+      defs.push({track:"take", buffer: takeBuffer, volume: getTrackVolume("take"), offsetMs: takeOffsetMs});
     if(trackSelectChorus && trackSelectChorus.checked && chorusBuffer)
-      defs.push({buffer: chorusBuffer, volume: getTrackVolume("chorus"), offsetMs: chorusOffsetMs});
+      defs.push({track:"chorus", buffer: chorusBuffer, volume: getTrackVolume("chorus"), offsetMs: chorusOffsetMs});
     if(!defs.length) return;
     playBuffersDirectly(defs, "▶ 選択トラックを同時再生中...");
   };
@@ -5605,9 +5619,9 @@ if(trackStackPlayBtn){
 if(trackAllPlayBtn){
   trackAllPlayBtn.onclick = ()=>{
     const defs = [];
-    if(mainBuffer) defs.push({buffer: mainBuffer, volume: getTrackVolume("main"), offsetMs: 0});
-    if(takeBuffer) defs.push({buffer: takeBuffer, volume: getTrackVolume("take"), offsetMs: takeOffsetMs});
-    if(chorusBuffer) defs.push({buffer: chorusBuffer, volume: getTrackVolume("chorus"), offsetMs: chorusOffsetMs});
+    if(mainBuffer) defs.push({track:"main", buffer: mainBuffer, volume: getTrackVolume("main"), offsetMs: 0});
+    if(takeBuffer) defs.push({track:"take", buffer: takeBuffer, volume: getTrackVolume("take"), offsetMs: takeOffsetMs});
+    if(chorusBuffer) defs.push({track:"chorus", buffer: chorusBuffer, volume: getTrackVolume("chorus"), offsetMs: chorusOffsetMs});
     if(!defs.length) return;
     playBuffersDirectly(defs, "▶ 全トラックを再生中...");
   };
@@ -6041,9 +6055,23 @@ document.addEventListener("keydown", (e) => {
     }, 220);
   }
 
+  // 引っかかりポイント（±2の範囲に入ったらこの値にスナップ）
+  const SNAP_POINTS = [0, 25, 50, 75, 100, 125, 150];
+  const SNAP_RANGE = 2;
+  function applySnap(raw){
+    for(const sp of SNAP_POINTS){
+      if(Math.abs(raw - sp) <= SNAP_RANGE) return sp;
+    }
+    return raw;
+  }
   slider.addEventListener("input", ()=>{
-    const v = Number(slider.value);
+    const raw = Number(slider.value);
+    const v = applySnap(raw);
+    // スナップが効いた場合はスライダーの値も補正
+    const snapped = (v !== raw);
+    if(snapped) slider.value = v;
     bigVal.textContent = v;
+    bigVal.classList.toggle("snap", snapped);
     if(!currentTrack) return;
     const inp   = document.getElementById("trackVolume"+cap(currentTrack));
     const label = document.getElementById("trackVolume"+cap(currentTrack)+"Label");
@@ -6051,6 +6079,13 @@ document.addEventListener("keydown", (e) => {
     if(inp)   inp.value = v;
     if(label) label.textContent = v;
     if(btn){ const sp=btn.querySelector("span"); if(sp) sp.textContent=v; }
+    // 再生中のゲインノードへ即時反映
+    if(trackPlaybackGains && trackPlaybackGains[currentTrack] && audioContext){
+      try{
+        const g = trackPlaybackGains[currentTrack];
+        g.gain.setTargetAtTime(v/100, audioContext.currentTime, 0.015);
+      }catch(e){}
+    }
   });
 
   ["main","take","chorus"].forEach(track=>{
