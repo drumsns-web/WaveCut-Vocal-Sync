@@ -590,49 +590,39 @@ audio{width:100%;margin:8px 0}
 
 
 
-/* v16: 横並びコンパクトレイアウト */
+/* v15: 各トラックの再生ボタンを見つけやすくする */
 .track-lane{
-  grid-template-columns:110px 1fr !important;
-  gap:8px !important;
+  grid-template-columns:1fr !important;
+  gap:10px !important;
   align-items:stretch !important;
-  padding:7px 8px !important;
 }
 .track-lane-side{
-  display:flex !important;
-  flex-direction:column !important;
-  gap:5px !important;
-  min-width:0 !important;
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:8px !important;
 }
 .track-lane-side > div:first-child{
   display:flex;
-  flex-direction:column;
-  gap:2px;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
 }
 .track-lane-pill{
   width:auto !important;
-  align-self:flex-start !important;
-  padding:3px 6px !important;
-  font-size:9px !important;
-}
-.track-lane-name{
-  font-size:12px !important;
-}
-.track-lane-sub{
-  font-size:10px !important;
+  align-self:flex-start;
 }
 .track-action-row{
-  display:flex;
-  flex-direction:column;
-  gap:4px;
+  display:grid;
+  grid-template-columns:2fr 1fr;
+  gap:8px;
   width:100%;
 }
 .track-action-row button{
-  min-height:32px !important;
-  padding:5px 6px !important;
+  min-height:42px !important;
   margin:0 !important;
-  border-radius:10px !important;
-  font-size:11px !important;
-  font-weight:800 !important;
+  border-radius:12px !important;
+  font-size:13px !important;
+  font-weight:900 !important;
 }
 .track-solo-btn{
   width:100% !important;
@@ -648,34 +638,28 @@ audio{width:100%;margin:8px 0}
 .track-mixer{
   background:rgba(255,255,255,.035);
   border:1px solid rgba(255,255,255,.075);
-  border-radius:10px;
-  padding:6px;
+  border-radius:12px;
+  padding:8px;
   margin-top:0 !important;
 }
 .track-mixer-row{
-  grid-template-columns:36px 1fr 44px !important;
-  font-size:10px !important;
-  gap:4px !important;
-}
-.track-mixer-row strong{
-  font-size:10px;
+  grid-template-columns:48px 1fr 56px !important;
 }
 .track-select-row{
-  justify-content:flex-start;
-}
-.track-select-row label{
-  font-size:10px !important;
+  justify-content:space-between;
 }
 .track-wave-wrap{
-  height:90px !important;
+  height:94px !important;
 }
 .track-wave-canvas{
-  height:90px !important;
+  height:94px !important;
 }
-@media(max-width:480px){
-  .track-lane{grid-template-columns:90px 1fr !important;padding:6px !important;}
-  .track-lane-name{font-size:11px !important;}
-  .track-wave-wrap,.track-wave-canvas{height:78px !important;}
+@media(max-width:640px){
+  .track-lane{grid-template-columns:1fr !important;padding:9px !important;}
+  .track-lane-side > div:first-child{display:flex;align-items:flex-start;justify-content:space-between;}
+  .track-action-row{grid-template-columns:1.8fr 1fr;}
+  .track-action-row button{min-height:44px !important;font-size:13px !important;}
+  .track-wave-wrap,.track-wave-canvas{height:92px !important;}
   .track-mini-controls{grid-template-columns:1fr 1fr !important;}
 }
 
@@ -719,6 +703,16 @@ audio{width:100%;margin:8px 0}
     <option value="1">モノラル</option>
     <option value="2" selected>ステレオ</option>
   </select>
+
+  <label>音声出力先（再生・モニター用）</label>
+  <select id="audioOutputSelect">
+    <option value="">デフォルト（システム設定に従う）</option>
+  </select>
+  <div class="row">
+    <button id="refreshOutputBtn">出力デバイス一覧を更新</button>
+    <button id="applyOutputBtn" class="primary">出力先を適用</button>
+  </div>
+  <div id="outputStatus" class="info">MV7などUSB-Cマイクを接続するとスピーカー出力が切り替わる場合があります。ここでPCスピーカーなど出力先を固定できます。</div>
 </section>
 
 <section class="card">
@@ -1100,6 +1094,7 @@ let micLevelData = null;
 let recordingWaveTrack = null;
 let liveRecordingSamples = [];
 const LIVE_RECORDING_HISTORY = 4096;
+let preferredSinkId = ""; // ユーザーが選んだ出力デバイスID
 
 const micSelect = document.getElementById("micSelect");
 const refreshMicBtn = document.getElementById("refreshMicBtn");
@@ -1107,6 +1102,10 @@ const micOnBtn = document.getElementById("micOnBtn");
 const micOffBtn = document.getElementById("micOffBtn");
 const micStatus = document.getElementById("micStatus");
 const channelSelect = document.getElementById("channelSelect");
+const audioOutputSelect = document.getElementById("audioOutputSelect");
+const refreshOutputBtn = document.getElementById("refreshOutputBtn");
+const applyOutputBtn = document.getElementById("applyOutputBtn");
+const outputStatus = document.getElementById("outputStatus");
 const recordTarget = document.getElementById("recordTarget");
 const fileTarget = document.getElementById("fileTarget");
 const modeLabel = document.getElementById("modeLabel");
@@ -1219,6 +1218,72 @@ const trackCheckLabelChorus = document.getElementById("trackCheckLabelChorus");
 
 function ensureAudioContext(){
   if(!audioContext) audioContext = new AudioContext();
+}
+
+async function applyAudioOutputSinkId(sinkId){
+  ensureAudioContext();
+  try{
+    if(typeof audioContext.setSinkId === "function"){
+      await audioContext.setSinkId(sinkId || "");
+      return true;
+    }
+    // setSinkId非対応ブラウザの場合はaudio要素側で対応
+    if(audioEl && typeof audioEl.setSinkId === "function"){
+      await audioEl.setSinkId(sinkId || "");
+    }
+    return false;
+  }catch(e){
+    console.warn("setSinkId failed:", e);
+    return false;
+  }
+}
+
+async function loadAudioOutputs(){
+  if(!audioOutputSelect) return;
+  try{
+    // 出力デバイスのラベルを得るには一度getUserMedia権限が必要
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const outputs = devices.filter(d => d.kind === "audiooutput");
+
+    const current = audioOutputSelect.value;
+    audioOutputSelect.innerHTML = "";
+
+    const defaultOpt = document.createElement("option");
+    defaultOpt.value = "";
+    defaultOpt.textContent = "デフォルト（システム設定に従う）";
+    audioOutputSelect.appendChild(defaultOpt);
+
+    outputs.forEach((device, index) => {
+      const opt = document.createElement("option");
+      opt.value = device.deviceId;
+      opt.textContent = device.label || `スピーカー ${index + 1}`;
+      audioOutputSelect.appendChild(opt);
+    });
+
+    // 以前選んだデバイスを復元
+    if(current && Array.from(audioOutputSelect.options).some(o => o.value === current)){
+      audioOutputSelect.value = current;
+    } else {
+      audioOutputSelect.value = preferredSinkId || "";
+    }
+
+    const supportsSetSinkId = (typeof AudioContext !== "undefined" && typeof AudioContext.prototype.setSinkId === "function")
+      || (audioEl && typeof audioEl.setSinkId === "function");
+
+    if(!supportsSetSinkId){
+      if(outputStatus) outputStatus.innerHTML =
+        `⚠️ このブラウザは出力デバイスの切り替えに対応していません。<br>` +
+        `Chrome / Edge での使用を推奨します。`;
+      if(applyOutputBtn) applyOutputBtn.disabled = true;
+    } else if(outputs.length === 0){
+      if(outputStatus) outputStatus.textContent = "出力デバイスが検出されませんでした。";
+    } else {
+      if(outputStatus) outputStatus.innerHTML =
+        `${outputs.length}件の出力デバイスを検出しました。選択後「出力先を適用」を押してください。`;
+    }
+  }catch(e){
+    if(outputStatus) outputStatus.textContent = "出力デバイスの取得に失敗しました: " + e.message;
+  }
 }
 
 function activeBuffer(){
@@ -1624,7 +1689,54 @@ refreshMicBtn.onclick = async()=>{
 window.addEventListener("load", ()=>{
   loadMics(false).catch(()=>{});
   updateMicStatus(false, "マイク：OFF（録音時に自動でONになります）");
+  loadAudioOutputs().catch(()=>{});
 });
+
+if(refreshOutputBtn){
+  refreshOutputBtn.onclick = async()=>{
+    await loadAudioOutputs();
+  };
+}
+
+if(applyOutputBtn){
+  applyOutputBtn.onclick = async()=>{
+    const sinkId = audioOutputSelect ? audioOutputSelect.value : "";
+    preferredSinkId = sinkId;
+    ensureAudioContext();
+    if(audioContext.state === "suspended"){
+      try{ await audioContext.resume(); }catch(e){}
+    }
+    const contextSupported = await applyAudioOutputSinkId(sinkId);
+
+    const label = audioOutputSelect
+      ? (audioOutputSelect.options[audioOutputSelect.selectedIndex]?.textContent || "デフォルト")
+      : "デフォルト";
+
+    if(outputStatus){
+      if(contextSupported){
+        outputStatus.innerHTML = `✅ 出力先を変更しました：<strong>${label}</strong><br>カラオケ再生・録音モニターがこのデバイスから出力されます。`;
+      } else {
+        // audio要素へのフォールバック試行
+        let elOk = false;
+        if(audioEl && typeof audioEl.setSinkId === "function"){
+          try{
+            await audioEl.setSinkId(sinkId || "");
+            elOk = true;
+          }catch(e){}
+        }
+        if(elOk){
+          outputStatus.innerHTML =
+            `✅ 再生プレイヤーの出力先を変更しました：<strong>${label}</strong><br>` +
+            `※ 録音モニター（AudioContext）はブラウザの制限で切り替えできない場合があります。`;
+        } else {
+          outputStatus.innerHTML =
+            `⚠️ 出力先の変更に対応していないか、権限がありません。<br>` +
+            `Chrome / Edge のご利用を推奨します。`;
+        }
+      }
+    }
+  };
+}
 
 
 function clearSelectionAndPreview(){
@@ -1743,6 +1855,10 @@ async function startKaraokePlaybackDuringRecord(){
   if(audioContext.state === "suspended"){
     try{ await audioContext.resume(); }catch(e){}
   }
+  // 出力先を選択済みの場合は再適用（AudioContextが再生成されていることがあるため）
+  if(preferredSinkId){
+    await applyAudioOutputSinkId(preferredSinkId).catch(()=>{});
+  }
   stopKaraokePlaybackDuringRecord();
   if(!mainBuffer) throw new Error("カラオケ音源がありません");
   const source = audioContext.createBufferSource();
@@ -1828,7 +1944,6 @@ recordBtn.onclick = async()=>{
   };
 
   mediaRecorder.start();
-  beginLiveRecordingWave(recordTarget.value);
 
   // ボーカル/コーラス録音時は、カラオケ音源を同時再生できる。
   // イヤホンなら歌声だけを録りやすく、スピーカーなら伴奏が薄く入り波形合わせの目印になる場合があります。
