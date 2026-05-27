@@ -590,39 +590,49 @@ audio{width:100%;margin:8px 0}
 
 
 
-/* v15: 各トラックの再生ボタンを見つけやすくする */
+/* v16: 横並びコンパクトレイアウト */
 .track-lane{
-  grid-template-columns:1fr !important;
-  gap:10px !important;
+  grid-template-columns:110px 1fr !important;
+  gap:8px !important;
   align-items:stretch !important;
+  padding:7px 8px !important;
 }
 .track-lane-side{
-  display:grid !important;
-  grid-template-columns:1fr !important;
-  gap:8px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:5px !important;
+  min-width:0 !important;
 }
 .track-lane-side > div:first-child{
   display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:8px;
+  flex-direction:column;
+  gap:2px;
 }
 .track-lane-pill{
   width:auto !important;
-  align-self:flex-start;
+  align-self:flex-start !important;
+  padding:3px 6px !important;
+  font-size:9px !important;
+}
+.track-lane-name{
+  font-size:12px !important;
+}
+.track-lane-sub{
+  font-size:10px !important;
 }
 .track-action-row{
-  display:grid;
-  grid-template-columns:2fr 1fr;
-  gap:8px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
   width:100%;
 }
 .track-action-row button{
-  min-height:42px !important;
+  min-height:32px !important;
+  padding:5px 6px !important;
   margin:0 !important;
-  border-radius:12px !important;
-  font-size:13px !important;
-  font-weight:900 !important;
+  border-radius:10px !important;
+  font-size:11px !important;
+  font-weight:800 !important;
 }
 .track-solo-btn{
   width:100% !important;
@@ -638,28 +648,34 @@ audio{width:100%;margin:8px 0}
 .track-mixer{
   background:rgba(255,255,255,.035);
   border:1px solid rgba(255,255,255,.075);
-  border-radius:12px;
-  padding:8px;
+  border-radius:10px;
+  padding:6px;
   margin-top:0 !important;
 }
 .track-mixer-row{
-  grid-template-columns:48px 1fr 56px !important;
+  grid-template-columns:36px 1fr 44px !important;
+  font-size:10px !important;
+  gap:4px !important;
+}
+.track-mixer-row strong{
+  font-size:10px;
 }
 .track-select-row{
-  justify-content:space-between;
+  justify-content:flex-start;
+}
+.track-select-row label{
+  font-size:10px !important;
 }
 .track-wave-wrap{
-  height:94px !important;
+  height:90px !important;
 }
 .track-wave-canvas{
-  height:94px !important;
+  height:90px !important;
 }
-@media(max-width:640px){
-  .track-lane{grid-template-columns:1fr !important;padding:9px !important;}
-  .track-lane-side > div:first-child{display:flex;align-items:flex-start;justify-content:space-between;}
-  .track-action-row{grid-template-columns:1.8fr 1fr;}
-  .track-action-row button{min-height:44px !important;font-size:13px !important;}
-  .track-wave-wrap,.track-wave-canvas{height:92px !important;}
+@media(max-width:480px){
+  .track-lane{grid-template-columns:90px 1fr !important;padding:6px !important;}
+  .track-lane-name{font-size:11px !important;}
+  .track-wave-wrap,.track-wave-canvas{height:78px !important;}
   .track-mini-controls{grid-template-columns:1fr 1fr !important;}
 }
 
@@ -1812,6 +1828,7 @@ recordBtn.onclick = async()=>{
   };
 
   mediaRecorder.start();
+  beginLiveRecordingWave(recordTarget.value);
 
   // ボーカル/コーラス録音時は、カラオケ音源を同時再生できる。
   // イヤホンなら歌声だけを録りやすく、スピーカーなら伴奏が薄く入り波形合わせの目印になる場合があります。
