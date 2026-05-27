@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>WaveCut Vocal Sync</title>
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<meta name="apple-mobile-web-app-title" content="WaveCut Vocal Sync">
+<meta name="application-name" content="WaveCut Vocal Sync">
+<meta name="theme-color" content="#08111f">
+<style>
+:root{
+  --bg:#07101f;--panel:#101827;--panel2:#172235;--panel3:#0c1423;
+  --text:#f8fafc;--muted:#94a3b8;--line:rgba(255,255,255,.12);
+  --green:#35e0a1;--blue:#4f8cff;--red:#ef4444;--orange:#f59e0b;--violet:#a78bfa;
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at 15% 0%,rgba(53,224,161,.18),transparent 28%),radial-gradient(circle at 85% 5%,rgba(79,140,255,.18),transparent 30%),linear-gradient(180deg,#08111f 0%,#070b14 68%,#05070d 100%);color:var(--text);}
+header{padding:18px 12px 8px;text-align:center}.logo{font-size:29px;font-weight:950;letter-spacing:.2px}.logo span{color:var(--green)}.sub{margin-top:4px;color:var(--muted);font-size:13px;line-height:1.45}main{max-width:960px;margin:auto;padding:10px 10px calc(24px + env(safe-area-inset-bottom))}.card{background:linear-gradient(180deg,rgba(16,24,39,.94),rgba(13,20,35,.88));border:1px solid var(--line);border-radius:22px;padding:14px;margin:12px 0;box-shadow:0 18px 44px rgba(0,0,0,.32);backdrop-filter:blur(12px)}.section-title{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:0 0 10px;font-size:14px;font-weight:900;color:#dbeafe}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:rgba(53,224,161,.12);color:var(--green);font-size:12px;white-space:nowrap}.pill.warn{background:rgba(245,158,11,.14);color:#fbbf24}.pill.blue{background:rgba(79,140,255,.13);color:#bfdbfe}.info{font-size:12.5px;color:var(--muted);line-height:1.65}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}label{display:block;margin:10px 0 5px;color:#cbd5e1;font-size:13px;font-weight:700}button,select,input{width:100%;border:none;border-radius:14px;font-size:15px}select,input[type="number"],input[type="text"]{padding:13px;background:#0f172a;color:#fff;border:1px solid var(--line)}input[type="range"]{accent-color:var(--green);width:100%}button{position:relative;padding:14px 12px;margin:5px 0;font-weight:900;color:#fff;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,0) 45%),linear-gradient(180deg,#334155,#1f2937);border:1px solid rgba(255,255,255,.18);box-shadow:0 8px 0 rgba(0,0,0,.28),0 14px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.18);transition:transform .12s ease,box-shadow .12s ease,filter .12s ease,border-color .12s ease}button:hover{filter:brightness(1.12);border-color:rgba(255,255,255,.32)}button:active{transform:translateY(5px) scale(.99);box-shadow:0 3px 0 rgba(0,0,0,.32),0 8px 16px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.16)}button:disabled{opacity:.36;cursor:not-allowed;filter:grayscale(.25);transform:none}.primary{background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 45%),linear-gradient(180deg,#60a5fa,#2563eb 60%,#1d4ed8);border-color:rgba(147,197,253,.45)}.green{background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 45%),linear-gradient(180deg,#4ade80,#16a34a 60%,#15803d);border-color:rgba(134,239,172,.45)}.red{background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 45%),linear-gradient(180deg,#f87171,#dc2626 60%,#991b1b);border-color:rgba(252,165,165,.45)}.orange{background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 45%),linear-gradient(180deg,#fbbf24,#f59e0b 60%,#b45309);border-color:rgba(253,230,138,.45)}.violet{background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 45%),linear-gradient(180deg,#a78bfa,#7c3aed 60%,#5b21b6);border-color:rgba(196,181,253,.45)}
+.file-hidden{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}.file-button{display:block;text-align:center;width:100%;padding:14px 12px;margin:6px 0;border-radius:14px;font-size:15px;font-weight:900;color:#fff;cursor:pointer;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 45%),linear-gradient(180deg,#334155,#1f2937);border:1px solid rgba(255,255,255,.18);box-shadow:0 8px 0 rgba(0,0,0,.28),0 14px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.18)}.file-name{font-size:12.5px;color:var(--muted);word-break:break-all;padding:2px 4px 8px}.sticky{position:sticky;top:0;z-index:20;margin-top:0}.transport{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.status{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;color:#dbeafe;background:rgba(79,140,255,.1);border:1px solid rgba(79,140,255,.24);border-radius:14px;padding:10px;line-height:1.55}.recLive{background:rgba(239,68,68,.11);border-color:rgba(239,68,68,.35);color:#fecaca;animation:pulse 1s infinite}@keyframes pulse{50%{opacity:.72}}.time{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:20px;font-weight:950;text-align:center}.time span{color:var(--green)}.count{font-size:36px;font-weight:1000;text-align:center;line-height:1.2;color:#fbbf24;min-height:48px}.wave-stack{display:grid;gap:8px}.track{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09);border-radius:18px;padding:10px}.track-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px}.track-name{font-size:13px;font-weight:900;color:#e2e8f0}.track-meta{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--muted)}.canvas-wrap{position:relative;border:1px solid rgba(255,255,255,.10);border-radius:16px;background:#020617;overflow:hidden;touch-action:none}.canvas-wrap canvas{display:block;width:100%;height:132px}.playhead{position:absolute;top:0;bottom:0;width:2px;background:#35e0a1;left:0;pointer-events:none;box-shadow:0 0 12px rgba(53,224,161,.6)}.zero-line{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.22);left:50%;pointer-events:none}.drag-hint{font-size:12px;color:var(--muted);line-height:1.5;margin-top:7px}.nudge-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}.nudge-grid button{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;padding:11px 2px;border-radius:12px}.mix-row{display:grid;grid-template-columns:1fr 90px;gap:9px;align-items:center}.small{font-size:12px;color:var(--muted);line-height:1.5}.sep{height:1px;background:rgba(255,255,255,.09);margin:12px 0}.meters{display:grid;grid-template-columns:1fr 1fr;gap:8px}.meter{height:12px;border-radius:999px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.06);overflow:hidden}.meter div{height:100%;width:0;background:linear-gradient(90deg,#35e0a1,#f59e0b,#ef4444);transition:width .06s linear}.footer{font-size:12px;color:var(--muted);line-height:1.65}.dangerText{color:#fecaca}.okText{color:#bbf7d0}.warnText{color:#fbbf24}@media(max-width:760px){main{padding-left:9px;padding-right:9px}.grid2,.grid3,.grid4,.transport,.meters{grid-template-columns:1fr 1fr}.nudge-grid{grid-template-columns:repeat(3,1fr)}.canvas-wrap canvas{height:118px}.logo{font-size:25px}button{min-height:48px}.sticky{top:0}}@media(max-width:420px){.transport,.grid2,.grid3,.grid4{grid-template-columns:1fr}.nudge-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Wave<span>Cut</span> Vocal Sync</div>
+  <div class="sub">カラオケ音源を聴きながら歌録り → 波形でズレ補正 → MIX保存</div>
+</header>
+<main>
+  <section class="card sticky">
+    <p class="section-title">Transport <span class="pill blue">おすすめ設定版</span></p>
+    <div class="transport">
+      <button id="recordBtn" class="red">● 歌を録音</button>
+      <button id="playMixBtn" class="primary">▶ MIX再生</button>
+      <button id="stopBtn">■ 停止</button>
+      <button id="exportBtn" class="green" disabled>⬇ MIX保存</button>
+    </div>
+    <div class="grid2">
+      <button id="playKaraokeBtn">▶ 伴奏だけ確認</button>
+      <button id="resetBtn" class="orange">初期状態にリセット</button>
+    </div>
+    <div id="countText" class="count"></div>
+    <div class="time">再生位置 <span id="timeText">00:00.000</span></div>
+    <div id="statusText" class="status">カラオケ音源を読み込んでください。録音時はイヤホン推奨です。</div>
+  </section>
+
+  <section class="card">
+    <p class="section-title">1. カラオケ音源 <span class="pill">Audio / Video</span></p>
+    <input id="fileInput" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.mp4,.mov,.webm" />
+    <label for="fileInput" class="file-button">カラオケ音源・動画を読み込む</label>
+    <div id="fileName" class="file-name">未選択</div>
+    <div class="info">
+      <b>推奨：</b>有線イヤホンで伴奏を聴きながら録音してください。スピーカー再生だと、伴奏がマイクに入り「歌声だけ録音」になりません。<br>
+      <b>注意：</b>MOVなど一部動画は端末・ブラウザ側で音声デコードできない場合があります。その場合は音声ファイル化してから読み込んでください。
+    </div>
+  </section>
+
+  <section class="card">
+    <p class="section-title">2. マイク・録音設定 <span class="pill warn">Mic OFF設計</span></p>
+    <label>入力マイク</label>
+    <select id="micSelect"></select>
+    <div class="grid2">
+      <button id="refreshMicBtn">マイク一覧更新</button>
+      <button id="micTestBtn">マイク許可テスト</button>
+    </div>
+    <div class="grid3">
+      <div>
+        <label>カウントイン</label>
+        <select id="countInSelect"><option value="4" selected>4拍</option><option value="2">2拍</option><option value="0">なし</option></select>
+      </div>
+      <div>
+        <label>BPM</label>
+        <input id="bpmInput" type="number" value="120" min="40" max="240" step="1" />
+      </div>
+      <div>
+        <label>録音後の初期補正</label>
+        <select id="initialOffsetSelect"><option value="-80" selected>-80ms 推奨</option><option value="-120">-120ms</option><option value="-50">-50ms</option><option value="0">0ms</option></select>
+      </div>
+    </div>
+    <div class="meters">
+      <div><div class="small">マイク入力</div><div class="meter"><div id="micMeter"></div></div></div>
+      <div><div class="small">MIX出力目安</div><div class="meter"><div id="mixMeter"></div></div></div>
+    </div>
+    <div class="info">マイクはページ表示中に常時ONにしません。録音開始時にON、停止後にOFFへ戻します。</div>
+  </section>
+
+  <section class="card">
+    <p class="section-title">3. 波形でズレ補正 <span class="pill blue">Vocal Sync</span></p>
+    <div class="wave-stack">
+      <div class="track">
+        <div class="track-head"><div class="track-name">Track 1：カラオケ音源</div><div id="karaokeMeta" class="track-meta">未読込</div></div>
+        <div class="canvas-wrap"><canvas id="karaokeCanvas"></canvas><div class="playhead" id="playhead1"></div></div>
+      </div>
+      <div class="track">
+        <div class="track-head"><div class="track-name">Track 2：歌声録音</div><div id="vocalMeta" class="track-meta">未録音</div></div>
+        <div id="vocalWrap" class="canvas-wrap"><canvas id="vocalCanvas"></canvas><div class="playhead" id="playhead2"></div></div>
+        <div class="drag-hint">歌声波形を左右にドラッグ、または下のボタンで補正。<b>歌が遅れて聞こえる → 左へ</b> / <b>歌が早い → 右へ</b></div>
+      </div>
+    </div>
+    <div class="sep"></div>
+    <div class="section-title">歌声のズレ補正 <span id="offsetText" class="pill">0ms</span></div>
+    <div class="nudge-grid">
+      <button data-nudge="-100">←100ms</button><button data-nudge="-50">←50ms</button><button data-nudge="-10">←10ms</button>
+      <button data-nudge="10">10ms→</button><button data-nudge="50">50ms→</button><button data-nudge="100">100ms→</button>
+    </div>
+    <div class="grid3">
+      <button data-nudge="-1">←1ms</button><button id="offsetZeroBtn">補正0に戻す</button><button data-nudge="1">1ms→</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <p class="section-title">4. MIX設定 <span class="pill">簡単ミキサー</span></p>
+    <div class="mix-row"><label>カラオケ音量</label><input id="karaokeGain" type="range" min="0" max="1.5" step="0.01" value="0.82"></div>
+    <div class="mix-row"><label>歌声音量</label><input id="vocalGain" type="range" min="0" max="2" step="0.01" value="1.08"></div>
+    <div class="mix-row"><label>歌声リバーブ</label><input id="reverbAmount" type="range" min="0" max="0.6" step="0.01" value="0.12"></div>
+    <div class="mix-row"><label>歌声ディレイ</label><input id="delayAmount" type="range" min="0" max="0.45" step="0.01" value="0.06"></div>
+    <div class="grid3">
+      <button id="presetDry">ナチュラル</button>
+      <button id="presetVocal" class="violet">歌向け</button>
+      <button id="saveVocalBtn" disabled>歌声だけ保存</button>
+    </div>
+    <div class="info">おすすめ初期値：伴奏82%、歌声108%、リバーブ12%、ディレイ6%、初期補正-80ms。録音後に波形と耳で微調整してください。</div>
+  </section>
+
+  <section class="card">
+    <p class="section-title">使い方 <span class="pill">Workflow</span></p>
+    <div class="footer">
+      1. カラオケ音源を読み込む → 2. イヤホンを付ける → 3. 「歌を録音」 → 4. MIX再生で確認 → 5. 歌声を左右に動かしてズレ補正 → 6. MIX保存。<br>
+      Bluetoothイヤホンは遅延が大きい場合があります。有線イヤホンの方が波形合わせが楽です。
+    </div>
+  </section>
+</main>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const els = {
+  fileInput:$('fileInput'), fileName:$('fileName'), micSelect:$('micSelect'), refreshMicBtn:$('refreshMicBtn'), micTestBtn:$('micTestBtn'),
+  recordBtn:$('recordBtn'), playMixBtn:$('playMixBtn'), playKaraokeBtn:$('playKaraokeBtn'), stopBtn:$('stopBtn'), exportBtn:$('exportBtn'), resetBtn:$('resetBtn'),
+  statusText:$('statusText'), countText:$('countText'), timeText:$('timeText'), karaokeCanvas:$('karaokeCanvas'), vocalCanvas:$('vocalCanvas'),
+  playhead1:$('playhead1'), playhead2:$('playhead2'), karaokeMeta:$('karaokeMeta'), vocalMeta:$('vocalMeta'), offsetText:$('offsetText'), offsetZeroBtn:$('offsetZeroBtn'),
+  karaokeGain:$('karaokeGain'), vocalGain:$('vocalGain'), reverbAmount:$('reverbAmount'), delayAmount:$('delayAmount'), countInSelect:$('countInSelect'), bpmInput:$('bpmInput'), initialOffsetSelect:$('initialOffsetSelect'),
+  presetDry:$('presetDry'), presetVocal:$('presetVocal'), saveVocalBtn:$('saveVocalBtn'), micMeter:$('micMeter'), mixMeter:$('mixMeter'), vocalWrap:$('vocalWrap')
+};
+let audioCtx = null;
+let karaokeBuffer = null;
+let vocalBuffer = null;
+let mediaStream = null;
+let recorder = null;
+let chunks = [];
+let currentSources = [];
+let playStartCtxTime = 0;
+let playStartTimeline = 0;
+let isPlaying = false;
+let rafId = null;
+let vocalOffset = 0; // seconds, negative means earlier
+let zoom = 1;
+let drag = {active:false, startX:0, startOffset:0};
+let micAnalyser = null;
+let micData = null;
+let meterRaf = null;
+
+function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+function fmtTime(sec){ sec = Math.max(0, sec||0); const m=Math.floor(sec/60); const s=Math.floor(sec%60); const ms=Math.floor((sec%1)*1000); return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(ms).padStart(3,'0')}`; }
+function setStatus(msg, cls=''){ els.statusText.className = 'status ' + cls; els.statusText.innerHTML = msg; }
+function duration(){ return Math.max(karaokeBuffer?karaokeBuffer.duration:0, vocalBuffer?(Math.max(0,vocalOffset)+vocalBuffer.duration):0); }
+function updateButtons(){ const hasK=!!karaokeBuffer, hasV=!!vocalBuffer; els.recordBtn.disabled=!hasK; els.playKaraokeBtn.disabled=!hasK; els.playMixBtn.disabled=!(hasK||hasV); els.exportBtn.disabled=!(hasK&&hasV); els.saveVocalBtn.disabled=!hasV; }
+async function loadMicDevices(){
+  try{
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const inputs = devices.filter(d=>d.kind==='audioinput');
+    els.micSelect.innerHTML = '';
+    if(!inputs.length){ const op=document.createElement('option'); op.textContent='既定のマイク'; op.value=''; els.micSelect.appendChild(op); return; }
+    inputs.forEach((d,i)=>{ const op=document.createElement('option'); op.value=d.deviceId; op.textContent=d.label || `マイク ${i+1}`; els.micSelect.appendChild(op); });
+  }catch(e){ els.micSelect.innerHTML='<option value="">マイク一覧を取得できません</option>'; }
+}
+async function getMicStream(){
+  stopMicStream();
+  const deviceId = els.micSelect.value;
+  const constraints = { audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false, ...(deviceId?{deviceId:{exact:deviceId}}:{}) } };
+  mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+  await loadMicDevices();
+  setupMicMeter(mediaStream);
+  return mediaStream;
+}
+function stopMicStream(){
+  if(mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; }
+  micAnalyser=null; micData=null; els.micMeter.style.width='0%'; if(meterRaf) cancelAnimationFrame(meterRaf); meterRaf=null;
+}
+function setupMicMeter(stream){
+  const ctx=ensureAudio();
+  const src=ctx.createMediaStreamSource(stream);
+  micAnalyser=ctx.createAnalyser(); micAnalyser.fftSize=1024; micData=new Uint8Array(micAnalyser.fftSize); src.connect(micAnalyser);
+  const loop=()=>{ if(!micAnalyser) return; micAnalyser.getByteTimeDomainData(micData); let sum=0; for(let i=0;i<micData.length;i++){ const v=(micData[i]-128)/128; sum+=v*v; } const rms=Math.sqrt(sum/micData.length); els.micMeter.style.width = Math.min(100, rms*420)+'%'; meterRaf=requestAnimationFrame(loop); };
+  loop();
+}
+async function decodeFile(file){
+  const ctx=ensureAudio();
+  const arr = await file.arrayBuffer();
+  try{ return await ctx.decodeAudioData(arr.slice(0)); }
+  catch(e){ throw new Error('このファイルはブラウザで音声として読み込めませんでした。音声ファイルに変換してから再読み込みしてください。'); }
+}
+function resizeCanvas(canvas){ const dpr=window.devicePixelRatio||1; const rect=canvas.getBoundingClientRect(); canvas.width=Math.max(320,Math.floor(rect.width*dpr)); canvas.height=Math.max(90,Math.floor(rect.height*dpr)); }
+function drawWave(canvas, buffer, opts={}){
+  resizeCanvas(canvas);
+  const ctx=canvas.getContext('2d'); const w=canvas.width,h=canvas.height; ctx.clearRect(0,0,w,h);
+  ctx.fillStyle='#020617'; ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=1; for(let i=1;i<4;i++){ const y=i*h/4; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+  ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.beginPath(); ctx.moveTo(0,h/2); ctx.lineTo(w,h/2); ctx.stroke();
+  if(!buffer){ ctx.fillStyle='rgba(255,255,255,.36)'; ctx.font=`${14*(window.devicePixelRatio||1)}px system-ui`; ctx.fillText(opts.empty||'音声なし',18,34); return; }
+  const data=buffer.getChannelData(0); const dur=duration() || buffer.duration; const dpr=window.devicePixelRatio||1;
+  let offsetSec = opts.offsetSec || 0; const samplesPerPx = Math.max(1, Math.floor((dur*buffer.sampleRate)/(w*zoom)));
+  ctx.strokeStyle = opts.color || '#35e0a1'; ctx.lineWidth = Math.max(1,dpr);
+  ctx.beginPath();
+  for(let x=0;x<w;x++){
+    const timelineSec=(x/w)*dur/zoom;
+    const bufferSec=timelineSec - offsetSec;
+    const center=h/2;
+    if(bufferSec<0 || bufferSec>buffer.duration){ if(x===0) ctx.moveTo(x,center); continue; }
+    const idx=Math.floor(bufferSec*buffer.sampleRate); let min=1,max=-1; const end=Math.min(data.length,idx+samplesPerPx);
+    for(let j=idx;j<end;j++){ const v=data[j]; if(v<min)min=v; if(v>max)max=v; }
+    const y1=(1+min)*h/2, y2=(1+max)*h/2; ctx.moveTo(x,y1); ctx.lineTo(x,y2);
+  }
+  ctx.stroke();
+  // time ticks
+  ctx.fillStyle='rgba(255,255,255,.45)'; ctx.font=`${11*dpr}px ui-monospace,monospace`;
+  for(let t=0;t<=dur;t+=Math.max(1, Math.ceil(dur/8))){ const x=(t/(dur/zoom))*w; if(x>=0&&x<=w) ctx.fillText(fmtTime(t).slice(0,5), x+4*dpr, 14*dpr); }
+}
+function redraw(){
+  drawWave(els.karaokeCanvas,karaokeBuffer,{color:'#4f8cff',empty:'カラオケ音源を読み込むと波形が出ます'});
+  drawWave(els.vocalCanvas,vocalBuffer,{color:'#35e0a1',offsetSec:vocalOffset,empty:'録音すると歌声波形が出ます'});
+  updateOffsetText(); updatePlayheads(0);
+}
+function updateMeta(){
+  els.karaokeMeta.textContent = karaokeBuffer ? `${fmtTime(karaokeBuffer.duration)} / ${karaokeBuffer.sampleRate}Hz` : '未読込';
+  els.vocalMeta.textContent = vocalBuffer ? `${fmtTime(vocalBuffer.duration)} / offset ${Math.round(vocalOffset*1000)}ms` : '未録音';
+}
+function updateOffsetText(){ els.offsetText.textContent = `${Math.round(vocalOffset*1000)}ms`; updateMeta(); }
+function updatePlayheads(t){ const dur=duration(); const p=dur?Math.max(0,Math.min(1,t/dur)):0; els.playhead1.style.left=(p*100)+'%'; els.playhead2.style.left=(p*100)+'%'; els.timeText.textContent=fmtTime(t); }
+function stopAll(){
+  currentSources.forEach(s=>{try{s.stop()}catch(e){}}); currentSources=[]; isPlaying=false; if(rafId) cancelAnimationFrame(rafId); rafId=null; updatePlayheads(0); els.mixMeter.style.width='0%';
+}
+function makeImpulse(ctx, seconds=1.2, decay=2.2){
+  const len=Math.floor(ctx.sampleRate*seconds); const buf=ctx.createBuffer(2,len,ctx.sampleRate);
+  for(let ch=0;ch<2;ch++){ const d=buf.getChannelData(ch); for(let i=0;i<len;i++){ d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay)*0.38; } }
+  return buf;
+}
+function connectVocalWithFx(ctx, source, dest, gainValue, reverbValue, delayValue){
+  const dry=ctx.createGain(); dry.gain.value=gainValue;
+  source.connect(dry); dry.connect(dest);
+  if(reverbValue>0.001){ const conv=ctx.createConvolver(); conv.buffer=makeImpulse(ctx); const rg=ctx.createGain(); rg.gain.value=gainValue*reverbValue; source.connect(conv); conv.connect(rg); rg.connect(dest); }
+  if(delayValue>0.001){ const delay=ctx.createDelay(1); delay.delayTime.value=0.24; const dg=ctx.createGain(); dg.gain.value=gainValue*delayValue; source.connect(delay); delay.connect(dg); dg.connect(dest); }
+}
+function playMix(onlyKaraoke=false){
+  const ctx=ensureAudio(); if(ctx.state==='suspended') ctx.resume(); stopAll();
+  const master=ctx.createGain(); master.gain.value=0.95; master.connect(ctx.destination);
+  const now=ctx.currentTime+0.05; currentSources=[];
+  if(karaokeBuffer){ const s=ctx.createBufferSource(); const g=ctx.createGain(); s.buffer=karaokeBuffer; g.gain.value=parseFloat(els.karaokeGain.value); s.connect(g); g.connect(master); s.start(now,0); currentSources.push(s); }
+  if(!onlyKaraoke && vocalBuffer){
+    const s=ctx.createBufferSource(); s.buffer=vocalBuffer; const gain=parseFloat(els.vocalGain.value); const startAt=now+Math.max(0,vocalOffset); const offsetInBuf=Math.max(0,-vocalOffset); connectVocalWithFx(ctx,s,master,gain,parseFloat(els.reverbAmount.value),parseFloat(els.delayAmount.value)); s.start(startAt,offsetInBuf); currentSources.push(s);
+  }
+  isPlaying=true; playStartCtxTime=ctx.currentTime; playStartTimeline=0; setStatus(onlyKaraoke?'伴奏だけ再生中です。':'MIX再生中です。波形と耳でズレを確認してください。');
+  const dur=onlyKaraoke&&karaokeBuffer?karaokeBuffer.duration:duration();
+  const loop=()=>{ if(!isPlaying)return; const t=ctx.currentTime-playStartCtxTime; updatePlayheads(t); els.mixMeter.style.width=(20+50*Math.abs(Math.sin(t*2)))+'%'; if(t>=dur+0.2){stopAll();return;} rafId=requestAnimationFrame(loop); };
+  loop();
+}
+async function countIn(){
+  const beats=parseInt(els.countInSelect.value,10)||0; if(!beats){ els.countText.textContent=''; return; }
+  const bpm=Math.max(40,Math.min(240,parseFloat(els.bpmInput.value)||120)); const interval=60000/bpm;
+  for(let i=beats;i>=1;i--){ els.countText.textContent=String(i); await beep(880,0.06); await sleep(interval-60); }
+  els.countText.textContent='REC'; setTimeout(()=>{ if(els.countText.textContent==='REC') els.countText.textContent=''; },600);
+}
+function sleep(ms){ return new Promise(r=>setTimeout(r,Math.max(0,ms))); }
+function beep(freq,dur){ return new Promise(r=>{ const ctx=ensureAudio(); const o=ctx.createOscillator(); const g=ctx.createGain(); o.frequency.value=freq; g.gain.value=0.08; o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime+dur); setTimeout(r,dur*1000); }); }
+async function startRecording(){
+  if(!karaokeBuffer){ setStatus('先にカラオケ音源を読み込んでください。',''); return; }
+  try{
+    stopAll(); const ctx=ensureAudio(); if(ctx.state==='suspended') await ctx.resume();
+    const stream=await getMicStream(); chunks=[];
+    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '');
+    recorder = new MediaRecorder(stream, mime?{mimeType:mime}:undefined);
+    recorder.ondataavailable = e => { if(e.data && e.data.size) chunks.push(e.data); };
+    recorder.onstop = async () => {
+      setStatus('録音を波形化しています...');
+      try{
+        const blob=new Blob(chunks,{type:chunks[0]?.type || mime || 'audio/webm'}); const arr=await blob.arrayBuffer(); vocalBuffer=await ensureAudio().decodeAudioData(arr);
+        vocalOffset=parseFloat(els.initialOffsetSelect.value)/1000 || 0; updateButtons(); redraw(); setStatus(`録音完了。初期補正 ${Math.round(vocalOffset*1000)}ms を入れました。MIX再生で確認してください。`,'');
+      }catch(e){ setStatus('録音データの読み込みに失敗しました：'+escapeHtml(e.message),''); }
+      stopMicStream(); document.body.classList.remove('recording'); els.recordBtn.textContent='● 歌を録音';
+    };
+    await countIn();
+    // play karaoke and record mic only
+    const ksrc=ctx.createBufferSource(); const kg=ctx.createGain(); ksrc.buffer=karaokeBuffer; kg.gain.value=parseFloat(els.karaokeGain.value); ksrc.connect(kg); kg.connect(ctx.destination); ksrc.start(); currentSources=[ksrc]; recorder.start(100); isPlaying=true; playStartCtxTime=ctx.currentTime; document.body.classList.add('recording'); els.recordBtn.textContent='■ 録音停止'; setStatus('録音中：イヤホンから伴奏を聴きながら歌ってください。マイクには歌声だけ入るのが理想です。','recLive');
+    const loop=()=>{ if(!isPlaying)return; const t=ctx.currentTime-playStartCtxTime; updatePlayheads(t); if(t>=karaokeBuffer.duration){ stopRecording(); return; } rafId=requestAnimationFrame(loop); }; loop();
+  }catch(e){ stopMicStream(); setStatus('マイク開始に失敗しました：'+escapeHtml(e.message)); }
+}
+function stopRecording(){
+  currentSources.forEach(s=>{try{s.stop()}catch(e){}}); currentSources=[]; isPlaying=false; if(rafId) cancelAnimationFrame(rafId); rafId=null;
+  if(recorder && recorder.state!=='inactive'){ recorder.stop(); } else { stopMicStream(); }
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function nudge(ms){ if(!vocalBuffer)return; vocalOffset += ms/1000; vocalOffset = Math.max(-10, Math.min(10, vocalOffset)); redraw(); }
+function canvasToOffsetDelta(dx){ const rect=els.vocalCanvas.getBoundingClientRect(); const dur=duration()||1; return (dx/rect.width)*dur/zoom; }
+function interleaveToWav(buffer){
+  const numCh=buffer.numberOfChannels, len=buffer.length, sr=buffer.sampleRate; const bytes=44+len*numCh*2; const ab=new ArrayBuffer(bytes); const v=new DataView(ab); let p=0;
+  function str(s){ for(let i=0;i<s.length;i++) v.setUint8(p++,s.charCodeAt(i)); } function u32(x){ v.setUint32(p,x,true); p+=4; } function u16(x){ v.setUint16(p,x,true); p+=2; }
+  str('RIFF'); u32(bytes-8); str('WAVE'); str('fmt '); u32(16); u16(1); u16(numCh); u32(sr); u32(sr*numCh*2); u16(numCh*2); u16(16); str('data'); u32(len*numCh*2);
+  const chans=[]; for(let ch=0;ch<numCh;ch++) chans.push(buffer.getChannelData(ch));
+  for(let i=0;i<len;i++){ for(let ch=0;ch<numCh;ch++){ let sample=Math.max(-1,Math.min(1,chans[ch][i])); v.setInt16(p, sample<0?sample*0x8000:sample*0x7fff, true); p+=2; } }
+  return new Blob([ab],{type:'audio/wav'});
+}
+async function renderMix(vocalOnly=false){
+  if(vocalOnly && !vocalBuffer) throw new Error('歌声がありません');
+  if(!vocalOnly && (!karaokeBuffer || !vocalBuffer)) throw new Error('カラオケ音源と歌声録音が必要です');
+  const sr=(karaokeBuffer||vocalBuffer).sampleRate; const lenSec=vocalOnly?vocalBuffer.duration:duration()+0.7; const offline=new OfflineAudioContext(2, Math.ceil(lenSec*sr), sr); const master=offline.createGain(); master.gain.value=0.95; master.connect(offline.destination);
+  if(!vocalOnly && karaokeBuffer){ const s=offline.createBufferSource(); const g=offline.createGain(); s.buffer=karaokeBuffer; g.gain.value=parseFloat(els.karaokeGain.value); s.connect(g); g.connect(master); s.start(0); }
+  if(vocalBuffer){ const s=offline.createBufferSource(); s.buffer=vocalBuffer; const startAt=vocalOnly?0:Math.max(0,vocalOffset); const off=vocalOnly?0:Math.max(0,-vocalOffset); connectVocalWithFx(offline,s,master,parseFloat(els.vocalGain.value),parseFloat(els.reverbAmount.value),parseFloat(els.delayAmount.value)); s.start(startAt,off); }
+  return await offline.startRendering();
+}
+function downloadBlob(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000); }
+function resetAll(){ stopAll(); stopMicStream(); karaokeBuffer=null; vocalBuffer=null; vocalOffset=0; els.fileInput.value=''; els.fileName.textContent='未選択'; updateButtons(); updateMeta(); redraw(); setStatus('初期状態に戻しました。カラオケ音源を読み込んでください。'); }
+// Events
+els.fileInput.addEventListener('change', async e=>{ const file=e.target.files && e.target.files[0]; if(!file)return; try{ setStatus('音源を読み込んでいます...'); karaokeBuffer=await decodeFile(file); els.fileName.textContent=`${file.name} / ${fmtTime(karaokeBuffer.duration)}`; updateButtons(); redraw(); setStatus('読み込み完了。イヤホンを付けて「歌を録音」を押してください。'); }catch(err){ setStatus(escapeHtml(err.message)); } });
+els.refreshMicBtn.addEventListener('click', loadMicDevices);
+els.micTestBtn.addEventListener('click', async()=>{ try{ await getMicStream(); setStatus('マイク許可OK。テスト後は自動でOFFに戻します。'); setTimeout(stopMicStream,1800); }catch(e){ setStatus('マイク許可に失敗しました：'+escapeHtml(e.message)); } });
+els.recordBtn.addEventListener('click',()=>{ if(recorder && recorder.state==='recording') stopRecording(); else startRecording(); });
+els.stopBtn.addEventListener('click',()=>{ if(recorder && recorder.state==='recording') stopRecording(); else stopAll(); });
+els.playMixBtn.addEventListener('click',()=>playMix(false));
+els.playKaraokeBtn.addEventListener('click',()=>playMix(true));
+els.exportBtn.addEventListener('click',async()=>{ try{ stopAll(); setStatus('MIXを書き出しています...'); const rendered=await renderMix(false); downloadBlob(interleaveToWav(rendered),'wavecut_vocal_sync_mix.wav'); setStatus('MIX保存を開始しました。'); }catch(e){ setStatus('保存に失敗しました：'+escapeHtml(e.message)); } });
+els.saveVocalBtn.addEventListener('click',async()=>{ try{ setStatus('歌声だけを書き出しています...'); const rendered=await renderMix(true); downloadBlob(interleaveToWav(rendered),'wavecut_vocal_only.wav'); setStatus('歌声だけの保存を開始しました。'); }catch(e){ setStatus('保存に失敗しました：'+escapeHtml(e.message)); } });
+els.resetBtn.addEventListener('click',()=>{ if(confirm('読み込んだ音源・録音・補正をリセットしますか？')) resetAll(); });
+document.querySelectorAll('[data-nudge]').forEach(btn=>btn.addEventListener('click',()=>nudge(parseFloat(btn.dataset.nudge))));
+els.offsetZeroBtn.addEventListener('click',()=>{ vocalOffset=0; redraw(); });
+els.presetDry.addEventListener('click',()=>{ els.karaokeGain.value=0.82; els.vocalGain.value=1.0; els.reverbAmount.value=0.02; els.delayAmount.value=0; setStatus('ナチュラル設定にしました。'); });
+els.presetVocal.addEventListener('click',()=>{ els.karaokeGain.value=0.82; els.vocalGain.value=1.08; els.reverbAmount.value=0.12; els.delayAmount.value=0.06; setStatus('歌向け設定にしました。'); });
+['karaokeGain','vocalGain','reverbAmount','delayAmount'].forEach(id=>els[id].addEventListener('input',()=>{ if(isPlaying){/* next playback reflects settings */} }));
+els.vocalWrap.addEventListener('pointerdown',e=>{ if(!vocalBuffer)return; drag.active=true; drag.startX=e.clientX; drag.startOffset=vocalOffset; els.vocalWrap.setPointerCapture(e.pointerId); });
+els.vocalWrap.addEventListener('pointermove',e=>{ if(!drag.active)return; vocalOffset=drag.startOffset+canvasToOffsetDelta(e.clientX-drag.startX); vocalOffset=Math.max(-10,Math.min(10,vocalOffset)); redraw(); });
+els.vocalWrap.addEventListener('pointerup',e=>{ drag.active=false; try{els.vocalWrap.releasePointerCapture(e.pointerId)}catch(_){} });
+els.vocalWrap.addEventListener('pointercancel',()=>{drag.active=false;});
+window.addEventListener('resize',()=>redraw());
+loadMicDevices(); updateButtons(); redraw();
+})();
+</script>
+</body>
+</html>
