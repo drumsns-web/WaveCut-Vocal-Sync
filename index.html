@@ -809,18 +809,20 @@ audio{width:100%;margin:8px 0}
 .track-btns{display:flex;gap:3px;flex-wrap:wrap;}
 .track-btn-load{
   display:inline-flex;align-items:center;justify-content:center;
-  width:25px;height:25px;border-radius:7px;font-size:12px;cursor:pointer;
-  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);
-  color:#cbd5e1;-webkit-tap-highlight-color:transparent;user-select:none;
+  width:34px;height:34px;border-radius:9px;font-size:18px;cursor:pointer;
+  background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.04));
+  border:1px solid rgba(255,255,255,.22);
+  color:#facc15;-webkit-tap-highlight-color:transparent;user-select:none;
+  font-weight:700;
 }
 .track-btn-rec{
-  width:25px;height:25px;border-radius:7px;font-size:12px;padding:0 !important;
+  width:34px;height:34px;border-radius:9px;font-size:14px;padding:0 !important;
   margin:0 !important;min-height:0 !important;
   background:linear-gradient(180deg,#f87171,#dc2626 60%,#991b1b) !important;
-  border-color:rgba(252,165,165,.35) !important;color:#fff !important;
+  border-color:rgba(252,165,165,.4) !important;color:#fff !important;
 }
 .track-btn-stop-rec{
-  width:25px;height:25px;border-radius:7px;font-size:12px;
+  width:34px;height:34px;border-radius:9px;font-size:14px;
   padding:0 !important;margin:0 !important;min-height:0 !important;
 }
 .track-btn-delete{
@@ -994,6 +996,38 @@ audio{width:100%;margin:8px 0}
 
 /* 波形ストレージのタイムライングリッドはJS側で実装 */
 
+/* ─── クイック移動ボタン（edit-bar内） ─── */
+.teb-btn.teb-quick-shift{
+  font-size:11px;font-weight:800;
+  width:auto;min-width:24px;padding:0 5px !important;
+}
+.teb-btn.teb-quick-shift.neg{
+  color:#fbbf24; border-color:rgba(251,191,36,.32) !important;
+}
+.teb-btn.teb-quick-shift.pos{
+  color:#60a5fa; border-color:rgba(96,165,250,.32) !important;
+}
+.teb-quick-label{
+  font-family:ui-monospace,monospace;
+  font-size:9px; font-weight:700;
+  color:#64748b; padding:0 4px;
+  min-width:34px; text-align:center;
+  background:rgba(255,255,255,.04);
+  border-radius:5px; border:1px solid rgba(255,255,255,.06);
+  height:22px; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.teb-quick-label.nonzero{
+  color:#fbbf24;
+  background:rgba(251,191,36,.12);
+  border-color:rgba(251,191,36,.3);
+}
+/* mainトラックのquick-shiftは無効化 */
+[data-track="main"].teb-quick-shift{
+  opacity:.32; cursor:not-allowed;
+}
+[data-track="main"].teb-quick-label{ opacity:.32; }
+
 </style>
 </head>
 <body>
@@ -1118,6 +1152,12 @@ audio{width:100%;margin:8px 0}
           <span class="teb-sep"></span>
           <button class="teb-btn teb-restart" id="tebRestartMain" data-track="main" title="最初に戻る">⏮</button>
           <span class="teb-sep"></span>
+          <button class="teb-btn teb-quick-shift neg" data-track="main" data-ms="-500" title="トラック全体を-500ms">⏪</button>
+          <button class="teb-btn teb-quick-shift neg" data-track="main" data-ms="-100" title="-100ms">‹</button>
+          <span class="teb-quick-label" id="quickOffsetLabelMain" data-track="main">±0</span>
+          <button class="teb-btn teb-quick-shift pos" data-track="main" data-ms="100"  title="+100ms">›</button>
+          <button class="teb-btn teb-quick-shift pos" data-track="main" data-ms="500"  title="トラック全体を+500ms">⏩</button>
+          <span class="teb-sep"></span>
           <button class="teb-btn teb-fx" id="fxToggleMain" title="エフェクト">FX</button>
           <button class="teb-btn teb-undo" id="tebUndoMain" title="元に戻す" disabled>↩</button>
         </div>
@@ -1196,6 +1236,12 @@ audio{width:100%;margin:8px 0}
           <button class="teb-btn teb-paste" id="tebPasteTake" title="カーソル位置へ貼り付け" disabled>⎙</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-restart" id="tebRestartTake" data-track="take" title="最初に戻る">⏮</button>
+          <span class="teb-sep"></span>
+          <button class="teb-btn teb-quick-shift neg" data-track="take" data-ms="-500" title="トラック全体を-500ms">⏪</button>
+          <button class="teb-btn teb-quick-shift neg" data-track="take" data-ms="-100" title="-100ms">‹</button>
+          <span class="teb-quick-label" id="quickOffsetLabelTake" data-track="take">±0</span>
+          <button class="teb-btn teb-quick-shift pos" data-track="take" data-ms="100"  title="+100ms">›</button>
+          <button class="teb-btn teb-quick-shift pos" data-track="take" data-ms="500"  title="トラック全体を+500ms">⏩</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-fx" id="fxToggleTake" title="エフェクト">FX</button>
           <button class="teb-btn teb-undo" id="tebUndoTake" title="元に戻す" disabled>↩</button>
@@ -1294,6 +1340,12 @@ audio{width:100%;margin:8px 0}
           <button class="teb-btn teb-paste" id="tebPasteChorus" title="カーソル位置へ貼り付け" disabled>⎙</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-restart" id="tebRestartChorus" data-track="chorus" title="最初に戻る">⏮</button>
+          <span class="teb-sep"></span>
+          <button class="teb-btn teb-quick-shift neg" data-track="chorus" data-ms="-500" title="トラック全体を-500ms">⏪</button>
+          <button class="teb-btn teb-quick-shift neg" data-track="chorus" data-ms="-100" title="-100ms">‹</button>
+          <span class="teb-quick-label" id="quickOffsetLabelChorus" data-track="chorus">±0</span>
+          <button class="teb-btn teb-quick-shift pos" data-track="chorus" data-ms="100"  title="+100ms">›</button>
+          <button class="teb-btn teb-quick-shift pos" data-track="chorus" data-ms="500"  title="トラック全体を+500ms">⏩</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-fx" id="fxToggleChorus" title="エフェクト">FX</button>
           <button class="teb-btn teb-undo" id="tebUndoChorus" title="元に戻す" disabled>↩</button>
@@ -4453,6 +4505,13 @@ function updateTrackLaneInfo(){
   if(playMainOnlyBtn) playMainOnlyBtn.disabled = !mainBuffer;
   if(playTakeOnlyBtn) playTakeOnlyBtn.disabled = !takeBuffer;
   if(playChorusOnlyBtn) playChorusOnlyBtn.disabled = !chorusBuffer;
+  // edit-bar の ▶ 再生ボタン
+  const tebMain = document.getElementById("tebPlayMain");
+  const tebTake = document.getElementById("tebPlayTake");
+  const tebChorus = document.getElementById("tebPlayChorus");
+  if(tebMain) tebMain.disabled = !mainBuffer;
+  if(tebTake) tebTake.disabled = !takeBuffer;
+  if(tebChorus) tebChorus.disabled = !chorusBuffer;
   if(trackSelectMain) trackSelectMain.disabled = !mainBuffer;
   if(trackSelectTake) trackSelectTake.disabled = !takeBuffer;
   if(trackSelectChorus) trackSelectChorus.disabled = !chorusBuffer;
@@ -5149,19 +5208,25 @@ drawMiniTrackWave = function(canvasEl, track, labelColor){
   else if(viewDur > 10)  gridInterval = 2;
   else if(viewDur > 4)   gridInterval = 1;
   else                   gridInterval = 0.5;
-  const firstGrid = Math.ceil(viewStartSec / gridInterval) * gridInterval;
+  // 上部にラベル帯を敷く（波形と重ならないように）
+  const labelBandH = 13 * dpr;
+  cctx.fillStyle = "rgba(2,6,23,.78)";
+  cctx.fillRect(0, 0, w, labelBandH);
   cctx.lineWidth = 1;
-  cctx.font = `${9*dpr}px ui-monospace,monospace`;
+  cctx.font = `bold ${9*dpr}px ui-monospace,monospace`;
   cctx.textBaseline = "top";
+  const firstGrid = Math.ceil(viewStartSec / gridInterval) * gridInterval;
   for(let t = firstGrid; t <= viewStartSec + viewDur; t += gridInterval){
     const x = ((t - viewStartSec) / viewDur) * w;
-    // 主グリッド（10秒・5秒の倍数を強調）
     const isMajor = (Math.abs(t % (gridInterval * 5)) < 0.01);
-    cctx.strokeStyle = isMajor ? "rgba(255,255,255,.13)" : "rgba(255,255,255,.06)";
-    cctx.beginPath(); cctx.moveTo(x, 0); cctx.lineTo(x, h); cctx.stroke();
-    // 時間ラベル（左上）
+    cctx.strokeStyle = isMajor ? "rgba(255,255,255,.18)" : "rgba(255,255,255,.08)";
+    cctx.beginPath(); cctx.moveTo(x, labelBandH); cctx.lineTo(x, h); cctx.stroke();
+    // 帯内の小さな目盛り
+    cctx.strokeStyle = isMajor ? "rgba(255,255,255,.5)" : "rgba(255,255,255,.25)";
+    cctx.beginPath(); cctx.moveTo(x, labelBandH - 3*dpr); cctx.lineTo(x, labelBandH); cctx.stroke();
+    // 時間ラベル（帯の中）
     const label = formatGridTime(t);
-    cctx.fillStyle = isMajor ? "rgba(148,163,184,.85)" : "rgba(100,116,139,.6)";
+    cctx.fillStyle = isMajor ? "#cbd5e1" : "rgba(148,163,184,.7)";
     cctx.fillText(label, x + 2*dpr, 2*dpr);
   }
 
@@ -5328,7 +5393,7 @@ function setupTrackEditBar(track){
 
   // «‹›» シフトボタン（トラック全体を前後に移動）
   // 旧.teb-shift-l/r と 新.offset-big-btn 両対応
-  document.querySelectorAll(`.teb-shift-l[data-track="${track}"], .teb-shift-r[data-track="${track}"], .offset-big-btn[data-track="${track}"]`).forEach(btn=>{
+  document.querySelectorAll(`.teb-shift-l[data-track="${track}"], .teb-shift-r[data-track="${track}"], .offset-big-btn[data-track="${track}"], .teb-quick-shift[data-track="${track}"]`).forEach(btn=>{
     btn.onclick = ()=>{
       const ms = Number(btn.dataset.ms);
       if(!ms) return; // resetボタンには data-ms がない
@@ -5341,6 +5406,13 @@ function setupTrackEditBar(track){
       }
       // ボタンに視覚フィードバック
       btn.classList.remove("flash"); void btn.offsetWidth; btn.classList.add("flash");
+      // edit-bar内のquick-labelも更新
+      const qlabel = document.getElementById("quickOffsetLabel"+cap(track));
+      if(qlabel){
+        const cur = track==="take"?takeOffsetMs : track==="chorus"?chorusOffsetMs : 0;
+        qlabel.textContent = (cur>=0?"+":"")+cur;
+        qlabel.classList.toggle("nonzero", cur !== 0);
+      }
       invalidateWaveformCache(); drawStackedTimelines(); updateTrackEditBar(track);
       const cur = track==="take"?takeOffsetMs:chorusOffsetMs;
       const sign = cur>=0?"+":"";
