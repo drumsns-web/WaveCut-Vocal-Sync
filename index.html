@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>WaveCut Vocal Sync v3</title>
+<title>WaveCut Vocal Sync v4</title>
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <meta name="apple-mobile-web-app-title" content="WaveCut Vocal Sync">
 <meta name="application-name" content="WaveCut Vocal Sync">
 <meta name="theme-color" content="#08111f">
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
 <style>
 :root{
   --bg:#07101f;--panel:#101827;--panel2:#172235;--panel3:#0c1423;
@@ -32,13 +33,13 @@ button.idle-disabled{opacity:.26!important;filter:grayscale(.4)!important}
   <div class="sub">カラオケ音源を聴きながら歌録り → 波形でズレ補正 → MIX保存</div>
 </header>
 <main>
-  <section class="card sticky">
-    <p class="section-title">Transport <span class="pill blue">おすすめ設定版</span></p>
+  <section class="card">
+    <p class="section-title">操作 <span class="pill blue">Vocal Sync</span></p>
     <div class="transport">
       <button id="recordBtn" class="red">● 歌を録音</button>
       <button id="playMixBtn" class="primary">▶ MIX再生</button>
       <button id="stopBtn">■ 停止</button>
-      <button id="exportBtn" class="green" disabled>⬇ MIX保存</button>
+      <button id="exportBtn" class="green" disabled>⬇ MIX書き出し</button>
     </div>
     <div class="grid2">
       <button id="playKaraokeBtn">▶ 伴奏だけ確認</button>
@@ -54,6 +55,13 @@ button.idle-disabled{opacity:.26!important;filter:grayscale(.4)!important}
     <input id="fileInput" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.mp4,.mov,.webm" />
     <label for="fileInput" class="file-button">カラオケ音源・動画を読み込む</label>
     <div id="fileName" class="file-name">未選択</div>
+    <div class="sep"></div>
+    <div class="section-title">音源を持っていない場合 <span class="pill warn">Mic Capture</span></div>
+    <div class="grid2">
+      <button id="sourceRecordBtn" class="orange">● 外部のカラオケを録音</button>
+      <button id="sourceStopBtn" disabled>■ 音源録音を停止</button>
+    </div>
+    <div id="sourceRecordNote" class="small">別の端末・店内カラオケ・スピーカー等で鳴っているカラオケ音源を、マイクで一度録音して伴奏トラックにできます。</div>
     <div class="info">
       <b>推奨：</b>有線イヤホンで伴奏を聴きながら録音してください。スピーカー再生だと、伴奏がマイクに入り「歌声だけ録音」になりません。<br>
       <b>MOV対策：</b>iPhoneカメラロールのMOVは、直接デコードできない場合にWaveCut方式の「動画を再生しながら音声だけ取り込み」を使います。取り込み中は画面を閉じないでください。
@@ -154,6 +162,7 @@ button.idle-disabled{opacity:.26!important;filter:grayscale(.4)!important}
     <div class="mix-row"><label>ボーカル音色</label><select id="vocalFxPreset"><option value="natural" selected>ナチュラル</option><option value="vocal">歌向け補正</option><option value="radio">ラジオボイス</option><option value="telephone">電話ボイス</option><option value="lofi">Lo-Fi</option><option value="warm">暖かめ</option><option value="bright">明るめ</option><option value="megaphone">メガホン風</option><option value="deep">低め・太め</option></select></div>
     <div class="mix-row"><label>歌声リバーブ</label><input id="reverbAmount" type="range" min="0" max="0.8" step="0.01" value="0.12"></div>
     <div class="mix-row"><label>歌声ディレイ</label><input id="delayAmount" type="range" min="0" max="0.45" step="0.01" value="0.06"></div>
+    <div class="mix-row"><label>書き出し形式</label><select id="exportFormat"><option value="wav" selected>WAV（高音質・編集向け）</option><option value="mp3">MP3（軽量・共有向け）</option></select></div>
     <div class="grid3">
       <button id="presetDry">ナチュラル</button>
       <button id="presetVocal" class="violet">歌向け</button>
@@ -166,7 +175,7 @@ button.idle-disabled{opacity:.26!important;filter:grayscale(.4)!important}
     <p class="section-title">使い方 <span class="pill">Workflow</span></p>
     <div class="footer">
       1. カラオケ音源を読み込む → 2. イヤホンを付ける → 3. 「歌を録音」 → 4. MIX再生で確認 → 5. 歌声を左右に動かしてズレ補正 → 6. 必要なら範囲編集・部分エフェクト → 7. MIX保存。<br>
-      Bluetoothイヤホンは遅延が大きい場合があります。有線イヤホンの方が波形合わせが楽です。
+      カラオケ音源を持っていない場合は、外部で鳴っているカラオケをマイクで録音して伴奏トラックにできます。MP4は通常読み込みを試し、失敗した場合はWaveCut方式の音声取り込みに切り替えます。Bluetoothイヤホンは遅延が大きい場合があります。有線イヤホンの方が波形合わせが楽です。
     </div>
   </section>
 </main>
@@ -175,11 +184,11 @@ button.idle-disabled{opacity:.26!important;filter:grayscale(.4)!important}
 'use strict';
 const $ = id => document.getElementById(id);
 const els = {
-  fileInput:$('fileInput'), fileName:$('fileName'), micSelect:$('micSelect'), refreshMicBtn:$('refreshMicBtn'), micToggleBtn:$('micToggleBtn'),
+  fileInput:$('fileInput'), fileName:$('fileName'), sourceRecordBtn:$('sourceRecordBtn'), sourceStopBtn:$('sourceStopBtn'), sourceRecordNote:$('sourceRecordNote'), micSelect:$('micSelect'), refreshMicBtn:$('refreshMicBtn'), micToggleBtn:$('micToggleBtn'),
   recordBtn:$('recordBtn'), playMixBtn:$('playMixBtn'), playKaraokeBtn:$('playKaraokeBtn'), stopBtn:$('stopBtn'), exportBtn:$('exportBtn'), resetBtn:$('resetBtn'),
   statusText:$('statusText'), countText:$('countText'), timeText:$('timeText'), karaokeCanvas:$('karaokeCanvas'), vocalCanvas:$('vocalCanvas'),
   playhead1:$('playhead1'), playhead2:$('playhead2'), karaokeMeta:$('karaokeMeta'), vocalMeta:$('vocalMeta'), offsetText:$('offsetText'), offsetZeroBtn:$('offsetZeroBtn'),
-  karaokeGain:$('karaokeGain'), vocalGain:$('vocalGain'), vocalFxPreset:$('vocalFxPreset'), reverbAmount:$('reverbAmount'), delayAmount:$('delayAmount'), countInSelect:$('countInSelect'), countDisplaySelect:$('countDisplaySelect'), bpmInput:$('bpmInput'), initialOffsetSelect:$('initialOffsetSelect'),
+  karaokeGain:$('karaokeGain'), vocalGain:$('vocalGain'), vocalFxPreset:$('vocalFxPreset'), reverbAmount:$('reverbAmount'), delayAmount:$('delayAmount'), exportFormat:$('exportFormat'), countInSelect:$('countInSelect'), countDisplaySelect:$('countDisplaySelect'), bpmInput:$('bpmInput'), initialOffsetSelect:$('initialOffsetSelect'),
   presetDry:$('presetDry'), presetVocal:$('presetVocal'), saveVocalBtn:$('saveVocalBtn'), micMeter:$('micMeter'), mixMeter:$('mixMeter'), vocalWrap:$('vocalWrap'), selectionBox:$('selectionBox'), selectionText:$('selectionText'), moveModeBtn:$('moveModeBtn'), selectModeBtn:$('selectModeBtn'), cutBtn:$('cutBtn'), deleteBtn:$('deleteBtn'), copyBtn:$('copyBtn'), pasteBtn:$('pasteBtn'), duplicateBtn:$('duplicateBtn'), clearSelectionBtn:$('clearSelectionBtn'), rangeFxSelect:$('rangeFxSelect'), applyRangeFxBtn:$('applyRangeFxBtn')
 };
 let audioCtx = null;
@@ -212,17 +221,20 @@ function duration(){ return Math.max(karaokeBuffer?karaokeBuffer.duration:0, voc
 function updateButtons(){
   const hasK=!!karaokeBuffer, hasV=!!vocalBuffer, hasSel=!!(selection&&selection.end>selection.start), hasClip=!!clipboardBuffer;
   const recording = !!(recorder && recorder.state === 'recording');
-  els.recordBtn.disabled=!hasK && !recording;
-  els.playKaraokeBtn.disabled=!hasK || recording || isPlaying;
-  els.playMixBtn.disabled=!(hasK||hasV) || recording || isPlaying;
-  els.exportBtn.disabled=!(hasK&&hasV) || recording || isPlaying;
-  els.saveVocalBtn.disabled=!hasV || recording;
-  els.stopBtn.disabled=!(recording || isPlaying);
-  els.resetBtn.disabled=!hasUserChanges && !hasK && !hasV && !mediaStream;
+  const sourceRecording = !!(sourceRecorder && sourceRecorder.state === 'recording');
+  els.recordBtn.disabled=(!hasK && !recording) || sourceRecording;
+  els.playKaraokeBtn.disabled=!hasK || recording || sourceRecording || isPlaying;
+  els.playMixBtn.disabled=!(hasK||hasV) || recording || sourceRecording || isPlaying;
+  els.exportBtn.disabled=!(hasK&&hasV) || recording || sourceRecording || isPlaying;
+  els.saveVocalBtn.disabled=!hasV || recording || sourceRecording;
+  els.stopBtn.disabled=!(recording || sourceRecording || isPlaying);
+  els.resetBtn.disabled=!hasUserChanges && !hasK && !hasV && !mediaStream && !sourceRecording;
+  if(els.sourceRecordBtn) els.sourceRecordBtn.disabled=recording || sourceRecording || isPlaying;
+  if(els.sourceStopBtn) els.sourceStopBtn.disabled=!sourceRecording;
   els.stopBtn.classList.toggle('idle-disabled', els.stopBtn.disabled);
   els.resetBtn.classList.toggle('idle-disabled', els.resetBtn.disabled);
-  [els.cutBtn,els.deleteBtn,els.copyBtn,els.duplicateBtn,els.applyRangeFxBtn,els.clearSelectionBtn].forEach(b=>b.disabled=!hasSel || recording);
-  els.pasteBtn.disabled=!(hasV&&hasClip) || recording;
+  [els.cutBtn,els.deleteBtn,els.copyBtn,els.duplicateBtn,els.applyRangeFxBtn,els.clearSelectionBtn].forEach(b=>b.disabled=!hasSel || recording || sourceRecording);
+  els.pasteBtn.disabled=!(hasV&&hasClip) || recording || sourceRecording;
 }
 async function loadMicDevices(){
   try{
@@ -474,6 +486,34 @@ function interleaveToWav(buffer){
   for(let i=0;i<len;i++){ for(let ch=0;ch<numCh;ch++){ let sample=Math.max(-1,Math.min(1,chans[ch][i])); v.setInt16(p, sample<0?sample*0x8000:sample*0x7fff, true); p+=2; } }
   return new Blob([ab],{type:'audio/wav'});
 }
+function audioBufferToMp3(buffer, kbps=192){
+  if(!window.lamejs) throw new Error('MP3エンコーダーを読み込めませんでした。ネット接続を確認するか、WAVで保存してください。');
+  const numCh = Math.min(2, buffer.numberOfChannels);
+  const sr = buffer.sampleRate;
+  const encoder = new lamejs.Mp3Encoder(numCh, sr, kbps);
+  const block = 1152;
+  const mp3Data = [];
+  const toI16 = (data, start, size) => {
+    const out = new Int16Array(size);
+    for(let i=0;i<size;i++){ const v=Math.max(-1,Math.min(1,data[start+i]||0)); out[i]=v<0?v*0x8000:v*0x7fff; }
+    return out;
+  };
+  const left = buffer.getChannelData(0);
+  const right = numCh>1 ? buffer.getChannelData(1) : null;
+  for(let i=0;i<buffer.length;i+=block){
+    const size=Math.min(block, buffer.length-i);
+    const l=toI16(left,i,size);
+    const chunk = numCh>1 ? encoder.encodeBuffer(l, toI16(right,i,size)) : encoder.encodeBuffer(l);
+    if(chunk.length) mp3Data.push(new Int8Array(chunk));
+  }
+  const end=encoder.flush(); if(end.length) mp3Data.push(new Int8Array(end));
+  return new Blob(mp3Data,{type:'audio/mpeg'});
+}
+async function downloadRendered(buffer, baseName){
+  const fmt = els.exportFormat ? els.exportFormat.value : 'wav';
+  if(fmt==='mp3'){ downloadBlob(audioBufferToMp3(buffer), baseName + '.mp3'); }
+  else { downloadBlob(interleaveToWav(buffer), baseName + '.wav'); }
+}
 async function renderMix(vocalOnly=false){
   if(vocalOnly && !vocalBuffer) throw new Error('歌声がありません');
   if(!vocalOnly && (!karaokeBuffer || !vocalBuffer)) throw new Error('カラオケ音源と歌声録音が必要です');
@@ -483,7 +523,7 @@ async function renderMix(vocalOnly=false){
   return await offline.startRendering();
 }
 function downloadBlob(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000); }
-function resetAll(){ stopAll(); stopMicStream(); karaokeBuffer=null; vocalBuffer=null; vocalOffset=0; selection=null; clipboardBuffer=null; hasUserChanges=false; els.fileInput.value=''; els.fileName.textContent='未選択'; updateButtons(); updateMeta(); redraw(); setStatus('初期状態に戻しました。カラオケ音源を読み込んでください。'); }
+function resetAll(){ stopAll(); if(sourceRecorder && sourceRecorder.state==='recording') try{sourceRecorder.stop()}catch(e){} stopMicStream(); karaokeBuffer=null; vocalBuffer=null; vocalOffset=0; selection=null; clipboardBuffer=null; hasUserChanges=false; els.fileInput.value=''; els.fileName.textContent='未選択'; updateButtons(); updateMeta(); redraw(); setStatus('初期状態に戻しました。カラオケ音源を読み込んでください。'); }
 
 function setEditMode(mode){
   editMode=mode; els.moveModeBtn.classList.toggle('mode-active',mode==='move'); els.selectModeBtn.classList.toggle('mode-active',mode==='select');
@@ -530,16 +570,50 @@ async function applyRangeEffect(){
   const seg=copyBufferRange(vocalBuffer,selection.start,selection.end); const effected=await renderSegmentWithEffect(seg,els.rangeFxSelect.value);
   const insertAt=selection.start; rebuildVocalWithEdit('delete'); selection=null; rebuildVocalWithEdit('insert',effected,insertAt); hasUserChanges=true; updateButtons(); setStatus('選択範囲にエフェクトを適用しました。');
 }
+async function startKaraokeSourceRecording(){
+  try{
+    stopAll(); const ctx=ensureAudio(); if(ctx.state==='suspended') await ctx.resume();
+    const stream=await getMicStream(); sourceChunks=[];
+    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '');
+    sourceRecorder = new MediaRecorder(stream, mime?{mimeType:mime}:undefined);
+    sourceRecorder.ondataavailable = e => { if(e.data && e.data.size) sourceChunks.push(e.data); };
+    sourceRecorder.onstop = async () => {
+      setStatus('外部カラオケ録音を波形化しています...');
+      try{
+        const blob=new Blob(sourceChunks,{type:sourceChunks[0]?.type || mime || 'audio/webm'});
+        const arr=await blob.arrayBuffer();
+        karaokeBuffer=await ensureAudio().decodeAudioData(arr);
+        hasUserChanges=true;
+        els.fileName.textContent=`外部カラオケ録音 / ${fmtTime(karaokeBuffer.duration)}`;
+        if(els.sourceRecordNote) els.sourceRecordNote.textContent='外部カラオケ録音を伴奏トラックに設定しました。次はイヤホンで確認しながら歌声を録音できます。';
+        updateButtons(); updateMeta(); redraw();
+        setStatus('外部カラオケ録音を伴奏トラックに設定しました。');
+      }catch(e){ setStatus('外部カラオケ録音の読み込みに失敗しました：'+escapeHtml(e.message)); }
+      stopMicStream(); if(els.sourceRecordBtn) els.sourceRecordBtn.textContent='● 外部のカラオケを録音'; updateButtons();
+    };
+    sourceRecorder.start(100);
+    hasUserChanges=true;
+    if(els.sourceRecordBtn) els.sourceRecordBtn.textContent='録音中...';
+    setStatus('外部で鳴っているカラオケ音源を録音中です。終わったら「音源録音を停止」を押してください。','recLive');
+    updateButtons();
+  }catch(e){ stopMicStream(); setStatus('外部カラオケ録音を開始できませんでした：'+escapeHtml(e.message)); updateButtons(); }
+}
+function stopKaraokeSourceRecording(){
+  if(sourceRecorder && sourceRecorder.state==='recording') sourceRecorder.stop();
+}
+
 // Events
 els.fileInput.addEventListener('change', async e=>{ const file=e.target.files && e.target.files[0]; if(!file)return; try{ stopAll(); setStatus('音源を読み込んでいます...'); karaokeBuffer=await decodeFile(file); hasUserChanges=true; els.fileName.textContent=`${file.name} / ${fmtTime(karaokeBuffer.duration)}`; updateButtons(); redraw(); setStatus('読み込み完了。イヤホンを付けて「歌を録音」を押してください。'); }catch(err){ updateButtons(); setStatus(escapeHtml(err.message)); } });
+if(els.sourceRecordBtn) els.sourceRecordBtn.addEventListener('click', startKaraokeSourceRecording);
+if(els.sourceStopBtn) els.sourceStopBtn.addEventListener('click', stopKaraokeSourceRecording);
 els.refreshMicBtn.addEventListener('click', loadMicDevices);
 els.micToggleBtn.addEventListener('click', async()=>{ try{ if(mediaStream){ stopMicStream(); els.micToggleBtn.textContent='マイクON'; els.micToggleBtn.className='green'; setStatus('マイクをOFFにしました。'); updateButtons(); } else { await getMicStream(); els.micToggleBtn.textContent='マイクOFF'; els.micToggleBtn.className='red'; setStatus('マイクをONにしました。録音しない時はOFFにできます。'); updateButtons(); } }catch(e){ setStatus('マイクをONにできませんでした：'+escapeHtml(e.message)); } });
 els.recordBtn.addEventListener('click',()=>{ if(recorder && recorder.state==='recording') stopRecording(); else startRecording(); });
-els.stopBtn.addEventListener('click',()=>{ if(els.stopBtn.disabled) return; if(recorder && recorder.state==='recording') stopRecording(); else stopAll(); });
+els.stopBtn.addEventListener('click',()=>{ if(els.stopBtn.disabled) return; if(sourceRecorder && sourceRecorder.state==='recording') stopKaraokeSourceRecording(); else if(recorder && recorder.state==='recording') stopRecording(); else stopAll(); });
 els.playMixBtn.addEventListener('click',()=>playMix(false));
 els.playKaraokeBtn.addEventListener('click',()=>playMix(true));
-els.exportBtn.addEventListener('click',async()=>{ try{ stopAll(); setStatus('MIXを書き出しています...'); const rendered=await renderMix(false); downloadBlob(interleaveToWav(rendered),'wavecut_vocal_sync_mix.wav'); setStatus('MIX保存を開始しました。'); }catch(e){ setStatus('保存に失敗しました：'+escapeHtml(e.message)); } });
-els.saveVocalBtn.addEventListener('click',async()=>{ try{ setStatus('歌声だけを書き出しています...'); const rendered=await renderMix(true); downloadBlob(interleaveToWav(rendered),'wavecut_vocal_only.wav'); setStatus('歌声だけの保存を開始しました。'); }catch(e){ setStatus('保存に失敗しました：'+escapeHtml(e.message)); } });
+els.exportBtn.addEventListener('click',async()=>{ try{ stopAll(); setStatus('MIXを書き出しています...'); const rendered=await renderMix(false); await downloadRendered(rendered,'wavecut_vocal_sync_mix'); setStatus('MIX書き出しを開始しました。'); }catch(e){ setStatus('保存に失敗しました：'+escapeHtml(e.message)); } });
+els.saveVocalBtn.addEventListener('click',async()=>{ try{ setStatus('歌声だけを書き出しています...'); const rendered=await renderMix(true); await downloadRendered(rendered,'wavecut_vocal_only'); setStatus('歌声だけの書き出しを開始しました。'); }catch(e){ setStatus('保存に失敗しました：'+escapeHtml(e.message)); } });
 els.resetBtn.addEventListener('click',()=>{ if(els.resetBtn.disabled) return; if(confirm('読み込んだ音源・録音・補正をリセットしますか？')) resetAll(); });
 document.querySelectorAll('[data-nudge]').forEach(btn=>btn.addEventListener('click',()=>nudge(parseFloat(btn.dataset.nudge))));
 els.offsetZeroBtn.addEventListener('click',()=>{ vocalOffset=0; hasUserChanges=true; redraw(); updateButtons(); });
