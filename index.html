@@ -558,13 +558,109 @@ audio{width:100%;margin:8px 0}
 .track-wave-canvas{display:block;width:100%;height:82px;margin:0;border:none;border-radius:0;background:transparent;touch-action:none;}
 .track-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;color:rgba(148,163,184,.72);pointer-events:none;padding:8px;}
 .track-lane.has-audio .track-empty{display:none;}
-.track-mini-controls{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;}
+.track-mini-controls{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;}
 .track-mini-controls button{min-height:34px;padding:7px 6px;margin:0;font-size:12px;border-radius:10px;}
+
+.track-mixer{display:grid;gap:6px;margin-top:8px;}
+.track-mixer-row{display:grid;grid-template-columns:44px 1fr 54px;gap:6px;align-items:center;font-size:11px;color:var(--muted);}
+.track-mixer-row input[type="range"]{width:100%;}
+.track-select-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--muted);}
+.track-select-row label{margin:0;display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text);}
+.track-select-row input{width:auto;}
+.track-solo-btn{min-height:30px!important;padding:5px 7px!important;font-size:11px!important;border-radius:9px!important;margin:0!important;}
+.track-lane.recording-live{border-color:rgba(239,68,68,.84);box-shadow:0 0 0 1px rgba(239,68,68,.20),0 0 24px rgba(239,68,68,.16);}
+.track-lane.recording-live .track-lane-pill{color:#fecaca;border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.14);}
+.track-rec-badge{display:none;color:#fecaca;font-size:10px;font-weight:900;animation:recDot 1s infinite;}
+.track-lane.recording-live .track-rec-badge{display:inline;}
+.track-play-panel{margin-top:10px;display:grid;gap:8px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px;}
+.track-play-title{font-size:12px;color:var(--muted);line-height:1.45;}
+.track-checks{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.track-checks label{margin:0;background:rgba(15,23,42,.8);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 7px;font-size:12px;color:var(--text);display:flex;align-items:center;gap:6px;justify-content:center;}
+.track-checks input{width:auto;}
+.track-checks label.disabled{opacity:.45;}
+.recording-wave-note{font-size:11px;color:#fecaca;margin-top:4px;display:none;}
+.track-lane.recording-live .recording-wave-note{display:block;}
+
 @media(max-width:640px){
   .track-lane{grid-template-columns:88px 1fr;gap:6px;padding:7px;}
   .track-lane-name{font-size:12px;}
   .track-lane-sub{font-size:10px;}
   .track-wave-wrap,.track-wave-canvas{height:72px;}
+}
+
+
+
+/* v15: 各トラックの再生ボタンを見つけやすくする */
+.track-lane{
+  grid-template-columns:1fr !important;
+  gap:10px !important;
+  align-items:stretch !important;
+}
+.track-lane-side{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:8px !important;
+}
+.track-lane-side > div:first-child{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+}
+.track-lane-pill{
+  width:auto !important;
+  align-self:flex-start;
+}
+.track-action-row{
+  display:grid;
+  grid-template-columns:2fr 1fr;
+  gap:8px;
+  width:100%;
+}
+.track-action-row button{
+  min-height:42px !important;
+  margin:0 !important;
+  border-radius:12px !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+}
+.track-solo-btn{
+  width:100% !important;
+  color:#fff !important;
+  background:linear-gradient(180deg,#60a5fa,#2563eb 60%,#1d4ed8) !important;
+  border-color:rgba(147,197,253,.50) !important;
+}
+.track-stop-inline{
+  color:#fff;
+  background:linear-gradient(180deg,#475569,#334155 60%,#1e293b);
+  border:1px solid rgba(255,255,255,.20);
+}
+.track-mixer{
+  background:rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.075);
+  border-radius:12px;
+  padding:8px;
+  margin-top:0 !important;
+}
+.track-mixer-row{
+  grid-template-columns:48px 1fr 56px !important;
+}
+.track-select-row{
+  justify-content:space-between;
+}
+.track-wave-wrap{
+  height:94px !important;
+}
+.track-wave-canvas{
+  height:94px !important;
+}
+@media(max-width:640px){
+  .track-lane{grid-template-columns:1fr !important;padding:9px !important;}
+  .track-lane-side > div:first-child{display:flex;align-items:flex-start;justify-content:space-between;}
+  .track-action-row{grid-template-columns:1.8fr 1fr;}
+  .track-action-row button{min-height:44px !important;font-size:13px !important;}
+  .track-wave-wrap,.track-wave-canvas{height:92px !important;}
+  .track-mini-controls{grid-template-columns:1fr 1fr !important;}
 }
 
 </style>
@@ -671,7 +767,7 @@ audio{width:100%;margin:8px 0}
 <section class="card track-stack-card">
   <p class="section-title">3 Track Timeline <span class="pill" id="trackTimelineTotal">00:00</span></p>
   <div class="track-stack-hint">
-    カラオケ・ボーカル・コーラスを上下に並べて表示します。各レーンをタップすると、そのトラックを編集対象に切り替えられます。
+    カラオケ・ボーカル・コーラスを上下に並べて表示します。各トラックの「▶ 〜だけ再生」で単独再生、「複数再生」にチェックして下のボタンで同時再生できます。
   </div>
   <div class="track-stack" id="trackStack">
     <div class="track-lane" data-track="main" id="laneMain">
@@ -681,10 +777,17 @@ audio{width:100%;margin:8px 0}
           <div class="track-lane-sub" id="laneMainInfo">未読み込み</div>
         </div>
         <span class="track-lane-pill" id="laneMainPill">Track 1</span>
+        <span class="track-rec-badge">REC</span>
+        <div class="track-action-row"><button class="track-solo-btn" id="playMainOnlyBtn" disabled>▶ カラオケだけ再生</button><button class="track-stop-inline" type="button">停止</button></div>
+        <div class="track-mixer">
+          <div class="track-mixer-row"><span>音量</span><input id="trackVolumeMain" type="range" min="0" max="150" step="1" value="100"><strong id="trackVolumeMainLabel">100%</strong></div>
+          <div class="track-select-row"><label><input id="trackSelectMain" type="checkbox" checked> 複数再生</label></div>
+        </div>
       </div>
       <div class="track-wave-wrap">
         <canvas class="track-wave-canvas" id="trackCanvasMain" data-track="main"></canvas>
         <div class="track-empty">カラオケ音源を読み込む</div>
+        <div class="recording-wave-note">録音中の入力波形を表示中</div>
       </div>
     </div>
     <div class="track-lane" data-track="take" id="laneTake">
@@ -694,10 +797,17 @@ audio{width:100%;margin:8px 0}
           <div class="track-lane-sub" id="laneTakeInfo">未録音</div>
         </div>
         <span class="track-lane-pill" id="laneTakePill">Track 2</span>
+        <span class="track-rec-badge">REC</span>
+        <div class="track-action-row"><button class="track-solo-btn" id="playTakeOnlyBtn" disabled>▶ ボーカルだけ再生</button><button class="track-stop-inline" type="button">停止</button></div>
+        <div class="track-mixer">
+          <div class="track-mixer-row"><span>音量</span><input id="trackVolumeTake" type="range" min="0" max="150" step="1" value="100"><strong id="trackVolumeTakeLabel">100%</strong></div>
+          <div class="track-select-row"><label><input id="trackSelectTake" type="checkbox" checked> 複数再生</label></div>
+        </div>
       </div>
       <div class="track-wave-wrap">
         <canvas class="track-wave-canvas" id="trackCanvasTake" data-track="take"></canvas>
         <div class="track-empty">録音すると波形が出ます</div>
+        <div class="recording-wave-note">録音中の入力波形を表示中</div>
       </div>
     </div>
     <div class="track-lane" data-track="chorus" id="laneChorus">
@@ -707,15 +817,31 @@ audio{width:100%;margin:8px 0}
           <div class="track-lane-sub" id="laneChorusInfo">未録音</div>
         </div>
         <span class="track-lane-pill" id="laneChorusPill">Track 3</span>
+        <span class="track-rec-badge">REC</span>
+        <div class="track-action-row"><button class="track-solo-btn" id="playChorusOnlyBtn" disabled>▶ コーラスだけ再生</button><button class="track-stop-inline" type="button">停止</button></div>
+        <div class="track-mixer">
+          <div class="track-mixer-row"><span>音量</span><input id="trackVolumeChorus" type="range" min="0" max="150" step="1" value="100"><strong id="trackVolumeChorusLabel">100%</strong></div>
+          <div class="track-select-row"><label><input id="trackSelectChorus" type="checkbox" checked> 複数再生</label></div>
+        </div>
       </div>
       <div class="track-wave-wrap">
         <canvas class="track-wave-canvas" id="trackCanvasChorus" data-track="chorus"></canvas>
         <div class="track-empty">ハモリ・追加声を録音</div>
+        <div class="recording-wave-note">録音中の入力波形を表示中</div>
       </div>
     </div>
   </div>
+  <div class="track-play-panel">
+    <div class="track-play-title">チェックしたトラックだけを同時再生できます。各トラックの音量スライダーは確認再生・MIX保存に反映されます。</div>
+    <div class="track-checks">
+      <label id="trackCheckLabelMain"><input id="multiPlayMain" type="checkbox" checked> カラオケ</label>
+      <label id="trackCheckLabelTake"><input id="multiPlayTake" type="checkbox" checked> ボーカル</label>
+      <label id="trackCheckLabelChorus"><input id="multiPlayChorus" type="checkbox" checked> コーラス</label>
+    </div>
+  </div>
   <div class="track-mini-controls">
-    <button id="trackStackPlayBtn" class="primary" disabled>▶ 3トラック確認</button>
+    <button id="trackStackPlayBtn" class="primary" disabled>▶ 選択トラック再生</button>
+    <button id="trackAllPlayBtn" disabled>▶ 全トラック再生</button>
     <button id="trackStackStopBtn" disabled>停止</button>
     <button id="trackStackMixBtn" class="green" disabled>MIX確定</button>
   </div>
@@ -955,6 +1081,9 @@ let micAnalyser = null;
 let micLevelSource = null;
 let micLevelAnimationId = null;
 let micLevelData = null;
+let recordingWaveTrack = null;
+let liveRecordingSamples = [];
+const LIVE_RECORDING_HISTORY = 4096;
 
 const micSelect = document.getElementById("micSelect");
 const refreshMicBtn = document.getElementById("refreshMicBtn");
@@ -1052,6 +1181,25 @@ const laneChorusInfo = document.getElementById("laneChorusInfo");
 const trackStackPlayBtn = document.getElementById("trackStackPlayBtn");
 const trackStackStopBtn = document.getElementById("trackStackStopBtn");
 const trackStackMixBtn = document.getElementById("trackStackMixBtn");
+const trackAllPlayBtn = document.getElementById("trackAllPlayBtn");
+const playMainOnlyBtn = document.getElementById("playMainOnlyBtn");
+const playTakeOnlyBtn = document.getElementById("playTakeOnlyBtn");
+const playChorusOnlyBtn = document.getElementById("playChorusOnlyBtn");
+const trackVolumeMain = document.getElementById("trackVolumeMain");
+const trackVolumeTake = document.getElementById("trackVolumeTake");
+const trackVolumeChorus = document.getElementById("trackVolumeChorus");
+const trackVolumeMainLabel = document.getElementById("trackVolumeMainLabel");
+const trackVolumeTakeLabel = document.getElementById("trackVolumeTakeLabel");
+const trackVolumeChorusLabel = document.getElementById("trackVolumeChorusLabel");
+const trackSelectMain = document.getElementById("trackSelectMain");
+const trackSelectTake = document.getElementById("trackSelectTake");
+const trackSelectChorus = document.getElementById("trackSelectChorus");
+const multiPlayMain = document.getElementById("multiPlayMain");
+const multiPlayTake = document.getElementById("multiPlayTake");
+const multiPlayChorus = document.getElementById("multiPlayChorus");
+const trackCheckLabelMain = document.getElementById("trackCheckLabelMain");
+const trackCheckLabelTake = document.getElementById("trackCheckLabelTake");
+const trackCheckLabelChorus = document.getElementById("trackCheckLabelChorus");
 
 function ensureAudioContext(){
   if(!audioContext) audioContext = new AudioContext();
@@ -1174,6 +1322,95 @@ window.addEventListener("resize",()=>{
 });
 
 
+
+function getTrackCanvas(track){
+  if(track === "take") return trackCanvasTake;
+  if(track === "chorus") return trackCanvasChorus;
+  return trackCanvasMain;
+}
+function getTrackBuffer(track){
+  if(track === "take") return takeBuffer;
+  if(track === "chorus") return chorusBuffer;
+  return mainBuffer;
+}
+function getTrackOffsetMs(track){
+  if(track === "take") return takeOffsetMs;
+  if(track === "chorus") return chorusOffsetMs;
+  return 0;
+}
+function getTrackVolume(track){
+  const el = track === "take" ? trackVolumeTake : track === "chorus" ? trackVolumeChorus : trackVolumeMain;
+  if(el) return Number(el.value) / 100;
+  if(track === "main") return getBackingGain ? getBackingGain() : 1;
+  return 1;
+}
+function updateTrackVolumeLabels(){
+  if(trackVolumeMainLabel && trackVolumeMain) trackVolumeMainLabel.textContent = `${trackVolumeMain.value}%`;
+  if(trackVolumeTakeLabel && trackVolumeTake) trackVolumeTakeLabel.textContent = `${trackVolumeTake.value}%`;
+  if(trackVolumeChorusLabel && trackVolumeChorus) trackVolumeChorusLabel.textContent = `${trackVolumeChorus.value}%`;
+  if(karaokeBackingVolume && trackVolumeMain && Number(karaokeBackingVolume.value) !== Number(trackVolumeMain.value)){
+    karaokeBackingVolume.value = trackVolumeMain.value;
+    if(karaokeBackingVolumeLabel) karaokeBackingVolumeLabel.textContent = `${karaokeBackingVolume.value}%`;
+  }
+}
+function syncTrackAndMultiChecks(){
+  if(multiPlayMain && trackSelectMain) multiPlayMain.checked = trackSelectMain.checked;
+  if(multiPlayTake && trackSelectTake) multiPlayTake.checked = trackSelectTake.checked;
+  if(multiPlayChorus && trackSelectChorus) multiPlayChorus.checked = trackSelectChorus.checked;
+}
+function syncMultiAndTrackChecks(){
+  if(multiPlayMain && trackSelectMain) trackSelectMain.checked = multiPlayMain.checked;
+  if(multiPlayTake && trackSelectTake) trackSelectTake.checked = multiPlayTake.checked;
+  if(multiPlayChorus && trackSelectChorus) trackSelectChorus.checked = multiPlayChorus.checked;
+}
+function beginLiveRecordingWave(track){
+  recordingWaveTrack = track || recordTarget.value || "take";
+  liveRecordingSamples = [];
+  [laneMain,laneTake,laneChorus].forEach(el=>el && el.classList.remove("recording-live"));
+  const lane = recordingWaveTrack === "take" ? laneTake : recordingWaveTrack === "chorus" ? laneChorus : laneMain;
+  if(lane) lane.classList.add("recording-live");
+  drawLiveRecordingWave(recordingWaveTrack, null);
+}
+function endLiveRecordingWave(){
+  recordingWaveTrack = null;
+  liveRecordingSamples = [];
+  [laneMain,laneTake,laneChorus].forEach(el=>el && el.classList.remove("recording-live"));
+  drawStackedTimelines();
+}
+function drawLiveRecordingWave(track, byteData){
+  const c = getTrackCanvas(track);
+  if(!c) return;
+  const cctx = c.getContext("2d");
+  const w = c.width, h = c.height;
+  if(byteData){
+    const step = Math.max(1, Math.floor(byteData.length / 96));
+    for(let i=0;i<byteData.length;i+=step){
+      liveRecordingSamples.push((byteData[i]-128)/128);
+    }
+    if(liveRecordingSamples.length > LIVE_RECORDING_HISTORY){
+      liveRecordingSamples = liveRecordingSamples.slice(liveRecordingSamples.length - LIVE_RECORDING_HISTORY);
+    }
+  }
+  cctx.clearRect(0,0,w,h);
+  cctx.fillStyle = "#020617";
+  cctx.fillRect(0,0,w,h);
+  cctx.strokeStyle = "rgba(239,68,68,.25)";
+  cctx.lineWidth = 1;
+  cctx.beginPath(); cctx.moveTo(0,h/2); cctx.lineTo(w,h/2); cctx.stroke();
+  cctx.strokeStyle = "#ef4444";
+  cctx.lineWidth = 2 * devicePixelRatio;
+  cctx.beginPath();
+  const arr = liveRecordingSamples.length ? liveRecordingSamples : [0];
+  for(let x=0;x<w;x++){
+    const idx = Math.floor((x / Math.max(1,w-1)) * Math.max(0, arr.length-1));
+    const y = h/2 - arr[idx] * h * 0.42;
+    if(x===0) cctx.moveTo(x,y); else cctx.lineTo(x,y);
+  }
+  cctx.stroke();
+  cctx.fillStyle = "rgba(239,68,68,.16)";
+  cctx.fillRect(0,0,w,h);
+}
+
 function drawMicLevelOff(){
   if(micLevelFill) micLevelFill.style.width = "0%";
   if(micLevelText) micLevelText.textContent = "OFF";
@@ -1242,6 +1479,9 @@ function startMicLevelMeter(stream){
         else micLevelCtx.lineTo(x,y);
       }
       micLevelCtx.stroke();
+      if(recordingWaveTrack){
+        drawLiveRecordingWave(recordingWaveTrack, micLevelData);
+      }
       micLevelAnimationId = requestAnimationFrame(draw);
     };
     draw();
@@ -1445,9 +1685,25 @@ if(karaokeMonitorVolume) karaokeMonitorVolume.oninput = ()=>{
   if(karaokePlaybackGain) karaokePlaybackGain.gain.value = Number(karaokeMonitorVolume.value) / 100;
 };
 if(karaokeBackingVolume) karaokeBackingVolume.oninput = ()=>{
+  if(trackVolumeMain) trackVolumeMain.value = karaokeBackingVolume.value;
+  updateTrackVolumeLabels();
   updateKaraokeMonitorUI();
 };
 updateKaraokeMonitorUI();
+[trackVolumeMain,trackVolumeTake,trackVolumeChorus].forEach(slider=>{
+  if(slider) slider.oninput = ()=>{
+    updateTrackVolumeLabels();
+    refreshPreview();
+    drawStackedTimelines();
+  };
+});
+[trackSelectMain,trackSelectTake,trackSelectChorus].forEach(chk=>{
+  if(chk) chk.onchange = ()=>{ syncTrackAndMultiChecks(); updateButtons(); };
+});
+[multiPlayMain,multiPlayTake,multiPlayChorus].forEach(chk=>{
+  if(chk) chk.onchange = ()=>{ syncMultiAndTrackChecks(); updateButtons(); };
+});
+updateTrackVolumeLabels();
 
 
 function stopKaraokePlaybackDuringRecord(){
@@ -1550,6 +1806,7 @@ recordBtn.onclick = async()=>{
       alert("録音データの読み込みに失敗しました: " + err.message);
       console.error(err);
     }finally{
+      endLiveRecordingWave();
       stopCurrentMicStream();
     }
   };
@@ -2954,6 +3211,7 @@ appendTakeBtn.onclick=()=>{
 
 
 function getBackingGain(){
+  if(trackVolumeMain) return Number(trackVolumeMain.value) / 100;
   return karaokeBackingVolume ? Number(karaokeBackingVolume.value) / 100 : 1;
 }
 
@@ -2972,15 +3230,57 @@ function scaleBuffer(buffer, gain){
 }
 
 function buildVocalSyncMix(){
-  if(!mainBuffer && !takeBuffer && !chorusBuffer) return null;
-  let mixed = mainBuffer ? scaleBuffer(mainBuffer, getBackingGain()) : null;
-  if(takeBuffer){
-    mixed = mixed ? mixBuffersWithOffset(mixed, takeBuffer, takeOffsetMs / 1000) : takeBuffer;
-  }
-  if(chorusBuffer){
-    mixed = mixed ? mixBuffersWithOffset(mixed, chorusBuffer, chorusOffsetMs / 1000) : chorusBuffer;
-  }
-  return mixed;
+  return buildSelectedTrackMix({main:true, take:true, chorus:true});
+}
+
+function buildSelectedTrackMix(selection){
+  ensureAudioContext();
+  const tracks = [];
+  if(selection.main && mainBuffer) tracks.push({track:"main", buffer:mainBuffer, offsetMs:0, gain:getTrackVolume("main")});
+  if(selection.take && takeBuffer) tracks.push({track:"take", buffer:takeBuffer, offsetMs:takeOffsetMs, gain:getTrackVolume("take")});
+  if(selection.chorus && chorusBuffer) tracks.push({track:"chorus", buffer:chorusBuffer, offsetMs:chorusOffsetMs, gain:getTrackVolume("chorus")});
+  if(!tracks.length) return null;
+  const channels = Math.max(...tracks.map(t=>t.buffer.numberOfChannels));
+  const rate = tracks[0].buffer.sampleRate;
+  let minStart = 0;
+  let maxEnd = 0;
+  tracks.forEach(t=>{
+    const start = Math.round((t.offsetMs/1000) * rate);
+    minStart = Math.min(minStart, start);
+    maxEnd = Math.max(maxEnd, start + t.buffer.length);
+  });
+  const shift = -minStart;
+  const length = Math.max(1, maxEnd - minStart);
+  const out = audioContext.createBuffer(channels, length, rate);
+  tracks.forEach(t=>{
+    const start = Math.round((t.offsetMs/1000) * rate) + shift;
+    for(let ch=0; ch<channels; ch++){
+      const dst = out.getChannelData(ch);
+      const src = t.buffer.getChannelData(Math.min(ch,t.buffer.numberOfChannels-1));
+      for(let i=0;i<src.length;i++){
+        const idx = start + i;
+        if(idx>=0 && idx<dst.length){
+          dst[idx] = Math.max(-1, Math.min(1, dst[idx] + src[i] * t.gain));
+        }
+      }
+    }
+  });
+  return out;
+}
+
+function buildSingleTrackPlayback(track){
+  const buffer = getTrackBuffer(track);
+  if(!buffer) return null;
+  return scaleBuffer(buffer, getTrackVolume(track));
+}
+
+function getSelectedTrackPlayback(){
+  syncMultiAndTrackChecks();
+  return buildSelectedTrackMix({
+    main: !!(trackSelectMain && trackSelectMain.checked),
+    take: !!(trackSelectTake && trackSelectTake.checked),
+    chorus: !!(trackSelectChorus && trackSelectChorus.checked)
+  });
 }
 
 mixTakeBtn.onclick=()=>{
@@ -3408,9 +3708,23 @@ function updateTrackLaneInfo(){
     el.classList.toggle("active", activeBufferType === track);
     el.classList.toggle("has-audio", has);
   });
-  if(trackStackPlayBtn) trackStackPlayBtn.disabled = !(mainBuffer || takeBuffer || chorusBuffer);
+  if(playMainOnlyBtn) playMainOnlyBtn.disabled = !mainBuffer;
+  if(playTakeOnlyBtn) playTakeOnlyBtn.disabled = !takeBuffer;
+  if(playChorusOnlyBtn) playChorusOnlyBtn.disabled = !chorusBuffer;
+  if(trackSelectMain) trackSelectMain.disabled = !mainBuffer;
+  if(trackSelectTake) trackSelectTake.disabled = !takeBuffer;
+  if(trackSelectChorus) trackSelectChorus.disabled = !chorusBuffer;
+  if(multiPlayMain) multiPlayMain.disabled = !mainBuffer;
+  if(multiPlayTake) multiPlayTake.disabled = !takeBuffer;
+  if(multiPlayChorus) multiPlayChorus.disabled = !chorusBuffer;
+  if(trackCheckLabelMain) trackCheckLabelMain.classList.toggle("disabled", !mainBuffer);
+  if(trackCheckLabelTake) trackCheckLabelTake.classList.toggle("disabled", !takeBuffer);
+  if(trackCheckLabelChorus) trackCheckLabelChorus.classList.toggle("disabled", !chorusBuffer);
+  if(trackStackPlayBtn) trackStackPlayBtn.disabled = !((trackSelectMain&&trackSelectMain.checked&&mainBuffer) || (trackSelectTake&&trackSelectTake.checked&&takeBuffer) || (trackSelectChorus&&trackSelectChorus.checked&&chorusBuffer));
+  if(trackAllPlayBtn) trackAllPlayBtn.disabled = !(mainBuffer || takeBuffer || chorusBuffer);
   if(trackStackStopBtn) trackStackStopBtn.disabled = !(mainBuffer || takeBuffer || chorusBuffer);
   if(trackStackMixBtn) trackStackMixBtn.disabled = !(mainBuffer && (takeBuffer || chorusBuffer));
+  updateTrackVolumeLabels();
 }
 
 function drawStackedTimelines(){
@@ -3961,14 +4275,34 @@ if(previewMixBtn){
   };
 }
 
+function playBufferInAudioElement(buffer, label){
+  if(!buffer) return;
+  updateAudioElement(buffer);
+  audioEl.currentTime = 0;
+  if(label) fileStatus.innerHTML = label;
+  audioEl.play().catch(()=>{});
+}
+if(playMainOnlyBtn){
+  playMainOnlyBtn.onclick = ()=>playBufferInAudioElement(buildSingleTrackPlayback("main"), "カラオケ音源だけを再生中です。");
+}
+if(playTakeOnlyBtn){
+  playTakeOnlyBtn.onclick = ()=>playBufferInAudioElement(buildSingleTrackPlayback("take"), "メインボーカルだけを再生中です。");
+}
+if(playChorusOnlyBtn){
+  playChorusOnlyBtn.onclick = ()=>playBufferInAudioElement(buildSingleTrackPlayback("chorus"), "コーラスだけを再生中です。");
+}
 if(trackStackPlayBtn){
   trackStackPlayBtn.onclick = ()=>{
+    const mixed = getSelectedTrackPlayback();
+    if(!mixed) return;
+    playBufferInAudioElement(mixed, "選択したトラックだけを同時再生中です。");
+  };
+}
+if(trackAllPlayBtn){
+  trackAllPlayBtn.onclick = ()=>{
     const mixed = buildVocalSyncMix();
     if(!mixed) return;
-    updateAudioElement(mixed);
-    activeBufferType = "main";
-    audioEl.currentTime = 0;
-    audioEl.play().catch(()=>{});
+    playBufferInAudioElement(mixed, "全トラックを再生中です。");
   };
 }
 if(trackStackStopBtn){
@@ -3981,6 +4315,19 @@ if(trackStackMixBtn){
     if(mixTakeBtn && !mixTakeBtn.disabled) mixTakeBtn.click();
   };
 }
+
+
+// v15: 各トラック行の「停止」ボタン
+Array.from(document.querySelectorAll(".track-stop-inline")).forEach(btn=>{
+  btn.onclick = (e)=>{
+    e.stopPropagation();
+    if(audioEl){
+      audioEl.pause();
+      try{ audioEl.currentTime = audioEl.currentTime; }catch(_){}
+    }
+    fileStatus.innerHTML = "再生を停止しました。";
+  };
+});
 
 function mixBuffersWithOffset(a,b,offsetSec){
   ensureAudioContext();
