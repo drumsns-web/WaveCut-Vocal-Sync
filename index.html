@@ -480,6 +480,47 @@ audio{width:100%;margin:8px 0}
   font-size:12px;
   color:var(--muted);
 }
+
+
+/* ─── 3トラック縦並びタイムライン ─── */
+.track-stack-card{padding-bottom:16px;}
+.track-stack-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;}
+.track-stack-hint{font-size:12px;color:var(--muted);line-height:1.5;}
+.track-stack{display:grid;gap:8px;}
+.track-lane{
+  display:grid;
+  grid-template-columns:118px 1fr;
+  gap:8px;
+  align-items:stretch;
+  background:rgba(2,6,23,.58);
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:16px;
+  padding:8px;
+  transition:border-color .12s ease, box-shadow .12s ease, background .12s ease;
+}
+.track-lane.active{
+  border-color:rgba(53,224,161,.7);
+  box-shadow:0 0 0 1px rgba(53,224,161,.18),0 0 22px rgba(53,224,161,.10);
+  background:rgba(15,23,42,.88);
+}
+.track-lane-side{display:flex;flex-direction:column;justify-content:space-between;gap:6px;min-width:0;}
+.track-lane-name{font-weight:900;font-size:13px;color:#f8fafc;line-height:1.25;}
+.track-lane-sub{font-size:11px;color:var(--muted);line-height:1.35;word-break:break-word;}
+.track-lane-pill{display:inline-flex;align-items:center;justify-content:center;width:max-content;max-width:100%;padding:4px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.12);font-size:10px;color:var(--muted);background:rgba(255,255,255,.05);}
+.track-lane.active .track-lane-pill{color:#35e0a1;border-color:rgba(53,224,161,.45);background:rgba(53,224,161,.10);}
+.track-wave-wrap{position:relative;min-width:0;height:82px;background:#020617;border:1px solid rgba(255,255,255,.08);border-radius:13px;overflow:hidden;}
+.track-wave-canvas{display:block;width:100%;height:82px;margin:0;border:none;border-radius:0;background:transparent;touch-action:none;}
+.track-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;color:rgba(148,163,184,.72);pointer-events:none;padding:8px;}
+.track-lane.has-audio .track-empty{display:none;}
+.track-mini-controls{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;}
+.track-mini-controls button{min-height:34px;padding:7px 6px;margin:0;font-size:12px;border-radius:10px;}
+@media(max-width:640px){
+  .track-lane{grid-template-columns:88px 1fr;gap:6px;padding:7px;}
+  .track-lane-name{font-size:12px;}
+  .track-lane-sub{font-size:10px;}
+  .track-wave-wrap,.track-wave-canvas{height:72px;}
+}
+
 </style>
 </head>
 <body>
@@ -557,6 +598,60 @@ audio{width:100%;margin:8px 0}
     <button id="deleteMainBtn" disabled class="red">カラオケ音源を削除</button>
     <button id="deleteTakeBtn" disabled class="red">ボーカルを削除</button>
     <button id="deleteChorusBtn" disabled class="red">コーラスを削除</button>
+  </div>
+</section>
+
+
+<section class="card track-stack-card">
+  <p class="section-title">3 Track Timeline <span class="pill" id="trackTimelineTotal">00:00</span></p>
+  <div class="track-stack-hint">
+    カラオケ・ボーカル・コーラスを上下に並べて表示します。各レーンをタップすると、そのトラックを編集対象に切り替えられます。
+  </div>
+  <div class="track-stack" id="trackStack">
+    <div class="track-lane" data-track="main" id="laneMain">
+      <div class="track-lane-side">
+        <div>
+          <div class="track-lane-name">カラオケ音源</div>
+          <div class="track-lane-sub" id="laneMainInfo">未読み込み</div>
+        </div>
+        <span class="track-lane-pill" id="laneMainPill">Track 1</span>
+      </div>
+      <div class="track-wave-wrap">
+        <canvas class="track-wave-canvas" id="trackCanvasMain" data-track="main"></canvas>
+        <div class="track-empty">カラオケ音源を読み込む</div>
+      </div>
+    </div>
+    <div class="track-lane" data-track="take" id="laneTake">
+      <div class="track-lane-side">
+        <div>
+          <div class="track-lane-name">メインボーカル</div>
+          <div class="track-lane-sub" id="laneTakeInfo">未録音</div>
+        </div>
+        <span class="track-lane-pill" id="laneTakePill">Track 2</span>
+      </div>
+      <div class="track-wave-wrap">
+        <canvas class="track-wave-canvas" id="trackCanvasTake" data-track="take"></canvas>
+        <div class="track-empty">録音すると波形が出ます</div>
+      </div>
+    </div>
+    <div class="track-lane" data-track="chorus" id="laneChorus">
+      <div class="track-lane-side">
+        <div>
+          <div class="track-lane-name">コーラス</div>
+          <div class="track-lane-sub" id="laneChorusInfo">未録音</div>
+        </div>
+        <span class="track-lane-pill" id="laneChorusPill">Track 3</span>
+      </div>
+      <div class="track-wave-wrap">
+        <canvas class="track-wave-canvas" id="trackCanvasChorus" data-track="chorus"></canvas>
+        <div class="track-empty">ハモリ・追加声を録音</div>
+      </div>
+    </div>
+  </div>
+  <div class="track-mini-controls">
+    <button id="trackStackPlayBtn" class="primary" disabled>▶ 3トラック確認</button>
+    <button id="trackStackStopBtn" disabled>停止</button>
+    <button id="trackStackMixBtn" class="green" disabled>MIX確定</button>
   </div>
 </section>
 
@@ -862,6 +957,20 @@ const timeRulerCtx = timeRulerCanvas.getContext("2d");
 const bigTimeLabel = document.getElementById("bigTimeLabel");
 const wavePlayBtn = document.getElementById("wavePlayBtn");
 const wavePauseBtn = document.getElementById("wavePauseBtn");
+const trackTimelineTotal = document.getElementById("trackTimelineTotal");
+const trackCanvasMain = document.getElementById("trackCanvasMain");
+const trackCanvasTake = document.getElementById("trackCanvasTake");
+const trackCanvasChorus = document.getElementById("trackCanvasChorus");
+const trackCanvasList = [trackCanvasMain, trackCanvasTake, trackCanvasChorus].filter(Boolean);
+const laneMain = document.getElementById("laneMain");
+const laneTake = document.getElementById("laneTake");
+const laneChorus = document.getElementById("laneChorus");
+const laneMainInfo = document.getElementById("laneMainInfo");
+const laneTakeInfo = document.getElementById("laneTakeInfo");
+const laneChorusInfo = document.getElementById("laneChorusInfo");
+const trackStackPlayBtn = document.getElementById("trackStackPlayBtn");
+const trackStackStopBtn = document.getElementById("trackStackStopBtn");
+const trackStackMixBtn = document.getElementById("trackStackMixBtn");
 
 function ensureAudioContext(){
   if(!audioContext) audioContext = new AudioContext();
@@ -970,6 +1079,10 @@ function resizeCanvas(){
   canvas.height = canvas.clientHeight * devicePixelRatio;
   timeRulerCanvas.width = timeRulerCanvas.clientWidth * devicePixelRatio;
   timeRulerCanvas.height = timeRulerCanvas.clientHeight * devicePixelRatio;
+  trackCanvasList.forEach(c=>{
+    c.width = c.clientWidth * devicePixelRatio;
+    c.height = c.clientHeight * devicePixelRatio;
+  });
 }
 resizeCanvas();
 window.addEventListener("resize",()=>{
@@ -2237,6 +2350,7 @@ function updateButtons(){
   if(applySelectionFxBtn) applySelectionFxBtn.disabled = !hasRange;
   updateTakeOffsetLabel();
   updateChorusOffsetLabel();
+  drawStackedTimelines();
 }
 
 function updateSourceStatus(){
@@ -2883,6 +2997,161 @@ function formatTimeMs(sec){
   return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}.${String(cs).padStart(2,"0")}`;
 }
 
+
+function getTrackTimelineDuration(){
+  const durations = [];
+  if(mainBuffer) durations.push(mainBuffer.duration);
+  if(takeBuffer) durations.push(Math.max(0, takeOffsetMs / 1000) + takeBuffer.duration);
+  if(chorusBuffer) durations.push(Math.max(0, chorusOffsetMs / 1000) + chorusBuffer.duration);
+  return Math.max(1, ...durations);
+}
+
+function bufferForTrack(track){
+  if(track === "take") return takeBuffer;
+  if(track === "chorus") return chorusBuffer;
+  return mainBuffer;
+}
+
+function offsetForTrack(track){
+  if(track === "take") return takeOffsetMs / 1000;
+  if(track === "chorus") return chorusOffsetMs / 1000;
+  return 0;
+}
+
+function setActiveTrack(track){
+  const b = bufferForTrack(track);
+  if(!b) return;
+  activeBufferType = track;
+  selectedStart = null;
+  selectedEnd = null;
+  playheadRatio = 0;
+  invalidateWaveformCache();
+  resetFx();
+  refreshPreview();
+  updateButtons();
+}
+
+function drawMiniTrackWave(canvasEl, track, labelColor){
+  if(!canvasEl) return;
+  const cctx = canvasEl.getContext("2d");
+  const w = canvasEl.width;
+  const h = canvasEl.height;
+  cctx.clearRect(0,0,w,h);
+  cctx.fillStyle = "#020617";
+  cctx.fillRect(0,0,w,h);
+
+  cctx.strokeStyle = "rgba(255,255,255,.07)";
+  cctx.lineWidth = 1;
+  for(let i=1;i<4;i++){
+    const y = h*i/4;
+    cctx.beginPath(); cctx.moveTo(0,y); cctx.lineTo(w,y); cctx.stroke();
+  }
+
+  const total = getTrackTimelineDuration();
+  const visibleStart = viewportStart;
+  const visibleEnd = getViewportEnd();
+  const viewStartSec = total * visibleStart;
+  const viewEndSec = total * visibleEnd;
+  const viewDur = Math.max(0.001, viewEndSec - viewStartSec);
+  const step = chooseGridStep(viewDur);
+  const firstTick = Math.ceil(viewStartSec / step) * step;
+  cctx.strokeStyle = "rgba(255,255,255,.06)";
+  for(let t=firstTick;t<=viewEndSec+0.0001;t+=step){
+    const x = ((t-viewStartSec)/viewDur)*w;
+    cctx.beginPath(); cctx.moveTo(x,0); cctx.lineTo(x,h); cctx.stroke();
+  }
+
+  const buffer = bufferForTrack(track);
+  const offsetSec = offsetForTrack(track);
+  if(buffer){
+    const startInBuffer = Math.max(0, viewStartSec - offsetSec);
+    const endInBuffer = Math.min(buffer.duration, viewEndSec - offsetSec);
+    if(endInBuffer > startInBuffer){
+      const data = buffer.getChannelData(0);
+      const amp = h / 2;
+      const xStart = Math.max(0, ((offsetSec + startInBuffer - viewStartSec) / viewDur) * w);
+      const xEnd = Math.min(w, ((offsetSec + endInBuffer - viewStartSec) / viewDur) * w);
+      const pxStart = Math.floor(xStart);
+      const pxEnd = Math.ceil(xEnd);
+      cctx.strokeStyle = labelColor;
+      cctx.lineWidth = 1.2 * devicePixelRatio;
+      cctx.beginPath();
+      for(let x=pxStart; x<=pxEnd; x++){
+        const timelineSec = viewStartSec + (x / w) * viewDur;
+        const bufSec = timelineSec - offsetSec;
+        const sample = Math.floor((bufSec / buffer.duration) * data.length);
+        const samplesPerPx = Math.max(1, Math.ceil((viewDur / w) * buffer.sampleRate));
+        let min=1, max=-1;
+        const s0 = Math.max(0, sample);
+        const s1 = Math.min(data.length, sample + samplesPerPx);
+        for(let i=s0;i<s1;i++){
+          const v = data[i] || 0;
+          if(v<min) min=v;
+          if(v>max) max=v;
+        }
+        cctx.moveTo(x, (1+min)*amp);
+        cctx.lineTo(x, (1+max)*amp);
+      }
+      cctx.stroke();
+    }
+  }
+
+  const active = activeBuffer();
+  let currentSec = 0;
+  if(active){
+    currentSec = active.duration * playheadRatio + offsetForTrack(activeBufferType);
+  }
+  if(currentSec >= viewStartSec && currentSec <= viewEndSec){
+    const px = ((currentSec-viewStartSec)/viewDur)*w;
+    cctx.strokeStyle = "#f8fafc";
+    cctx.lineWidth = 2 * devicePixelRatio;
+    cctx.beginPath(); cctx.moveTo(px,0); cctx.lineTo(px,h); cctx.stroke();
+  }
+
+  if(buffer && activeBufferType === track && selectedStart!==null && selectedEnd!==null && selectedEnd > selectedStart){
+    const selStartSec = offsetSec + buffer.duration * selectedStart;
+    const selEndSec = offsetSec + buffer.duration * selectedEnd;
+    const clippedStart = Math.max(selStartSec, viewStartSec);
+    const clippedEnd = Math.min(selEndSec, viewEndSec);
+    if(clippedEnd > clippedStart){
+      const x1=((clippedStart-viewStartSec)/viewDur)*w;
+      const x2=((clippedEnd-viewStartSec)/viewDur)*w;
+      cctx.fillStyle="rgba(79,140,255,.28)";
+      cctx.fillRect(x1,0,x2-x1,h);
+    }
+  }
+}
+
+function updateTrackLaneInfo(){
+  const total = getTrackTimelineDuration();
+  if(trackTimelineTotal) trackTimelineTotal.textContent = formatTime(total);
+  if(laneMainInfo) laneMainInfo.textContent = mainBuffer ? `${formatTime(mainBuffer.duration)} / 基準` : "未読み込み";
+  if(laneTakeInfo){
+    const sign = takeOffsetMs > 0 ? "+" : "";
+    laneTakeInfo.textContent = takeBuffer ? `${formatTime(takeBuffer.duration)} / 補正 ${sign}${takeOffsetMs}ms` : "未録音";
+  }
+  if(laneChorusInfo){
+    const sign = chorusOffsetMs > 0 ? "+" : "";
+    laneChorusInfo.textContent = chorusBuffer ? `${formatTime(chorusBuffer.duration)} / 補正 ${sign}${chorusOffsetMs}ms` : "未録音";
+  }
+  const lanes = [{el:laneMain, track:"main", has:!!mainBuffer},{el:laneTake, track:"take", has:!!takeBuffer},{el:laneChorus, track:"chorus", has:!!chorusBuffer}];
+  lanes.forEach(({el,track,has})=>{
+    if(!el) return;
+    el.classList.toggle("active", activeBufferType === track);
+    el.classList.toggle("has-audio", has);
+  });
+  if(trackStackPlayBtn) trackStackPlayBtn.disabled = !(mainBuffer || takeBuffer || chorusBuffer);
+  if(trackStackStopBtn) trackStackStopBtn.disabled = !(mainBuffer || takeBuffer || chorusBuffer);
+  if(trackStackMixBtn) trackStackMixBtn.disabled = !(mainBuffer && (takeBuffer || chorusBuffer));
+}
+
+function drawStackedTimelines(){
+  updateTrackLaneInfo();
+  drawMiniTrackWave(trackCanvasMain, "main", "#35e0a1");
+  drawMiniTrackWave(trackCanvasTake, "take", "#4f8cff");
+  drawMiniTrackWave(trackCanvasChorus, "chorus", "#f59e0b");
+}
+
 function drawWaveform(buffer){
   drawTimeRuler(buffer);
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -2969,6 +3238,7 @@ function drawWaveform(buffer){
     ctx.arc(px, 13 * devicePixelRatio, 6 * devicePixelRatio, 0, Math.PI * 2);
     ctx.fill();
   }
+  drawStackedTimelines();
 }
 
 let isDragging=false;
