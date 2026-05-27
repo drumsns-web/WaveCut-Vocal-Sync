@@ -559,15 +559,23 @@ audio{width:100%;margin:8px 0}
   <label>録音先</label>
   <select id="recordTarget">
     <option value="main">外部カラオケを録音してカラオケ音源にする</option>
-    <option value="take">イヤホンで聴きながらメインボーカルを録音する</option>
-    <option value="chorus">イヤホンで聴きながらコーラスを録音する</option>
+    <option value="take">メインボーカルを録音する</option>
+    <option value="chorus">コーラスを録音する</option>
   </select>
 
-  <label style="display:flex;align-items:center;gap:8px;margin:10px 0;color:#cbd5e1;">
-    <input id="playKaraokeWhileRecording" type="checkbox" checked style="width:auto;accent-color:var(--green);">
-    カラオケ音源を聴きながら録音する（イヤホン推奨）
-  </label>
-  <div class="info">カラオケ音源トラックがある場合、録音開始と同時に再生します。イヤホンで聴けば、マイクには基本的に歌声だけを録音できます。</div>
+  <label>録音中のカラオケ再生</label>
+  <select id="karaokeMonitorMode">
+    <option value="headphones" selected>再生する：イヤホン向け（歌声だけ録りやすい）</option>
+    <option value="speaker">再生する：スピーカー可（伴奏が薄く入る可能性あり）</option>
+    <option value="off">再生しない</option>
+  </select>
+
+  <label>録音中の再生音量：<span id="karaokeMonitorVolumeLabel">100%</span></label>
+  <input id="karaokeMonitorVolume" type="range" min="0" max="100" step="1" value="100">
+
+  <div id="karaokeMonitorInfo" class="info">
+    カラオケ音源トラックがある場合、録音開始と同時に再生できます。イヤホンなら歌声だけを録りやすく、スピーカー再生なら伴奏がマイクに薄く入って波形合わせの目印になる場合があります。
+  </div>
 
   <div class="row">
     <button id="recordBtn" class="primary">録音開始</button>
@@ -932,7 +940,10 @@ const resetTakeOffsetBtn = document.getElementById("resetTakeOffsetBtn");
 const previewMixBtn = document.getElementById("previewMixBtn");
 const chorusOffsetLabel = document.getElementById("chorusOffsetLabel");
 const resetChorusOffsetBtn = document.getElementById("resetChorusOffsetBtn");
-const playKaraokeWhileRecording = document.getElementById("playKaraokeWhileRecording");
+const karaokeMonitorMode = document.getElementById("karaokeMonitorMode");
+const karaokeMonitorVolume = document.getElementById("karaokeMonitorVolume");
+const karaokeMonitorVolumeLabel = document.getElementById("karaokeMonitorVolumeLabel");
+const karaokeMonitorInfo = document.getElementById("karaokeMonitorInfo");
 
 const gainSlider = document.getElementById("gainSlider");
 const reverbSlider = document.getElementById("reverbSlider");
@@ -1260,6 +1271,25 @@ recordTarget.onchange=()=>{
   else modeLabel.textContent = "カラオケ録音";
 };
 
+function updateKaraokeMonitorUI(){
+  if(karaokeMonitorVolumeLabel && karaokeMonitorVolume){
+    karaokeMonitorVolumeLabel.textContent = `${karaokeMonitorVolume.value}%`;
+  }
+  if(!karaokeMonitorInfo || !karaokeMonitorMode) return;
+
+  if(karaokeMonitorMode.value === "off"){
+    karaokeMonitorInfo.innerHTML = "録音中はカラオケ音源を再生しません。別端末や店内カラオケを使う場合に向いています。";
+  }else if(karaokeMonitorMode.value === "speaker"){
+    karaokeMonitorInfo.innerHTML = "スピーカーでカラオケを鳴らしながら録音します。伴奏がマイクに薄く入る可能性があり、波形合わせの目印になる場合があります。ただし最終MIXでは伴奏が二重に聞こえる可能性があるため、再生音量は低めから試してください。";
+  }else{
+    karaokeMonitorInfo.innerHTML = "イヤホンでカラオケを聴きながら録音します。伴奏がマイクに入りにくいため、歌声だけをきれいに録りやすい設定です。";
+  }
+}
+
+if(karaokeMonitorMode) karaokeMonitorMode.onchange = updateKaraokeMonitorUI;
+if(karaokeMonitorVolume) karaokeMonitorVolume.oninput = updateKaraokeMonitorUI;
+updateKaraokeMonitorUI();
+
 recordBtn.onclick = async()=>{
   ensureAudioContext();
   recordedChunks=[];
@@ -1294,6 +1324,13 @@ recordBtn.onclick = async()=>{
         takeFxBackup = null;
         activeBufferType = "take";
         fileStatus.textContent = `歌声トラックを録音しました / 長さ ${formatTime(decoded.duration)}`;
+      }else if(recordTarget.value === "chorus"){
+        chorusBuffer = decoded;
+        chorusOffsetMs = 0;
+        chorusFxBaked = false;
+        chorusFxBackup = null;
+        activeBufferType = "chorus";
+        fileStatus.textContent = `コーラストラックを録音しました / 長さ ${formatTime(decoded.duration)}`;
       }else{
         mainBuffer = decoded;
         mainFxBaked = false;
@@ -1318,20 +1355,27 @@ recordBtn.onclick = async()=>{
 
   mediaRecorder.start();
 
-  // ボーカル/コーラス録音時は、カラオケ音源をイヤホンで聴きながら録音できるように同時再生する。
-  // iPhoneでは有線イヤホンまたは低遅延のイヤホン推奨。スピーカー再生だと伴奏がマイクに回り込みます。
+  // ボーカル/コーラス録音時は、カラオケ音源を同時再生できる。
+  // イヤホンなら歌声だけを録りやすく、スピーカーなら伴奏が薄く入り波形合わせの目印になる場合があります。
   karaokePlaybackDuringRecord = null;
-  if((recordTarget.value === "take" || recordTarget.value === "chorus") && mainBuffer && playKaraokeWhileRecording && playKaraokeWhileRecording.checked){
+  if((recordTarget.value === "take" || recordTarget.value === "chorus") && mainBuffer && karaokeMonitorMode && karaokeMonitorMode.value !== "off"){
     try{
       updateAudioElement(mainBuffer);
       audioEl.currentTime = 0;
+      audioEl.volume = karaokeMonitorVolume ? Number(karaokeMonitorVolume.value) / 100 : 1;
       karaokePlaybackDuringRecord = audioEl;
       await audioEl.play();
-      fileStatus.innerHTML = `カラオケ音源を再生しながら録音中です。イヤホンで聴くと、マイクには基本的に歌声だけが録音されます。`;
+      if(karaokeMonitorMode.value === "speaker"){
+        fileStatus.innerHTML = `カラオケ音源をスピーカーで再生しながら録音中です。伴奏がマイクに薄く入る可能性があります。位置合わせの目印にはなりますが、最終MIXでは伴奏が二重に聞こえる場合があります。`;
+      }else{
+        fileStatus.innerHTML = `カラオケ音源を再生しながら録音中です。イヤホンで聴くと、マイクには基本的に歌声だけが録音されます。`;
+      }
     }catch(playErr){
       console.warn("Karaoke playback during recording failed", playErr);
       fileStatus.innerHTML = `録音は開始しましたが、カラオケ音源の自動再生に失敗しました。iPhoneの場合は音量・消音モード・再生許可を確認してください。`;
     }
+  }else if((recordTarget.value === "take" || recordTarget.value === "chorus") && (!karaokeMonitorMode || karaokeMonitorMode.value === "off")){
+    fileStatus.innerHTML = `カラオケ音源を再生せずに録音中です。別端末や店内カラオケを聴きながら録る場合はこの設定で使えます。`;
   }
 
   recordBtn.disabled=true;
