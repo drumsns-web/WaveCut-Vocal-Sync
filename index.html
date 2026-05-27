@@ -1089,6 +1089,11 @@ let chorusOffsetMs = 0;
 let karaokePlaybackDuringRecord = null;
 let karaokePlaybackSource = null;
 let karaokePlaybackGain = null;
+// トラック直接再生（AudioContext方式）
+let trackPlaybackNodes = [];
+let trackPlaybackRaf = null;
+let trackPlaybackStartAt = 0;
+let trackPlaybackDuration = 0;
 let micAnalyser = null;
 let micLevelSource = null;
 let micLevelAnimationId = null;
@@ -4385,39 +4390,144 @@ if(previewMixBtn){
   };
 }
 
-function playBufferInAudioElement(buffer, label){
-  if(!buffer) return;
-  updateAudioElement(buffer);
-  audioEl.currentTime = 0;
-  if(label) fileStatus.innerHTML = label;
-  audioEl.play().catch(()=>{});
+// ── トラック直接再生（AudioContext方式）────────────────────────────
+function stopTrackPlayback(){
+  trackPlaybackNodes.forEach(n=>{ try{ n.stop(); }catch(_){} });
+  trackPlaybackNodes = [];
+  if(trackPlaybackRaf){ cancelAnimationFrame(trackPlaybackRaf); trackPlaybackRaf = null; }
+  // ミニ波形のプレイヘッドをリセット
+  drawStackedTimelines();
 }
+
+function startTrackPlaybackHeadAnimation(){
+  if(trackPlaybackRaf) cancelAnimationFrame(trackPlaybackRaf);
+  const tick = ()=>{
+    if(!audioContext || trackPlaybackNodes.length === 0) return;
+    const elapsed = audioContext.currentTime - trackPlaybackStartAt;
+    // ミニ波形のプレイヘッドを更新するためdrawStackedTimelinesを呼ぶ
+    // playheadRatio相当をtrackPlayback専用で更新
+    drawStackedTimelines();
+    if(elapsed < trackPlaybackDuration + 0.15){
+      trackPlaybackRaf = requestAnimationFrame(tick);
+    } else {
+      trackPlaybackNodes = [];
+      trackPlaybackRaf = null;
+      drawStackedTimelines();
+      updateTrackPlaybackStatus("");
+    }
+  };
+  trackPlaybackRaf = requestAnimationFrame(tick);
+}
+
+function updateTrackPlaybackStatus(msg){
+  if(msg) fileStatus.innerHTML = msg;
+}
+
+async function playBuffersDirectly(trackDefs, label){
+  // trackDefs: [{buffer, volume, offsetMs}]
+  ensureAudioContext();
+  if(audioContext.state === "suspended"){
+    try{ await audioContext.resume(); }catch(e){}
+  }
+  stopTrackPlayback();
+
+  if(preferredSinkId){
+    await applyAudioOutputSinkId(preferredSinkId).catch(()=>{});
+  }
+
+  const baseAt = audioContext.currentTime + 0.08;
+  let maxDur = 0;
+  const nodes = [];
+
+  for(const def of trackDefs){
+    if(!def.buffer) continue;
+    const vol = (def.volume != null) ? def.volume : 1;
+    const offsetSec = (def.offsetMs || 0) / 1000;
+    const startAt = baseAt + Math.max(0, offsetSec);
+    const startOffset = Math.max(0, -offsetSec); // 負オフセット=バッファの途中から
+
+    const gain = audioContext.createGain();
+    gain.gain.value = vol;
+    gain.connect(audioContext.destination);
+    const src = audioContext.createBufferSource();
+    src.buffer = def.buffer;
+    src.connect(gain);
+    src.start(startAt, startOffset);
+    nodes.push(src);
+
+    const endTime = offsetSec + def.buffer.duration;
+    if(endTime > maxDur) maxDur = endTime;
+  }
+
+  if(nodes.length === 0){
+    updateTrackPlaybackStatus("再生できる音源がありません。");
+    return;
+  }
+
+  trackPlaybackNodes = nodes;
+  trackPlaybackStartAt = baseAt;
+  trackPlaybackDuration = maxDur;
+  startTrackPlaybackHeadAnimation();
+  updateTrackPlaybackStatus(label || "再生中...");
+
+  setTimeout(()=>{
+    trackPlaybackNodes = [];
+    if(trackPlaybackRaf){ cancelAnimationFrame(trackPlaybackRaf); trackPlaybackRaf = null; }
+    drawStackedTimelines();
+    updateTrackPlaybackStatus("再生完了。");
+  }, (maxDur + 0.3) * 1000);
+}
+
 if(playMainOnlyBtn){
-  playMainOnlyBtn.onclick = ()=>playBufferInAudioElement(buildSingleTrackPlayback("main"), "カラオケ音源だけを再生中です。");
+  playMainOnlyBtn.onclick = ()=>{
+    const buf = buildSingleTrackPlayback("main");
+    if(!buf) return;
+    playBuffersDirectly([{buffer:buf, volume:1}], "▶ カラオケ音源を再生中...");
+  };
 }
 if(playTakeOnlyBtn){
-  playTakeOnlyBtn.onclick = ()=>playBufferInAudioElement(buildSingleTrackPlayback("take"), "メインボーカルだけを再生中です。");
+  playTakeOnlyBtn.onclick = ()=>{
+    const buf = buildSingleTrackPlayback("take");
+    if(!buf) return;
+    playBuffersDirectly([{buffer:buf, volume:1}], "▶ メインボーカルを再生中...");
+  };
 }
 if(playChorusOnlyBtn){
-  playChorusOnlyBtn.onclick = ()=>playBufferInAudioElement(buildSingleTrackPlayback("chorus"), "コーラスだけを再生中です。");
+  playChorusOnlyBtn.onclick = ()=>{
+    const buf = buildSingleTrackPlayback("chorus");
+    if(!buf) return;
+    playBuffersDirectly([{buffer:buf, volume:1}], "▶ コーラスを再生中...");
+  };
 }
 if(trackStackPlayBtn){
   trackStackPlayBtn.onclick = ()=>{
-    const mixed = getSelectedTrackPlayback();
-    if(!mixed) return;
-    playBufferInAudioElement(mixed, "選択したトラックだけを同時再生中です。");
+    syncMultiAndTrackChecks();
+    const defs = [];
+    if(trackSelectMain && trackSelectMain.checked && mainBuffer)
+      defs.push({buffer: mainBuffer, volume: getTrackVolume("main"), offsetMs: 0});
+    if(trackSelectTake && trackSelectTake.checked && takeBuffer)
+      defs.push({buffer: takeBuffer, volume: getTrackVolume("take"), offsetMs: takeOffsetMs});
+    if(trackSelectChorus && trackSelectChorus.checked && chorusBuffer)
+      defs.push({buffer: chorusBuffer, volume: getTrackVolume("chorus"), offsetMs: chorusOffsetMs});
+    if(!defs.length) return;
+    playBuffersDirectly(defs, "▶ 選択トラックを同時再生中...");
   };
 }
 if(trackAllPlayBtn){
   trackAllPlayBtn.onclick = ()=>{
-    const mixed = buildVocalSyncMix();
-    if(!mixed) return;
-    playBufferInAudioElement(mixed, "全トラックを再生中です。");
+    const defs = [];
+    if(mainBuffer) defs.push({buffer: mainBuffer, volume: getTrackVolume("main"), offsetMs: 0});
+    if(takeBuffer) defs.push({buffer: takeBuffer, volume: getTrackVolume("take"), offsetMs: takeOffsetMs});
+    if(chorusBuffer) defs.push({buffer: chorusBuffer, volume: getTrackVolume("chorus"), offsetMs: chorusOffsetMs});
+    if(!defs.length) return;
+    playBuffersDirectly(defs, "▶ 全トラックを再生中...");
   };
 }
 if(trackStackStopBtn){
   trackStackStopBtn.onclick = ()=>{
+    stopTrackPlayback();
     audioEl.pause();
+    fileStatus.innerHTML = "再生を停止しました。";
   };
 }
 if(trackStackMixBtn){
@@ -4426,15 +4536,12 @@ if(trackStackMixBtn){
   };
 }
 
-
-// v15: 各トラック行の「停止」ボタン
+// 各トラック行の停止ボタン
 Array.from(document.querySelectorAll(".track-stop-inline")).forEach(btn=>{
   btn.onclick = (e)=>{
     e.stopPropagation();
-    if(audioEl){
-      audioEl.pause();
-      try{ audioEl.currentTime = audioEl.currentTime; }catch(_){}
-    }
+    stopTrackPlayback();
+    audioEl.pause();
     fileStatus.innerHTML = "再生を停止しました。";
   };
 });
