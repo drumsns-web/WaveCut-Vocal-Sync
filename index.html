@@ -842,6 +842,165 @@ audio{width:100%;margin:8px 0}
   padding:0 2px;
 }
 
+/* ─── トラック新レイアウト ─── */
+.track-lane{
+  display:grid;
+  grid-template-columns:1fr 90px !important; /* 波形右・サイド左を逆に */
+  gap:0 !important;
+  padding:0 !important;
+  border-radius:14px;
+  overflow:hidden;
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(255,255,255,.07);
+  margin-bottom:8px;
+}
+.track-wave-area{
+  display:flex;flex-direction:column;min-width:0;
+  border-right:1px solid rgba(255,255,255,.06);
+}
+.track-wave-wrap{
+  border-radius:0 !important;
+  border:none !important;
+  height:80px !important;
+  cursor:crosshair;
+  position:relative;
+}
+.track-wave-canvas{ height:80px !important; }
+.track-edit-bar{
+  display:flex;align-items:center;gap:3px;
+  padding:4px 6px;
+  background:rgba(2,6,23,.85);
+  border-top:1px solid rgba(255,255,255,.06);
+  overflow-x:auto;scrollbar-width:none;
+  flex-shrink:0;
+}
+.track-edit-bar::-webkit-scrollbar{display:none;}
+
+/* FXパネル */
+.track-fx-panel{
+  background:rgba(15,23,42,.95);
+  border-top:1px solid rgba(255,255,255,.08);
+  padding:8px 10px;
+}
+.track-fx-row{
+  display:grid;grid-template-columns:44px 1fr 36px;
+  align-items:center;gap:4px;margin-bottom:4px;
+}
+.track-fx-label{font-size:10px;color:var(--muted);font-weight:700;}
+.track-fx-slider{width:100%;height:4px;accent-color:#35e0a1;}
+.track-fx-val{font-size:10px;color:#35e0a1;font-family:monospace;text-align:right;}
+.track-fx-actions{display:flex;gap:6px;margin-top:6px;}
+.track-offset-row{
+  margin-top:8px;padding-top:7px;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.track-offset-label{font-size:10px;color:var(--muted);margin-bottom:4px;}
+.track-offset-label strong{color:#fbbf24;}
+.track-offset-btns{display:flex;gap:3px;flex-wrap:wrap;}
+
+/* サイドパネル */
+.track-lane-side{
+  display:flex;flex-direction:column;
+  padding:8px 6px;gap:4px;
+  background:rgba(255,255,255,.015);
+}
+.track-lane-header{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:3px;
+}
+.track-lane-name{font-size:11px;font-weight:800;color:#f8fafc;}
+.track-rec-badge{
+  font-size:8px;font-weight:900;color:#f87171;
+  letter-spacing:.05em;opacity:.5;
+}
+.track-lane.recording .track-rec-badge{opacity:1;animation:recblink 1s infinite;}
+@keyframes recblink{0%,100%{opacity:1}50%{opacity:.2}}
+.track-lane-sub{font-size:9px;color:var(--muted);line-height:1.3;word-break:break-all;}
+.track-btns{display:flex;gap:3px;flex-wrap:wrap;}
+.track-btn-load{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:8px;font-size:13px;cursor:pointer;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);
+  color:#cbd5e1;-webkit-tap-highlight-color:transparent;user-select:none;
+}
+.track-btn-rec{
+  width:28px;height:28px;border-radius:8px;font-size:13px;padding:0 !important;
+  margin:0 !important;min-height:0 !important;
+  background:linear-gradient(180deg,#f87171,#dc2626 60%,#991b1b) !important;
+  border-color:rgba(252,165,165,.35) !important;color:#fff !important;
+}
+.track-btn-stop-rec{
+  width:28px;height:28px;border-radius:8px;font-size:13px;
+  padding:0 !important;margin:0 !important;min-height:0 !important;
+}
+.track-btn-delete{
+  padding:3px 0 !important;margin:0 !important;font-size:9px !important;
+  border-radius:7px !important;min-height:0 !important;width:100% !important;
+  background:rgba(255,255,255,.05) !important;
+  color:rgba(248,113,113,.7) !important;
+  border-color:rgba(248,113,113,.2) !important;
+}
+.track-vol-row{
+  display:flex;align-items:center;gap:4px;
+}
+.vol-btn{
+  display:inline-flex;align-items:center;gap:2px;
+  padding:3px 5px !important;margin:0 !important;
+  font-size:10px !important;border-radius:7px !important;min-height:0 !important;
+  background:rgba(255,255,255,.07) !important;
+  border:1px solid rgba(255,255,255,.13) !important;
+  color:#cbd5e1 !important;cursor:pointer;font-weight:700;flex:1;
+}
+.track-select-label{font-size:9px;color:var(--muted);white-space:nowrap;cursor:pointer;}
+.track-select-label input{width:12px;height:12px;cursor:pointer;}
+
+/* edit-bar teb-btn */
+.teb-btn{
+  width:26px;height:26px;border-radius:7px;font-size:12px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.10) !important;
+  color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;padding:0 !important;margin:0 !important;min-height:0 !important;
+  font-weight:700;transition:background .1s,color .1s;
+  -webkit-tap-highlight-color:transparent;
+}
+.teb-btn:not(:disabled):hover,.teb-btn:not(:disabled):active{
+  background:rgba(255,255,255,.15);color:#f8fafc;
+}
+.teb-btn:disabled{opacity:.22;cursor:not-allowed;}
+.teb-btn.teb-play:not(:disabled){color:#4ade80;border-color:rgba(74,222,128,.35) !important;}
+.teb-btn.teb-play.playing{color:#fff;background:rgba(74,222,128,.25) !important;}
+.teb-btn.teb-cut:not(:disabled){color:#f87171;border-color:rgba(248,113,113,.3) !important;}
+.teb-btn.teb-copy:not(:disabled){color:#60a5fa;border-color:rgba(96,165,250,.3) !important;}
+.teb-btn.teb-paste:not(:disabled){color:#4ade80;border-color:rgba(74,222,128,.3) !important;}
+.teb-btn.teb-shift-l,.teb-btn.teb-shift-r{color:#fbbf24;}
+.teb-btn.teb-fx{color:#a78bfa;font-size:9px;font-weight:900;width:24px;}
+.teb-btn.teb-fx.active{background:rgba(167,139,250,.2) !important;color:#c4b5fd;border-color:rgba(167,139,250,.4) !important;}
+.teb-btn.teb-undo:not(:disabled){color:#a78bfa;border-color:rgba(167,139,250,.3) !important;}
+.teb-sep{width:1px;height:18px;background:rgba(255,255,255,.09);flex-shrink:0;margin:0 1px;}
+.track-time-label{
+  font-family:ui-monospace,monospace;font-size:9px;font-weight:700;color:#35e0a1;
+  min-width:44px;text-align:center;background:rgba(53,224,161,.08);
+  border:1px solid rgba(53,224,161,.2);border-radius:5px;padding:2px 3px;flex-shrink:0;
+}
+
+/* Wave Edit タブ */
+.wave-track-tab{
+  width:28px;height:22px;border-radius:7px;font-size:13px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12) !important;
+  color:#64748b;cursor:pointer;padding:0 !important;margin:0 !important;min-height:0 !important;
+}
+.wave-track-tab.active{
+  background:rgba(53,224,161,.15);color:#35e0a1;
+  border-color:rgba(53,224,161,.4) !important;
+}
+.section-title{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+
+/* 再生中のトラックハイライト */
+.track-lane.playing-now .track-wave-wrap{
+  box-shadow:inset 0 0 0 2px rgba(74,222,128,.45);
+}
+
 </style>
 </head>
 <body>
@@ -903,199 +1062,328 @@ audio{width:100%;margin:8px 0}
 <section class="card track-stack-card">
   <p class="section-title">Tracks <span class="pill" id="trackTimelineTotal">00:00</span></p>
 
-  <!-- カラオケ録音中のモニター設定（1箇所だけ） -->
   <div class="monitor-bar">
     <span class="monitor-bar-label">録音中カラオケ再生：</span>
     <select id="karaokeMonitorMode">
       <option value="headphones" selected>イヤホンで聴く</option>
-      <option value="speaker">スピーカーで鳴らす（マイクに薄く入る可能性あり）</option>
+      <option value="speaker">スピーカー（マイクに入る可能性あり）</option>
       <option value="off">再生しない</option>
     </select>
-    <span class="monitor-bar-label" style="margin-left:8px">音量</span>
-    <input id="karaokeMonitorVolume" type="range" min="0" max="100" step="1" value="100" style="width:80px">
-    <span id="karaokeMonitorVolumeLabel" style="font-size:11px;color:var(--muted);min-width:34px">100%</span>
+    <input id="karaokeMonitorVolume" type="range" min="0" max="100" step="1" value="100" style="width:70px">
+    <span id="karaokeMonitorVolumeLabel" style="font-size:11px;color:var(--muted);min-width:32px">100%</span>
   </div>
-  <div id="karaokeMonitorInfo" class="info" style="margin-bottom:8px"></div>
+  <div id="karaokeMonitorInfo" class="info" style="margin-bottom:6px"></div>
 
   <div class="track-stack" id="trackStack">
-
-    <!-- Track 1: カラオケ -->
     <div class="track-lane" data-track="main" id="laneMain">
-      <div class="track-lane-side">
-        <div class="track-lane-name">🎵 カラオケ</div>
-        <div class="track-lane-sub" id="laneMainInfo">未読み込み</div>
-        <span class="track-rec-badge">● REC</span>
-        <div class="track-btns">
-          <input id="fileInputMain" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
-          <label for="fileInputMain" class="track-btn-load">📁 読込</label>
-          <button class="track-btn-rec" id="recMainBtn">⏺ 録音</button>
-          <button class="track-btn-stop-rec track-stop-rec" id="stopMainBtn" disabled>⏹</button>
-        </div>
-        <div class="track-play-row">
-          <button class="track-solo-btn" id="playMainOnlyBtn" disabled>▶</button>
-          <button class="track-stop-inline" type="button">■</button>
-          <button class="vol-btn" id="volBtnMain" data-track="main">🔊 <span id="trackVolumeMainLabel">100</span></button>
-          <input id="trackVolumeMain" type="hidden" value="100">
-        </div>
-        <div class="track-select-row"><label><input id="trackSelectMain" type="checkbox" checked> 全体再生に含む</label></div>
-        <button id="deleteMainBtn" disabled class="track-btn-delete">削除</button>
-      </div>
+      <!-- 波形エリア（右） -->
       <div class="track-wave-area">
         <div class="track-wave-wrap">
           <canvas class="track-wave-canvas" id="trackCanvasMain" data-track="main"></canvas>
-          <div class="track-empty">📁 読込 または ⏺ 録音</div>
-          <div class="recording-wave-note">録音中…</div>
+          <div class="track-empty">🎵 読込 または ⏺ 録音</div>
+          <div class="recording-wave-note">● 録音中…</div>
         </div>
+        <!-- 波形下 edit-bar（再生・編集の全操作） -->
         <div class="track-edit-bar" id="editBarMain" data-track="main">
-          <span class="track-time-label" id="timeLabelMain">--:--.-</span>
-          <button class="teb-btn" id="tebPlayMain" title="この位置から再生">▶</button>
-          <button class="teb-btn teb-stop" id="tebStopMain" title="停止">■</button>
+          <span class="track-time-label" id="timeLabelMain">--:--.--</span>
+          <button class="teb-btn teb-play" id="tebPlayMain" title="カーソル位置から再生" disabled>▶</button>
+          <button class="teb-btn teb-stop-play" id="tebStopMain" title="停止">■</button>
           <span class="teb-sep"></span>
-          <button class="teb-btn teb-cut"   id="tebCutMain"   title="選択範囲をカット" disabled>✂</button>
-          <button class="teb-btn teb-copy"  id="tebCopyMain"  title="選択範囲をコピー" disabled>⎘</button>
-          <button class="teb-btn teb-paste" id="tebPasteMain" title="カーソル位置に貼り付け" disabled>⎙</button>
+          <button class="teb-btn teb-cut"   id="tebCutMain"   title="選択をカット（クリップへ）" disabled>✂</button>
+          <button class="teb-btn teb-copy"  id="tebCopyMain"  title="選択をコピー" disabled>⎘</button>
+          <button class="teb-btn teb-paste" id="tebPasteMain" title="カーソル位置へ貼り付け" disabled>⎙</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-shift-l" data-track="main" data-ms="-100" title="-100ms">«</button>
           <button class="teb-btn teb-shift-l" data-track="main" data-ms="-10"  title="-10ms">‹</button>
           <button class="teb-btn teb-shift-r" data-track="main" data-ms="10"   title="+10ms">›</button>
           <button class="teb-btn teb-shift-r" data-track="main" data-ms="100"  title="+100ms">»</button>
+          <span class="teb-sep"></span>
+          <button class="teb-btn teb-fx" id="fxToggleMain" title="エフェクト">FX</button>
           <button class="teb-btn teb-undo" id="tebUndoMain" title="元に戻す" disabled>↩</button>
         </div>
+        <!-- FXパネル（トグル） -->
+        <div class="track-fx-panel" id="fxPanelMain" style="display:none">
+          <div class="track-fx-row">
+            <span class="track-fx-label">Gain</span>
+            <input type="range" class="track-fx-slider" data-track="main" data-fx="gain" min="-24" max="24" step="0.5" value="0">
+            <span class="track-fx-val" data-track="main" data-fx="gain">0dB</span>
+          </div>
+          <div class="track-fx-row">
+            <span class="track-fx-label">Reverb</span>
+            <input type="range" class="track-fx-slider" data-track="main" data-fx="reverb" min="0" max="100" step="1" value="0">
+            <span class="track-fx-val" data-track="main" data-fx="reverb">0%</span>
+          </div>
+          <div class="track-fx-row">
+            <span class="track-fx-label">Delay</span>
+            <input type="range" class="track-fx-slider" data-track="main" data-fx="delay" min="0" max="100" step="1" value="0">
+            <span class="track-fx-val" data-track="main" data-fx="delay">0%</span>
+          </div>
+          <div class="track-fx-row">
+            <span class="track-fx-label">Double</span>
+            <input type="range" class="track-fx-slider" data-track="main" data-fx="double" min="0" max="100" step="1" value="0">
+            <span class="track-fx-val" data-track="main" data-fx="double">0%</span>
+          </div>
+          <div class="track-fx-row">
+            <span class="track-fx-label">Radio</span>
+            <input type="range" class="track-fx-slider" data-track="main" data-fx="radio" min="0" max="100" step="1" value="0">
+            <span class="track-fx-val" data-track="main" data-fx="radio">0%</span>
+          </div>
+          <div class="track-fx-actions">
+            <button class="teb-btn track-fx-apply" data-track="main" style="width:auto;padding:0 8px;font-size:10px;color:#fbbf24;border-color:rgba(251,191,36,.35)!important;">反映</button>
+            <button class="teb-btn track-fx-reset" data-track="main" style="width:auto;padding:0 8px;font-size:10px;">リセット</button>
+          </div>
+        </div>
+      </div>
+      <!-- サイドパネル（左） -->
+      <div class="track-lane-side">
+        <div class="track-lane-header">
+          <span class="track-lane-name">🎵 カラオケ</span>
+          <span class="track-rec-badge">●REC</span>
+        </div>
+        <div class="track-lane-sub" id="laneMainInfo">未読み込み</div>
+        <div class="track-btns">
+          <input id="fileInputMain" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
+          <label for="fileInputMain" class="track-btn-load">📁</label>
+          <button class="track-btn-rec" id="recMainBtn" title="録音開始">⏺</button>
+          <button class="track-btn-stop-rec" id="stopMainBtn" disabled title="録音停止">⏹</button>
+        </div>
+        <div class="track-vol-row">
+          <button class="vol-btn" id="volBtnMain" data-track="main">🔊<span id="trackVolumeMainLabel">100</span></button>
+          <input id="trackVolumeMain" type="hidden" value="100">
+          <label class="track-select-label"><input id="trackSelectMain" type="checkbox" checked> MIX</label>
+        </div>
+        <button id="deleteMainBtn" disabled class="track-btn-delete">削除</button>
+        <span id="multiPlayMain" style="display:none"></span>
+        <span id="trackCheckLabelMain" style="display:none"></span>
       </div>
     </div>
-
-    <!-- Track 2: ボーカル -->
     <div class="track-lane" data-track="take" id="laneTake">
-      <div class="track-lane-side">
-        <div class="track-lane-name">🎤 ボーカル</div>
-        <div class="track-lane-sub" id="laneTakeInfo">未録音</div>
-        <span class="track-rec-badge">● REC</span>
-        <div class="track-btns">
-          <input id="fileInputTake" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
-          <label for="fileInputTake" class="track-btn-load">📁 読込</label>
-          <button class="track-btn-rec" id="recTakeBtn">⏺ 録音</button>
-          <button class="track-btn-stop-rec track-stop-rec" id="stopTakeBtn" disabled>⏹</button>
-        </div>
-        <div class="track-play-row">
-          <button class="track-solo-btn" id="playTakeOnlyBtn" disabled>▶</button>
-          <button class="track-stop-inline" type="button">■</button>
-          <button class="vol-btn" id="volBtnTake" data-track="take">🔊 <span id="trackVolumeTakeLabel">100</span></button>
-          <input id="trackVolumeTake" type="hidden" value="100">
-        </div>
-        <div class="track-select-row"><label><input id="trackSelectTake" type="checkbox" checked> 全体再生に含む</label></div>
-        <button id="deleteTakeBtn" disabled class="track-btn-delete">削除</button>
-      </div>
+      <!-- 波形エリア（右） -->
       <div class="track-wave-area">
         <div class="track-wave-wrap">
           <canvas class="track-wave-canvas" id="trackCanvasTake" data-track="take"></canvas>
-          <div class="track-empty">⏺ 録音 または 📁 読込</div>
-          <div class="recording-wave-note">録音中…</div>
+          <div class="track-empty">🎤 読込 または ⏺ 録音</div>
+          <div class="recording-wave-note">● 録音中…</div>
         </div>
+        <!-- 波形下 edit-bar（再生・編集の全操作） -->
         <div class="track-edit-bar" id="editBarTake" data-track="take">
-          <span class="track-time-label" id="timeLabelTake">--:--.-</span>
-          <button class="teb-btn" id="tebPlayTake" title="この位置から再生">▶</button>
-          <button class="teb-btn teb-stop" id="tebStopTake" title="停止">■</button>
+          <span class="track-time-label" id="timeLabelTake">--:--.--</span>
+          <button class="teb-btn teb-play" id="tebPlayTake" title="カーソル位置から再生" disabled>▶</button>
+          <button class="teb-btn teb-stop-play" id="tebStopTake" title="停止">■</button>
           <span class="teb-sep"></span>
-          <button class="teb-btn teb-cut"   id="tebCutTake"   title="選択範囲をカット" disabled>✂</button>
-          <button class="teb-btn teb-copy"  id="tebCopyTake"  title="選択範囲をコピー" disabled>⎘</button>
-          <button class="teb-btn teb-paste" id="tebPasteTake" title="カーソル位置に貼り付け" disabled>⎙</button>
+          <button class="teb-btn teb-cut"   id="tebCutTake"   title="選択をカット（クリップへ）" disabled>✂</button>
+          <button class="teb-btn teb-copy"  id="tebCopyTake"  title="選択をコピー" disabled>⎘</button>
+          <button class="teb-btn teb-paste" id="tebPasteTake" title="カーソル位置へ貼り付け" disabled>⎙</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-shift-l" data-track="take" data-ms="-100" title="-100ms">«</button>
           <button class="teb-btn teb-shift-l" data-track="take" data-ms="-10"  title="-10ms">‹</button>
           <button class="teb-btn teb-shift-r" data-track="take" data-ms="10"   title="+10ms">›</button>
           <button class="teb-btn teb-shift-r" data-track="take" data-ms="100"  title="+100ms">»</button>
+          <span class="teb-sep"></span>
+          <button class="teb-btn teb-fx" id="fxToggleTake" title="エフェクト">FX</button>
           <button class="teb-btn teb-undo" id="tebUndoTake" title="元に戻す" disabled>↩</button>
         </div>
+        <!-- FXパネル（トグル） -->
+        <div class="track-fx-panel" id="fxPanelTake" style="display:none">
+          <div class="track-fx-row">
+            <span class="track-fx-label">Gain</span>
+            <input type="range" class="track-fx-slider" data-track="take" data-fx="gain" min="-24" max="24" step="0.5" value="0">
+            <span class="track-fx-val" data-track="take" data-fx="gain">0dB</span>
+          </div>
+          <div class="track-fx-row">
+            <span class="track-fx-label">Reverb</span>
+            <input type="range" class="track-fx-slider" data-track="take" data-fx="reverb" min="0" max="100" step="1" value="0">
+            <span class="track-fx-val" data-track="take" data-fx="reverb">0%</span>
+          </div>
+          <div class="track-fx-row">
+            <span class="track-fx-label">Delay</span>
+            <input type="range" class="track-fx-slider" data-track="take" data-fx="delay" min="0" max="100" step="1" value="0">
+            <span class="track-fx-val" data-track="take" data-fx="delay">0%</span>
+          </div>
+          <div class="track-fx-row">
+            <span class="track-fx-label">Double</span>
+            <input type="range" class="track-fx-slider" data-track="take" data-fx="double" min="0" max="100" step="1" value="0">
+            <span class="track-fx-val" data-track="take" data-fx="double">0%</span>
+          </div>
+          <div class="track-fx-row">
+            <span class="track-fx-label">Radio</span>
+            <input type="range" class="track-fx-slider" data-track="take" data-fx="radio" min="0" max="100" step="1" value="0">
+            <span class="track-fx-val" data-track="take" data-fx="radio">0%</span>
+          </div>
+          <div class="track-fx-actions">
+            <button class="teb-btn track-fx-apply" data-track="take" style="width:auto;padding:0 8px;font-size:10px;color:#fbbf24;border-color:rgba(251,191,36,.35)!important;">反映</button>
+            <button class="teb-btn track-fx-reset" data-track="take" style="width:auto;padding:0 8px;font-size:10px;">リセット</button>
+          </div>
+          <div class="track-offset-row" id="takeOffsetPanel">
+            <div class="track-offset-label">タイミング補正：<strong id="takeOffsetLabel">0 ms</strong></div>
+            <div class="track-offset-btns">
+              <button class="teb-btn teb-shift-l" data-track="take" data-ms="-100">-100</button>
+              <button class="teb-btn teb-shift-l" data-track="take" data-ms="-10">-10</button>
+              <button class="teb-btn teb-shift-l" data-track="take" data-ms="-1">-1</button>
+              <button class="teb-btn teb-shift-r" data-track="take" data-ms="1">+1</button>
+              <button class="teb-btn teb-shift-r" data-track="take" data-ms="10">+10</button>
+              <button class="teb-btn teb-shift-r" data-track="take" data-ms="100">+100</button>
+              <button class="teb-btn" id="resetTakeOffsetBtn" style="font-size:9px;width:auto;padding:0 5px;">reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- サイドパネル（左） -->
+      <div class="track-lane-side">
+        <div class="track-lane-header">
+          <span class="track-lane-name">🎤 ボーカル</span>
+          <span class="track-rec-badge">●REC</span>
+        </div>
+        <div class="track-lane-sub" id="laneTakeInfo">未録音</div>
+        <div class="track-btns">
+          <input id="fileInputTake" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
+          <label for="fileInputTake" class="track-btn-load">📁</label>
+          <button class="track-btn-rec" id="recTakeBtn" title="録音開始">⏺</button>
+          <button class="track-btn-stop-rec" id="stopTakeBtn" disabled title="録音停止">⏹</button>
+        </div>
+        <div class="track-vol-row">
+          <button class="vol-btn" id="volBtnTake" data-track="take">🔊<span id="trackVolumeTakeLabel">100</span></button>
+          <input id="trackVolumeTake" type="hidden" value="100">
+          <label class="track-select-label"><input id="trackSelectTake" type="checkbox" checked> MIX</label>
+        </div>
+        <button id="deleteTakeBtn" disabled class="track-btn-delete">削除</button>
+        <span id="multiPlayTake" style="display:none"></span>
+        <span id="trackCheckLabelTake" style="display:none"></span>
       </div>
     </div>
-
-    <!-- Track 3: コーラス -->
     <div class="track-lane" data-track="chorus" id="laneChorus">
-      <div class="track-lane-side">
-        <div class="track-lane-name">🎶 コーラス</div>
-        <div class="track-lane-sub" id="laneChorusInfo">未録音</div>
-        <span class="track-rec-badge">● REC</span>
-        <div class="track-btns">
-          <input id="fileInputChorus" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
-          <label for="fileInputChorus" class="track-btn-load">📁 読込</label>
-          <button class="track-btn-rec" id="recChorusBtn">⏺ 録音</button>
-          <button class="track-btn-stop-rec track-stop-rec" id="stopChorusBtn" disabled>⏹</button>
-        </div>
-        <div class="track-play-row">
-          <button class="track-solo-btn" id="playChorusOnlyBtn" disabled>▶</button>
-          <button class="track-stop-inline" type="button">■</button>
-          <button class="vol-btn" id="volBtnChorus" data-track="chorus">🔊 <span id="trackVolumeChorusLabel">100</span></button>
-          <input id="trackVolumeChorus" type="hidden" value="100">
-        </div>
-        <div class="track-select-row"><label><input id="trackSelectChorus" type="checkbox" checked> 全体再生に含む</label></div>
-        <button id="deleteChorusBtn" disabled class="track-btn-delete">削除</button>
-      </div>
+      <!-- 波形エリア（右） -->
       <div class="track-wave-area">
         <div class="track-wave-wrap">
           <canvas class="track-wave-canvas" id="trackCanvasChorus" data-track="chorus"></canvas>
-          <div class="track-empty">⏺ 録音 または 📁 読込</div>
-          <div class="recording-wave-note">録音中…</div>
+          <div class="track-empty">🎶 読込 または ⏺ 録音</div>
+          <div class="recording-wave-note">● 録音中…</div>
         </div>
+        <!-- 波形下 edit-bar（再生・編集の全操作） -->
         <div class="track-edit-bar" id="editBarChorus" data-track="chorus">
-          <span class="track-time-label" id="timeLabelChorus">--:--.-</span>
-          <button class="teb-btn" id="tebPlayChorus" title="この位置から再生">▶</button>
-          <button class="teb-btn teb-stop" id="tebStopChorus" title="停止">■</button>
+          <span class="track-time-label" id="timeLabelChorus">--:--.--</span>
+          <button class="teb-btn teb-play" id="tebPlayChorus" title="カーソル位置から再生" disabled>▶</button>
+          <button class="teb-btn teb-stop-play" id="tebStopChorus" title="停止">■</button>
           <span class="teb-sep"></span>
-          <button class="teb-btn teb-cut"   id="tebCutChorus"   title="選択範囲をカット" disabled>✂</button>
-          <button class="teb-btn teb-copy"  id="tebCopyChorus"  title="選択範囲をコピー" disabled>⎘</button>
-          <button class="teb-btn teb-paste" id="tebPasteChorus" title="カーソル位置に貼り付け" disabled>⎙</button>
+          <button class="teb-btn teb-cut"   id="tebCutChorus"   title="選択をカット（クリップへ）" disabled>✂</button>
+          <button class="teb-btn teb-copy"  id="tebCopyChorus"  title="選択をコピー" disabled>⎘</button>
+          <button class="teb-btn teb-paste" id="tebPasteChorus" title="カーソル位置へ貼り付け" disabled>⎙</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-100" title="-100ms">«</button>
           <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-10"  title="-10ms">‹</button>
           <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="10"   title="+10ms">›</button>
           <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="100"  title="+100ms">»</button>
+          <span class="teb-sep"></span>
+          <button class="teb-btn teb-fx" id="fxToggleChorus" title="エフェクト">FX</button>
           <button class="teb-btn teb-undo" id="tebUndoChorus" title="元に戻す" disabled>↩</button>
         </div>
+        <!-- FXパネル（トグル） -->
+        <div class="track-fx-panel" id="fxPanelChorus" style="display:none">
+          <div class="track-fx-row">
+            <span class="track-fx-label">Gain</span>
+            <input type="range" class="track-fx-slider" data-track="chorus" data-fx="gain" min="-24" max="24" step="0.5" value="0">
+            <span class="track-fx-val" data-track="chorus" data-fx="gain">0dB</span>
+          </div>
+          <div class="track-fx-row">
+            <span class="track-fx-label">Reverb</span>
+            <input type="range" class="track-fx-slider" data-track="chorus" data-fx="reverb" min="0" max="100" step="1" value="0">
+            <span class="track-fx-val" data-track="chorus" data-fx="reverb">0%</span>
+          </div>
+          <div class="track-fx-row">
+            <span class="track-fx-label">Delay</span>
+            <input type="range" class="track-fx-slider" data-track="chorus" data-fx="delay" min="0" max="100" step="1" value="0">
+            <span class="track-fx-val" data-track="chorus" data-fx="delay">0%</span>
+          </div>
+          <div class="track-fx-row">
+            <span class="track-fx-label">Double</span>
+            <input type="range" class="track-fx-slider" data-track="chorus" data-fx="double" min="0" max="100" step="1" value="0">
+            <span class="track-fx-val" data-track="chorus" data-fx="double">0%</span>
+          </div>
+          <div class="track-fx-row">
+            <span class="track-fx-label">Radio</span>
+            <input type="range" class="track-fx-slider" data-track="chorus" data-fx="radio" min="0" max="100" step="1" value="0">
+            <span class="track-fx-val" data-track="chorus" data-fx="radio">0%</span>
+          </div>
+          <div class="track-fx-actions">
+            <button class="teb-btn track-fx-apply" data-track="chorus" style="width:auto;padding:0 8px;font-size:10px;color:#fbbf24;border-color:rgba(251,191,36,.35)!important;">反映</button>
+            <button class="teb-btn track-fx-reset" data-track="chorus" style="width:auto;padding:0 8px;font-size:10px;">リセット</button>
+          </div>
+          <div class="track-offset-row" id="chorusOffsetPanel">
+            <div class="track-offset-label">タイミング補正：<strong id="chorusOffsetLabel">0 ms</strong></div>
+            <div class="track-offset-btns">
+              <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-100">-100</button>
+              <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-10">-10</button>
+              <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-1">-1</button>
+              <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="1">+1</button>
+              <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="10">+10</button>
+              <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="100">+100</button>
+              <button class="teb-btn" id="resetChorusOffsetBtn" style="font-size:9px;width:auto;padding:0 5px;">reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- サイドパネル（左） -->
+      <div class="track-lane-side">
+        <div class="track-lane-header">
+          <span class="track-lane-name">🎶 コーラス</span>
+          <span class="track-rec-badge">●REC</span>
+        </div>
+        <div class="track-lane-sub" id="laneChorusInfo">未録音</div>
+        <div class="track-btns">
+          <input id="fileInputChorus" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
+          <label for="fileInputChorus" class="track-btn-load">📁</label>
+          <button class="track-btn-rec" id="recChorusBtn" title="録音開始">⏺</button>
+          <button class="track-btn-stop-rec" id="stopChorusBtn" disabled title="録音停止">⏹</button>
+        </div>
+        <div class="track-vol-row">
+          <button class="vol-btn" id="volBtnChorus" data-track="chorus">🔊<span id="trackVolumeChorusLabel">100</span></button>
+          <input id="trackVolumeChorus" type="hidden" value="100">
+          <label class="track-select-label"><input id="trackSelectChorus" type="checkbox" checked> MIX</label>
+        </div>
+        <button id="deleteChorusBtn" disabled class="track-btn-delete">削除</button>
+        <span id="multiPlayChorus" style="display:none"></span>
+        <span id="trackCheckLabelChorus" style="display:none"></span>
       </div>
     </div>
-
-  </div><!-- /track-stack -->
+  </div>
 
   <div id="fileStatus" class="info" style="margin-top:8px">トラックに音源を読み込むか録音してください。</div>
   <div id="selectedFileName" class="file-name"></div>
   <audio id="audio" controls style="display:none"></audio>
   <video id="mediaProbe" playsinline muted style="display:none"></video>
 
-  <!-- 全体再生コントロール -->
-  <div class="track-checks" style="margin-top:10px">
-    <label id="trackCheckLabelMain"><input id="multiPlayMain" type="checkbox" checked> カラオケ</label>
-    <label id="trackCheckLabelTake"><input id="multiPlayTake" type="checkbox" checked> ボーカル</label>
-    <label id="trackCheckLabelChorus"><input id="multiPlayChorus" type="checkbox" checked> コーラス</label>
-  </div>
-  <div class="track-mini-controls">
-    <button id="trackStackPlayBtn" class="primary" disabled>▶ 選択再生</button>
-    <button id="trackAllPlayBtn" disabled>▶ 全曲再生</button>
+  <div class="track-mini-controls" style="margin-top:10px">
+    <button id="trackAllPlayBtn" class="primary" disabled>▶ 全曲再生</button>
+    <button id="trackStackPlayBtn" disabled>▶ チェックのみ</button>
     <button id="trackStackStopBtn" disabled>■ 停止</button>
     <button id="trackStackMixBtn" class="green" disabled>MIX確定</button>
   </div>
 
-  <!-- 旧互換ダミー（JSが参照するが非表示） -->
-  <select id="recordTarget" style="display:none">
-    <option value="main">main</option>
-    <option value="take">take</option>
-    <option value="chorus">chorus</option>
-  </select>
-  <select id="fileTarget" style="display:none">
-    <option value="main" selected>main</option>
-    <option value="take">take</option>
-    <option value="chorus">chorus</option>
-  </select>
-  <input id="karaokeBackingVolume" type="range" min="0" max="150" step="1" value="100" style="display:none">
+  <!-- ダミー（JS互換） -->
+  <select id="recordTarget" style="display:none"><option value="main">main</option><option value="take">take</option><option value="chorus">chorus</option></select>
+  <select id="fileTarget" style="display:none"><option value="main" selected>main</option><option value="take">take</option><option value="chorus">chorus</option></select>
+  <input id="karaokeBackingVolume" type="range" min="0" max="150" value="100" style="display:none">
   <span id="karaokeBackingVolumeLabel" style="display:none">100%</span>
   <span id="modeLabel" style="display:none"></span>
-  <span id="laneMainPill" style="display:none"></span>
-  <span id="laneTakePill" style="display:none"></span>
-  <span id="laneChorusPill" style="display:none"></span>
-</section>
+  <span id="laneMainPill" style="display:none"></span><span id="laneTakePill" style="display:none"></span><span id="laneChorusPill" style="display:none"></span>
+  <button id="previewMixBtn" style="display:none"></button>
+  <button id="prependTakeBtn" style="display:none"></button>
+  <button id="appendTakeBtn" style="display:none"></button>
+  <span id="takeOffsetLabel2" style="display:none"></span>
+  <span id="chorusOffsetLabel" style="display:none"></span>
+</section></section>
 
 <section class="card">
-  <p class="section-title">Wave Edit <span class="pill" id="timeLabel">00:00 / 00:00</span></p>
-  <div id="sourceStatus" class="info">現在表示：未読み込み</div>
+  <p class="section-title">
+    Wave Edit
+    <span style="display:flex;gap:5px;align-items:center">
+      <button class="wave-track-tab active" data-track="main">🎵</button>
+      <button class="wave-track-tab" data-track="take">🎤</button>
+      <button class="wave-track-tab" data-track="chorus">🎶</button>
+      <span class="pill" id="timeLabel">00:00 / 00:00</span>
+    </span>
+  </p>
+  <div id="sourceStatus" class="info">🎵 カラオケ を表示中（タブで切り替え）</div>
 
   <div class="row">
     <div>
@@ -1179,100 +1467,6 @@ audio{width:100%;margin:8px 0}
 </section>
 
 <section class="card">
-  <p class="section-title">Effects <span class="pill">FX</span></p>
-
-  <label>Gain：<span id="gainValue">0 dB</span></label>
-  <input id="gainSlider" type="range" min="-24" max="24" step="0.5" value="0">
-
-  <label>Reverb：<span id="reverbValue">0%</span></label>
-  <input id="reverbSlider" type="range" min="0" max="100" step="1" value="0">
-
-  <label>Delay：<span id="delayValue">0%</span></label>
-  <input id="delaySlider" type="range" min="0" max="100" step="1" value="0">
-
-  <label>Double：<span id="doubleValue">0%</span></label>
-  <input id="doubleSlider" type="range" min="0" max="100" step="1" value="0">
-
-  <label>Radio Voice：<span id="radioValue">0%</span></label>
-  <input id="radioSlider" type="range" min="0" max="100" step="1" value="0">
-
-  <label>選択範囲だけにかけるボーカルFX</label>
-  <select id="selectionFxPreset">
-    <option value="radio">ラジオボイス</option>
-    <option value="telephone">電話ボイス</option>
-    <option value="lofi">Lo-Fi</option>
-    <option value="megaphone">メガホン風</option>
-    <option value="warm">暖かめ</option>
-    <option value="bright">明るめ</option>
-    <option value="deep">低め・太め</option>
-  </select>
-
-  <div class="row">
-    <button id="applySelectionFxBtn" disabled class="orange">選択範囲だけFX反映</button>
-    <button id="applyFxBtn" disabled class="orange">全体エフェクトを反映</button>
-  </div>
-  <button id="resetFxBtn" disabled>エフェクトリセット</button>
-  <p class="small">「エフェクトリセット」は、スライダーを0に戻します。反映済みの場合は、直前のエフェクト反映前の音源へ戻します。</p>
-</section>
-
-<section class="card">
-  <p class="section-title">Vocal Sync / Mix <span class="pill">ズレ補正</span></p>
-  <div class="row3">
-    <button id="selectMainBtn" class="green" disabled>カラオケ波形を表示</button>
-    <button id="selectTakeBtn" disabled>ボーカル波形を表示</button>
-    <button id="selectChorusBtn" disabled>コーラス波形を表示</button>
-  </div>
-
-  <div class="nudge-panel">
-    <div class="nudge-title">
-      <strong>歌声トラックのズレ補正</strong>
-      <span id="takeOffsetLabel">0 ms</span>
-    </div>
-    <div class="nudge-grid">
-      <button class="vocal-offset-btn minus" data-offset-ms="-100">-100ms</button>
-      <button class="vocal-offset-btn minus" data-offset-ms="-50">-50ms</button>
-      <button class="vocal-offset-btn minus tiny" data-offset-ms="-10">-10ms</button>
-      <button class="vocal-offset-btn minus tiny" data-offset-ms="-1">-1ms</button>
-      <button class="vocal-offset-btn plus tiny" data-offset-ms="1">+1ms</button>
-      <button class="vocal-offset-btn plus tiny" data-offset-ms="10">+10ms</button>
-      <button class="vocal-offset-btn plus" data-offset-ms="50">+50ms</button>
-      <button class="vocal-offset-btn plus" data-offset-ms="100">+100ms</button>
-    </div>
-    <div class="row">
-      <button id="resetTakeOffsetBtn" disabled>歌声ズレ補正を0に戻す</button>
-      <button id="previewMixBtn" disabled class="primary">補正込みでMIX確認</button>
-    </div>
-    <p class="small">歌声が遅れて聞こえる場合はマイナス方向、歌声が早い場合はプラス方向に動かします。MIX時にもこの補正値を反映します。</p>
-  </div>
-
-  <div class="nudge-panel">
-    <div class="nudge-title">
-      <strong>コーラストラックのズレ補正</strong>
-      <span id="chorusOffsetLabel">0 ms</span>
-    </div>
-    <div class="nudge-grid">
-      <button class="chorus-offset-btn minus" data-offset-ms="-100">-100ms</button>
-      <button class="chorus-offset-btn minus" data-offset-ms="-50">-50ms</button>
-      <button class="chorus-offset-btn minus tiny" data-offset-ms="-10">-10ms</button>
-      <button class="chorus-offset-btn minus tiny" data-offset-ms="-1">-1ms</button>
-      <button class="chorus-offset-btn plus tiny" data-offset-ms="1">+1ms</button>
-      <button class="chorus-offset-btn plus tiny" data-offset-ms="10">+10ms</button>
-      <button class="chorus-offset-btn plus" data-offset-ms="50">+50ms</button>
-      <button class="chorus-offset-btn plus" data-offset-ms="100">+100ms</button>
-    </div>
-    <button id="resetChorusOffsetBtn" disabled>コーラス補正を0に戻す</button>
-    <p class="small">コーラスもボーカルと同じように、カラオケ音源に対して前後へ動かせます。</p>
-  </div>
-
-  <div class="row">
-    <button id="prependTakeBtn" disabled>ボーカルを前にくっつける</button>
-    <button id="appendTakeBtn" disabled>ボーカルを後ろにくっつける</button>
-  </div>
-  <button id="mixTakeBtn" disabled class="primary">補正込みでカラオケ＋ボーカル＋コーラスをMIX</button>
-  <p class="small">基本は、カラオケ音源・メインボーカル・コーラスの3トラック構成です。最終的に補正込みでMIXし、WAV / MP3で保存できます。</p>
-</section>
-
-<section class="card">
   <p class="section-title">Export <span class="pill">WAV / MP3</span></p>
   <div class="row">
     <button id="saveWavBtn" disabled class="green">WAV保存</button>
@@ -1285,6 +1479,26 @@ audio{width:100%;margin:8px 0}
 </section>
 
 </main>
+<!-- JS互換ダミー -->
+<button id="selectMainBtn"  style="display:none"></button>
+<button id="selectTakeBtn"  style="display:none"></button>
+<button id="selectChorusBtn" style="display:none"></button>
+<button id="gainSlider2"    style="display:none"></button>
+<span   id="gainValue"      style="display:none"></span>
+<span   id="reverbValue"    style="display:none"></span>
+<span   id="delayValue"     style="display:none"></span>
+<span   id="doubleValue"    style="display:none"></span>
+<span   id="radioValue"     style="display:none"></span>
+<input  id="gainSlider"     type="range" min="-24" max="24" step="0.5" value="0" style="display:none">
+<input  id="reverbSlider"   type="range" min="0" max="100" value="0" style="display:none">
+<input  id="delaySlider"    type="range" min="0" max="100" value="0" style="display:none">
+<input  id="doubleSlider"   type="range" min="0" max="100" value="0" style="display:none">
+<input  id="radioSlider"    type="range" min="0" max="100" value="0" style="display:none">
+<select id="selectionFxPreset" style="display:none"><option value="radio">radio</option></select>
+<button id="applySelectionFxBtn" style="display:none"></button>
+<button id="applyFxBtn"          style="display:none"></button>
+<button id="resetFxBtn"          style="display:none"></button>
+<span   id="takeOffsetLabel"     style="display:none">0 ms</span>
 
 <!-- 音量スライダーポップアップ -->
 <div id="volOverlay" style="display:none;position:fixed;inset:0;z-index:998;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);"></div>
@@ -5592,6 +5806,214 @@ document.addEventListener("keydown", (e) => {
       return _orig(track);
     };
   }
+})();
+
+
+// ════════════════════════════════════════════════════════════════
+// ── トラック内FXパネル ───────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+(function(){
+  // FXスライダーのリアルタイムラベル更新
+  document.querySelectorAll('.track-fx-slider').forEach(sl=>{
+    const track = sl.dataset.track;
+    const fx    = sl.dataset.fx;
+    const valEl = document.querySelector(`.track-fx-val[data-track="${track}"][data-fx="${fx}"]`);
+    // グローバルスライダーに値を同期
+    function syncGlobal(v){
+      const gsl = document.getElementById(fx+'Slider');
+      if(gsl && activeBufferType === track){ gsl.value = v; }
+    }
+    sl.addEventListener('input', ()=>{
+      const v = sl.value;
+      if(valEl) valEl.textContent = fx==='gain' ? v+'dB' : v+'%';
+      syncGlobal(v);
+    });
+  });
+
+  // FX反映ボタン
+  document.querySelectorAll('.track-fx-apply').forEach(btn=>{
+    btn.onclick = ()=>{
+      const track = btn.dataset.track;
+      // アクティブトラックを切り替えてから既存applyFxBtnを叩く
+      switchActiveBufferTo(track);
+      // トラック内スライダー値をグローバルスライダーへコピー
+      ['gain','reverb','delay','double','radio'].forEach(fx=>{
+        const tsl = document.querySelector(`.track-fx-slider[data-track="${track}"][data-fx="${fx}"]`);
+        const gsl = document.getElementById(fx+'Slider');
+        if(tsl && gsl) gsl.value = tsl.value;
+      });
+      const applyBtn = document.getElementById('applyFxBtn');
+      if(applyBtn) applyBtn.click();
+    };
+  });
+
+  // FXリセットボタン
+  document.querySelectorAll('.track-fx-reset').forEach(btn=>{
+    btn.onclick = ()=>{
+      const track = btn.dataset.track;
+      document.querySelectorAll(`.track-fx-slider[data-track="${track}"]`).forEach(sl=>{
+        sl.value = sl.dataset.fx==='gain' ? 0 : 0;
+        sl.dispatchEvent(new Event('input'));
+      });
+      switchActiveBufferTo(track);
+      const resetBtn = document.getElementById('resetFxBtn');
+      if(resetBtn) resetBtn.click();
+    };
+  });
+
+  // FXトグルボタン
+  ['main','take','chorus'].forEach(track=>{
+    const toggleBtn = document.getElementById('fxToggle'+cap(track));
+    const panel     = document.getElementById('fxPanel'+cap(track));
+    if(!toggleBtn || !panel) return;
+    toggleBtn.onclick = ()=>{
+      const open = panel.style.display === 'none';
+      panel.style.display = open ? 'block' : 'none';
+      toggleBtn.classList.toggle('active', open);
+    };
+  });
+
+  // タイミング補正リセット
+  const resetTake = document.getElementById('resetTakeOffsetBtn');
+  if(resetTake) resetTake.onclick = ()=>{
+    takeOffsetMs = 0;
+    const lbl = document.getElementById('takeOffsetLabel');
+    if(lbl) lbl.textContent = '0 ms';
+    invalidateWaveformCache(); drawStackedTimelines();
+  };
+  const resetChorus = document.getElementById('resetChorusOffsetBtn');
+  if(resetChorus) resetChorus.onclick = ()=>{
+    chorusOffsetMs = 0;
+    const lbl = document.getElementById('chorusOffsetLabel');
+    if(lbl) lbl.textContent = '0 ms';
+    invalidateWaveformCache(); drawStackedTimelines();
+  };
+
+  function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+})();
+
+// ════════════════════════════════════════════════════════════════
+// ── Wave Editタブ切り替え ────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+(function(){
+  const tabs = document.querySelectorAll('.wave-track-tab');
+  tabs.forEach(tab=>{
+    tab.onclick = ()=>{
+      tabs.forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      const track = tab.dataset.track;
+      switchActiveBufferTo(track);
+    };
+  });
+})();
+
+// switchActiveBufferTo: アクティブバッファをトラックに切り替え
+function switchActiveBufferTo(track){
+  activeBufferType = track;
+  // 既存の selectMainBtn等を叩いて波形を更新
+  const map = { main:'selectMainBtn', take:'selectTakeBtn', chorus:'selectChorusBtn' };
+  const btn = document.getElementById(map[track]);
+  if(btn) btn.click();
+  // タブのactive表示も更新
+  document.querySelectorAll('.wave-track-tab').forEach(t=>{
+    t.classList.toggle('active', t.dataset.track === track);
+  });
+  // sourceStatus更新
+  const names = {main:'🎵 カラオケ', take:'🎤 ボーカル', chorus:'🎶 コーラス'};
+  const ss = document.getElementById('sourceStatus');
+  if(ss) ss.textContent = '表示中：' + (names[track]||track);
+}
+
+// ════════════════════════════════════════════════════════════════
+// ── 再生中トラックのハイライト ──────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+(function(){
+  // playBuffersDirectlyをラップして再生中トラックをハイライト
+  const _orig = window.playBuffersDirectly;
+  if(!_orig) return;
+  window.playBuffersDirectly = async function(trackDefs, label){
+    // 全レーンのplaying-nowを外す
+    document.querySelectorAll('.track-lane').forEach(l=>l.classList.remove('playing-now'));
+    // 単一トラックなら対象をハイライト
+    if(trackDefs.length === 1){
+      // labelからtrack特定
+      const m = label && label.match(/teb|main|take|chorus/i);
+    }
+    await _orig(trackDefs, label);
+  };
+})();
+
+// ════════════════════════════════════════════════════════════════
+// ── tebPlay: シーク位置から再生（playing-nowハイライト付き） ────
+// ════════════════════════════════════════════════════════════════
+// setupTrackEditBarのtebPlay部分を上書き
+['main','take','chorus'].forEach(track=>{
+  const c2 = track.charAt(0).toUpperCase()+track.slice(1);
+  const playBtn = document.getElementById('tebPlay'+c2);
+  if(!playBtn) return;
+  playBtn.onclick = async ()=>{
+    const buf = bufferForTrack(track);
+    if(!buf) return;
+    const st = getTrackState(track);
+    const startInBuf = buf.duration * (st.playheadRatio || 0);
+    ensureAudioContext();
+    if(audioContext.state==='suspended') await audioContext.resume();
+    stopTrackPlayback();
+    if(preferredSinkId) await applyAudioOutputSinkId(preferredSinkId).catch(()=>{});
+    // ハイライト
+    document.querySelectorAll('.track-lane').forEach(l=>l.classList.remove('playing-now'));
+    const lane = document.getElementById('lane'+c2);
+    if(lane) lane.classList.add('playing-now');
+    // 他のtebPlayボタンのplaying状態を外す
+    document.querySelectorAll('.teb-play').forEach(b=>b.classList.remove('playing'));
+    playBtn.classList.add('playing');
+
+    const gain = audioContext.createGain();
+    gain.gain.value = getTrackVolume(track);
+    gain.connect(audioContext.destination);
+    const src = audioContext.createBufferSource();
+    src.buffer = buf;
+    src.connect(gain);
+    const startAt = audioContext.currentTime + 0.05;
+    src.start(startAt, startInBuf);
+    trackPlaybackNodes = [src];
+    trackPlaybackStartAt = startAt;
+    trackPlaybackDuration = buf.duration - startInBuf;
+    if(fileStatus) fileStatus.textContent = `▶ ${track==='main'?'カラオケ':track==='take'?'ボーカル':'コーラス'} 再生中...`;
+    const remain = (buf.duration - startInBuf + 0.25) * 1000;
+    setTimeout(()=>{
+      trackPlaybackNodes=[];
+      lane && lane.classList.remove('playing-now');
+      playBtn.classList.remove('playing');
+      if(fileStatus) fileStatus.textContent='再生完了。';
+    }, remain);
+  };
+});
+
+// ════════════════════════════════════════════════════════════════
+// ── 全曲・選択再生ボタンもハイライト対応 ───────────────────────
+// ════════════════════════════════════════════════════════════════
+(function(){
+  const allBtn   = document.getElementById('trackAllPlayBtn');
+  const selBtn   = document.getElementById('trackStackPlayBtn');
+  const stopBtn_ = document.getElementById('trackStackStopBtn');
+  if(stopBtn_) stopBtn_.addEventListener('click',()=>{
+    document.querySelectorAll('.track-lane').forEach(l=>l.classList.remove('playing-now'));
+    document.querySelectorAll('.teb-play').forEach(b=>b.classList.remove('playing'));
+  });
+})();
+
+// Wave Edit: MIX確認ボタン2のブリッジ
+(function(){
+  const b2 = document.getElementById('previewMixBtn2');
+  const b1 = document.getElementById('previewMixBtn');
+  if(b2 && b1) b2.onclick = ()=>b1.click();
+  const pa2 = document.getElementById('prependTakeBtn2');
+  const pa1 = document.getElementById('prependTakeBtn');
+  if(pa2 && pa1) pa2.onclick = ()=>pa1.click();
+  const ap2 = document.getElementById('appendTakeBtn2');
+  const ap1 = document.getElementById('appendTakeBtn');
+  if(ap2 && ap1) ap2.onclick = ()=>ap1.click();
 })();
 
 </script>
