@@ -533,137 +533,7 @@ audio{width:100%;margin:8px 0}
 .track-stack-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;}
 .track-stack-hint{font-size:12px;color:var(--muted);line-height:1.5;}
 .track-stack{display:grid;gap:8px;}
-.track-lane{
-  display:grid;
-  grid-template-columns:118px 1fr;
-  gap:8px;
-  align-items:stretch;
-  background:rgba(2,6,23,.58);
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:16px;
-  padding:8px;
-  transition:border-color .12s ease, box-shadow .12s ease, background .12s ease;
-}
-.track-lane.active{
-  border-color:rgba(53,224,161,.7);
-  box-shadow:0 0 0 1px rgba(53,224,161,.18),0 0 22px rgba(53,224,161,.10);
-  background:rgba(15,23,42,.88);
-}
-.track-lane-side{display:flex;flex-direction:column;justify-content:space-between;gap:6px;min-width:0;}
-.track-lane-name{font-weight:900;font-size:13px;color:#f8fafc;line-height:1.25;}
-.track-lane-sub{font-size:11px;color:var(--muted);line-height:1.35;word-break:break-word;}
-.track-lane-pill{display:inline-flex;align-items:center;justify-content:center;width:max-content;max-width:100%;padding:4px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.12);font-size:10px;color:var(--muted);background:rgba(255,255,255,.05);}
-.track-lane.active .track-lane-pill{color:#35e0a1;border-color:rgba(53,224,161,.45);background:rgba(53,224,161,.10);}
-.track-wave-wrap{position:relative;min-width:0;height:82px;background:#020617;border:1px solid rgba(255,255,255,.08);border-radius:13px;overflow:hidden;}
-.track-wave-canvas{display:block;width:100%;height:82px;margin:0;border:none;border-radius:0;background:transparent;touch-action:none;}
-.track-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;color:rgba(148,163,184,.72);pointer-events:none;padding:8px;}
-.track-lane.has-audio .track-empty{display:none;}
-.track-mini-controls{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;}
-.track-mini-controls button{min-height:34px;padding:7px 6px;margin:0;font-size:12px;border-radius:10px;}
-
-.track-mixer{display:grid;gap:6px;margin-top:8px;}
-.track-mixer-row{display:grid;grid-template-columns:44px 1fr 54px;gap:6px;align-items:center;font-size:11px;color:var(--muted);}
-.track-mixer-row input[type="range"]{width:100%;}
-.track-select-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--muted);}
-.track-select-row label{margin:0;display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text);}
-.track-select-row input{width:auto;}
-.track-solo-btn{min-height:30px!important;padding:5px 7px!important;font-size:11px!important;border-radius:9px!important;margin:0!important;}
-.track-lane.recording-live{border-color:rgba(239,68,68,.84);box-shadow:0 0 0 1px rgba(239,68,68,.20),0 0 24px rgba(239,68,68,.16);}
-.track-lane.recording-live .track-lane-pill{color:#fecaca;border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.14);}
-.track-rec-badge{display:none;color:#fecaca;font-size:10px;font-weight:900;animation:recDot 1s infinite;}
-.track-lane.recording-live .track-rec-badge{display:inline;}
-.track-play-panel{margin-top:10px;display:grid;gap:8px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px;}
-.track-play-title{font-size:12px;color:var(--muted);line-height:1.45;}
-.track-checks{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
-.track-checks label{margin:0;background:rgba(15,23,42,.8);border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:8px 7px;font-size:12px;color:var(--text);display:flex;align-items:center;gap:6px;justify-content:center;}
-.track-checks input{width:auto;}
-.track-checks label.disabled{opacity:.45;}
-.recording-wave-note{font-size:11px;color:#fecaca;margin-top:4px;display:none;}
-.track-lane.recording-live .recording-wave-note{display:block;}
-
-@media(max-width:640px){
-  .track-lane{grid-template-columns:88px 1fr;gap:6px;padding:7px;}
-  .track-lane-name{font-size:12px;}
-  .track-lane-sub{font-size:10px;}
-  .track-wave-wrap,.track-wave-canvas{height:72px;}
-}
-
-
-
-/* v16: 横並びコンパクトレイアウト */
-.track-lane{
-  grid-template-columns:110px 1fr !important;
-  gap:8px !important;
-  align-items:stretch !important;
-  padding:7px 8px !important;
-}
-.track-lane-side{
-  display:flex !important;
-  flex-direction:column !important;
-  gap:5px !important;
-  min-width:0 !important;
-}
-.track-lane-side > div:first-child{
-  display:flex;
-  flex-direction:column;
-  gap:2px;
-}
-.track-lane-pill{
-  width:auto !important;
-  align-self:flex-start !important;
-  padding:3px 6px !important;
-  font-size:9px !important;
-}
-.track-lane-name{ font-size:12px !important; }
-.track-lane-sub{ font-size:10px !important; }
-.track-action-row{
-  display:flex;
-  flex-direction:column;
-  gap:4px;
-  width:100%;
-}
-.track-action-row button{
-  min-height:32px !important;
-  padding:5px 6px !important;
-  margin:0 !important;
-  border-radius:10px !important;
-  font-size:11px !important;
-  font-weight:800 !important;
-}
-.track-solo-btn{
-  width:100% !important;
-  color:#fff !important;
-  background:linear-gradient(180deg,#60a5fa,#2563eb 60%,#1d4ed8) !important;
-  border-color:rgba(147,197,253,.50) !important;
-}
-.track-stop-inline{
-  color:#fff;
-  background:linear-gradient(180deg,#475569,#334155 60%,#1e293b);
-  border:1px solid rgba(255,255,255,.20);
-}
-.track-mixer{
-  background:rgba(255,255,255,.035);
-  border:1px solid rgba(255,255,255,.075);
-  border-radius:10px;
-  padding:6px;
-  margin-top:0 !important;
-}
-.track-mixer-row{
-  grid-template-columns:36px 1fr 44px !important;
-  font-size:10px !important;
-  gap:4px !important;
-}
-.track-mixer-row strong{ font-size:10px; }
-.track-select-row{ justify-content:flex-start; }
-.track-select-row label{ font-size:10px !important; }
-.track-wave-wrap{ height:90px !important; }
-.track-wave-canvas{ height:90px !important; }
-@media(max-width:480px){
-  .track-lane{grid-template-columns:90px 1fr !important;padding:6px !important;}
-  .track-lane-name{font-size:11px !important;}
-  .track-wave-wrap,.track-wave-canvas{height:78px !important;}
-  .track-mini-controls{grid-template-columns:1fr 1fr !important;}
-}
+/* 旧トラックCSS（v16以前）は新レイアウトに統合のため削除 */
 
 /* ─── 新トラックUI ─── */
 .monitor-bar{
@@ -845,7 +715,7 @@ audio{width:100%;margin:8px 0}
 /* ─── トラック新レイアウト ─── */
 .track-lane{
   display:grid;
-  grid-template-columns:1fr 90px !important; /* 波形右・サイド左を逆に */
+  grid-template-columns:96px 1fr !important; /* サイド左・波形右 */
   gap:0 !important;
   padding:0 !important;
   border-radius:14px;
@@ -856,7 +726,7 @@ audio{width:100%;margin:8px 0}
 }
 .track-wave-area{
   display:flex;flex-direction:column;min-width:0;
-  border-right:1px solid rgba(255,255,255,.06);
+  border-left:1px solid rgba(255,255,255,.06);
 }
 .track-wave-wrap{
   border-radius:0 !important;
@@ -864,8 +734,27 @@ audio{width:100%;margin:8px 0}
   height:80px !important;
   cursor:crosshair;
   position:relative;
+  background:#020617;
+  overflow:hidden;
 }
-.track-wave-canvas{ height:80px !important; }
+.track-wave-canvas{ height:80px !important; display:block; width:100%; }
+/* 空状態テキスト：波形中央に重ねる */
+.track-empty{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  text-align:center; font-size:12px; color:rgba(148,163,184,.65);
+  pointer-events:none; padding:8px;
+}
+.track-lane.has-audio .track-empty{ display:none; }
+/* 録音中テキスト：波形中央に重ねる（通常は非表示） */
+.recording-wave-note{
+  position:absolute; inset:0;
+  display:none; align-items:center; justify-content:center;
+  text-align:center; font-size:13px; font-weight:800; color:#fecaca;
+  pointer-events:none; background:rgba(2,6,23,.35);
+}
+.track-lane.recording-live .recording-wave-note{ display:flex; }
+.track-lane.recording-live .track-empty{ display:none; }
 .track-edit-bar{
   display:flex;align-items:center;gap:3px;
   padding:4px 6px;
@@ -1076,7 +965,29 @@ audio{width:100%;margin:8px 0}
 
   <div class="track-stack" id="trackStack">
     <div class="track-lane" data-track="main" id="laneMain">
-      <!-- 波形エリア（右） -->
+      <!-- 波形エリア -->
+      <div class="track-lane-side">
+        <div class="track-lane-header">
+          <span class="track-lane-name">🎵 カラオケ</span>
+          <span class="track-rec-badge">●REC</span>
+        </div>
+        <div class="track-lane-sub" id="laneMainInfo">未読み込み</div>
+        <div class="track-btns">
+          <input id="fileInputMain" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
+          <label for="fileInputMain" class="track-btn-load">📁</label>
+          <button class="track-btn-rec" id="recMainBtn" title="録音開始">⏺</button>
+          <button class="track-btn-stop-rec" id="stopMainBtn" disabled title="録音停止">⏹</button>
+        </div>
+        <div class="track-vol-row">
+          <button class="vol-btn" id="volBtnMain" data-track="main">🔊<span id="trackVolumeMainLabel">100</span></button>
+          <input id="trackVolumeMain" type="hidden" value="100">
+          <label class="track-select-label"><input id="trackSelectMain" type="checkbox" checked> MIX</label>
+        </div>
+        <button id="deleteMainBtn" disabled class="track-btn-delete">削除</button>
+        <span id="multiPlayMain" style="display:none"></span>
+        <span id="trackCheckLabelMain" style="display:none"></span>
+      </div>
+      <!-- サイドパネル -->
       <div class="track-wave-area">
         <div class="track-wave-wrap">
           <canvas class="track-wave-canvas" id="trackCanvasMain" data-track="main"></canvas>
@@ -1134,31 +1045,31 @@ audio{width:100%;margin:8px 0}
           </div>
         </div>
       </div>
-      <!-- サイドパネル（左） -->
-      <div class="track-lane-side">
-        <div class="track-lane-header">
-          <span class="track-lane-name">🎵 カラオケ</span>
-          <span class="track-rec-badge">●REC</span>
-        </div>
-        <div class="track-lane-sub" id="laneMainInfo">未読み込み</div>
-        <div class="track-btns">
-          <input id="fileInputMain" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
-          <label for="fileInputMain" class="track-btn-load">📁</label>
-          <button class="track-btn-rec" id="recMainBtn" title="録音開始">⏺</button>
-          <button class="track-btn-stop-rec" id="stopMainBtn" disabled title="録音停止">⏹</button>
-        </div>
-        <div class="track-vol-row">
-          <button class="vol-btn" id="volBtnMain" data-track="main">🔊<span id="trackVolumeMainLabel">100</span></button>
-          <input id="trackVolumeMain" type="hidden" value="100">
-          <label class="track-select-label"><input id="trackSelectMain" type="checkbox" checked> MIX</label>
-        </div>
-        <button id="deleteMainBtn" disabled class="track-btn-delete">削除</button>
-        <span id="multiPlayMain" style="display:none"></span>
-        <span id="trackCheckLabelMain" style="display:none"></span>
-      </div>
     </div>
     <div class="track-lane" data-track="take" id="laneTake">
-      <!-- 波形エリア（右） -->
+      <!-- 波形エリア -->
+      <div class="track-lane-side">
+        <div class="track-lane-header">
+          <span class="track-lane-name">🎤 ボーカル</span>
+          <span class="track-rec-badge">●REC</span>
+        </div>
+        <div class="track-lane-sub" id="laneTakeInfo">未録音</div>
+        <div class="track-btns">
+          <input id="fileInputTake" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
+          <label for="fileInputTake" class="track-btn-load">📁</label>
+          <button class="track-btn-rec" id="recTakeBtn" title="録音開始">⏺</button>
+          <button class="track-btn-stop-rec" id="stopTakeBtn" disabled title="録音停止">⏹</button>
+        </div>
+        <div class="track-vol-row">
+          <button class="vol-btn" id="volBtnTake" data-track="take">🔊<span id="trackVolumeTakeLabel">100</span></button>
+          <input id="trackVolumeTake" type="hidden" value="100">
+          <label class="track-select-label"><input id="trackSelectTake" type="checkbox" checked> MIX</label>
+        </div>
+        <button id="deleteTakeBtn" disabled class="track-btn-delete">削除</button>
+        <span id="multiPlayTake" style="display:none"></span>
+        <span id="trackCheckLabelTake" style="display:none"></span>
+      </div>
+      <!-- サイドパネル -->
       <div class="track-wave-area">
         <div class="track-wave-wrap">
           <canvas class="track-wave-canvas" id="trackCanvasTake" data-track="take"></canvas>
@@ -1228,101 +1139,9 @@ audio{width:100%;margin:8px 0}
           </div>
         </div>
       </div>
-      <!-- サイドパネル（左） -->
-      <div class="track-lane-side">
-        <div class="track-lane-header">
-          <span class="track-lane-name">🎤 ボーカル</span>
-          <span class="track-rec-badge">●REC</span>
-        </div>
-        <div class="track-lane-sub" id="laneTakeInfo">未録音</div>
-        <div class="track-btns">
-          <input id="fileInputTake" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
-          <label for="fileInputTake" class="track-btn-load">📁</label>
-          <button class="track-btn-rec" id="recTakeBtn" title="録音開始">⏺</button>
-          <button class="track-btn-stop-rec" id="stopTakeBtn" disabled title="録音停止">⏹</button>
-        </div>
-        <div class="track-vol-row">
-          <button class="vol-btn" id="volBtnTake" data-track="take">🔊<span id="trackVolumeTakeLabel">100</span></button>
-          <input id="trackVolumeTake" type="hidden" value="100">
-          <label class="track-select-label"><input id="trackSelectTake" type="checkbox" checked> MIX</label>
-        </div>
-        <button id="deleteTakeBtn" disabled class="track-btn-delete">削除</button>
-        <span id="multiPlayTake" style="display:none"></span>
-        <span id="trackCheckLabelTake" style="display:none"></span>
-      </div>
     </div>
     <div class="track-lane" data-track="chorus" id="laneChorus">
-      <!-- 波形エリア（右） -->
-      <div class="track-wave-area">
-        <div class="track-wave-wrap">
-          <canvas class="track-wave-canvas" id="trackCanvasChorus" data-track="chorus"></canvas>
-          <div class="track-empty">🎶 読込 または ⏺ 録音</div>
-          <div class="recording-wave-note">● 録音中…</div>
-        </div>
-        <!-- 波形下 edit-bar（再生・編集の全操作） -->
-        <div class="track-edit-bar" id="editBarChorus" data-track="chorus">
-          <span class="track-time-label" id="timeLabelChorus">--:--.--</span>
-          <button class="teb-btn teb-play" id="tebPlayChorus" title="カーソル位置から再生" disabled>▶</button>
-          <button class="teb-btn teb-stop-play" id="tebStopChorus" title="停止">■</button>
-          <span class="teb-sep"></span>
-          <button class="teb-btn teb-cut"   id="tebCutChorus"   title="選択をカット（クリップへ）" disabled>✂</button>
-          <button class="teb-btn teb-copy"  id="tebCopyChorus"  title="選択をコピー" disabled>⎘</button>
-          <button class="teb-btn teb-paste" id="tebPasteChorus" title="カーソル位置へ貼り付け" disabled>⎙</button>
-          <span class="teb-sep"></span>
-          <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-100" title="-100ms">«</button>
-          <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-10"  title="-10ms">‹</button>
-          <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="10"   title="+10ms">›</button>
-          <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="100"  title="+100ms">»</button>
-          <span class="teb-sep"></span>
-          <button class="teb-btn teb-fx" id="fxToggleChorus" title="エフェクト">FX</button>
-          <button class="teb-btn teb-undo" id="tebUndoChorus" title="元に戻す" disabled>↩</button>
-        </div>
-        <!-- FXパネル（トグル） -->
-        <div class="track-fx-panel" id="fxPanelChorus" style="display:none">
-          <div class="track-fx-row">
-            <span class="track-fx-label">Gain</span>
-            <input type="range" class="track-fx-slider" data-track="chorus" data-fx="gain" min="-24" max="24" step="0.5" value="0">
-            <span class="track-fx-val" data-track="chorus" data-fx="gain">0dB</span>
-          </div>
-          <div class="track-fx-row">
-            <span class="track-fx-label">Reverb</span>
-            <input type="range" class="track-fx-slider" data-track="chorus" data-fx="reverb" min="0" max="100" step="1" value="0">
-            <span class="track-fx-val" data-track="chorus" data-fx="reverb">0%</span>
-          </div>
-          <div class="track-fx-row">
-            <span class="track-fx-label">Delay</span>
-            <input type="range" class="track-fx-slider" data-track="chorus" data-fx="delay" min="0" max="100" step="1" value="0">
-            <span class="track-fx-val" data-track="chorus" data-fx="delay">0%</span>
-          </div>
-          <div class="track-fx-row">
-            <span class="track-fx-label">Double</span>
-            <input type="range" class="track-fx-slider" data-track="chorus" data-fx="double" min="0" max="100" step="1" value="0">
-            <span class="track-fx-val" data-track="chorus" data-fx="double">0%</span>
-          </div>
-          <div class="track-fx-row">
-            <span class="track-fx-label">Radio</span>
-            <input type="range" class="track-fx-slider" data-track="chorus" data-fx="radio" min="0" max="100" step="1" value="0">
-            <span class="track-fx-val" data-track="chorus" data-fx="radio">0%</span>
-          </div>
-          <div class="track-fx-actions">
-            <button class="teb-btn track-fx-apply" data-track="chorus" style="width:auto;padding:0 8px;font-size:10px;color:#fbbf24;border-color:rgba(251,191,36,.35)!important;">反映</button>
-            <button class="teb-btn track-fx-reset" data-track="chorus" style="width:auto;padding:0 8px;font-size:10px;">リセット</button>
-          </div>
-          <div class="track-offset-row" id="chorusOffsetPanel">
-            <div class="track-offset-label">タイミング補正：<strong id="chorusOffsetLabel">0 ms</strong></div>
-            <div class="track-offset-btns">
-              <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-100">-100</button>
-              <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-10">-10</button>
-              <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-1">-1</button>
-              <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="1">+1</button>
-              <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="10">+10</button>
-              <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="100">+100</button>
-              <button class="teb-btn" id="resetChorusOffsetBtn" style="font-size:9px;width:auto;padding:0 5px;">reset</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- サイドパネル（左） -->
+      <!-- サイドパネル -->
       <div class="track-lane-side">
         <div class="track-lane-header">
           <span class="track-lane-name">🎶 コーラス</span>
@@ -1367,6 +1186,7 @@ audio{width:100%;margin:8px 0}
   <span id="modeLabel" style="display:none"></span>
   <span id="laneMainPill" style="display:none"></span><span id="laneTakePill" style="display:none"></span><span id="laneChorusPill" style="display:none"></span>
   <button id="previewMixBtn" style="display:none"></button>
+  <button id="mixTakeBtn" style="display:none"></button>
   <button id="prependTakeBtn" style="display:none"></button>
   <button id="appendTakeBtn" style="display:none"></button>
   <span id="takeOffsetLabel2" style="display:none"></span>
@@ -5812,21 +5632,34 @@ document.addEventListener("keydown", (e) => {
 // ════════════════════════════════════════════════════════════════
 // ── トラック内FXパネル ───────────────────────────────────────────
 // ════════════════════════════════════════════════════════════════
-(function(){
+function _initTrackFX(){
+  function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+  // FXトグルボタン（FXパネルの開閉）
+  ['main','take','chorus'].forEach(track=>{
+    const toggleBtn = document.getElementById('fxToggle'+cap(track));
+    const panel     = document.getElementById('fxPanel'+cap(track));
+    if(!toggleBtn || !panel){ console.warn('FX elements missing for',track); return; }
+    toggleBtn.onclick = ()=>{
+      const opening = panel.style.display === 'none';
+      panel.style.display = opening ? 'block' : 'none';
+      toggleBtn.classList.toggle('active', opening);
+    };
+  });
+
   // FXスライダーのリアルタイムラベル更新
   document.querySelectorAll('.track-fx-slider').forEach(sl=>{
     const track = sl.dataset.track;
     const fx    = sl.dataset.fx;
     const valEl = document.querySelector(`.track-fx-val[data-track="${track}"][data-fx="${fx}"]`);
-    // グローバルスライダーに値を同期
-    function syncGlobal(v){
-      const gsl = document.getElementById(fx+'Slider');
-      if(gsl && activeBufferType === track){ gsl.value = v; }
-    }
     sl.addEventListener('input', ()=>{
       const v = sl.value;
       if(valEl) valEl.textContent = fx==='gain' ? v+'dB' : v+'%';
-      syncGlobal(v);
+      // グローバルスライダーにも同期（アクティブトラックの場合）
+      if(activeBufferType === track){
+        const gsl = document.getElementById(fx+'Slider');
+        if(gsl) gsl.value = v;
+      }
     });
   });
 
@@ -5834,9 +5667,7 @@ document.addEventListener("keydown", (e) => {
   document.querySelectorAll('.track-fx-apply').forEach(btn=>{
     btn.onclick = ()=>{
       const track = btn.dataset.track;
-      // アクティブトラックを切り替えてから既存applyFxBtnを叩く
       switchActiveBufferTo(track);
-      // トラック内スライダー値をグローバルスライダーへコピー
       ['gain','reverb','delay','double','radio'].forEach(fx=>{
         const tsl = document.querySelector(`.track-fx-slider[data-track="${track}"][data-fx="${fx}"]`);
         const gsl = document.getElementById(fx+'Slider');
@@ -5852,24 +5683,12 @@ document.addEventListener("keydown", (e) => {
     btn.onclick = ()=>{
       const track = btn.dataset.track;
       document.querySelectorAll(`.track-fx-slider[data-track="${track}"]`).forEach(sl=>{
-        sl.value = sl.dataset.fx==='gain' ? 0 : 0;
+        sl.value = 0;
         sl.dispatchEvent(new Event('input'));
       });
       switchActiveBufferTo(track);
       const resetBtn = document.getElementById('resetFxBtn');
       if(resetBtn) resetBtn.click();
-    };
-  });
-
-  // FXトグルボタン
-  ['main','take','chorus'].forEach(track=>{
-    const toggleBtn = document.getElementById('fxToggle'+cap(track));
-    const panel     = document.getElementById('fxPanel'+cap(track));
-    if(!toggleBtn || !panel) return;
-    toggleBtn.onclick = ()=>{
-      const open = panel.style.display === 'none';
-      panel.style.display = open ? 'block' : 'none';
-      toggleBtn.classList.toggle('active', open);
     };
   });
 
@@ -5888,9 +5707,13 @@ document.addEventListener("keydown", (e) => {
     if(lbl) lbl.textContent = '0 ms';
     invalidateWaveformCache(); drawStackedTimelines();
   };
-
-  function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
-})();
+}
+// DOMが確実に存在するタイミングで実行
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', _initTrackFX);
+} else {
+  _initTrackFX();
+}
 
 // ════════════════════════════════════════════════════════════════
 // ── Wave Editタブ切り替え ────────────────────────────────────────
@@ -6018,4 +5841,74 @@ function switchActiveBufferTo(track){
 
 </script>
 </body>
-</html>
+</html>      <!-- 波形エリア -->
+      <div class="track-wave-area">
+        <div class="track-wave-wrap">
+          <canvas class="track-wave-canvas" id="trackCanvasChorus" data-track="chorus"></canvas>
+          <div class="track-empty">🎶 読込 または ⏺ 録音</div>
+          <div class="recording-wave-note">● 録音中…</div>
+        </div>
+        <!-- 波形下 edit-bar（再生・編集の全操作） -->
+        <div class="track-edit-bar" id="editBarChorus" data-track="chorus">
+          <span class="track-time-label" id="timeLabelChorus">--:--.--</span>
+          <button class="teb-btn teb-play" id="tebPlayChorus" title="カーソル位置から再生" disabled>▶</button>
+          <button class="teb-btn teb-stop-play" id="tebStopChorus" title="停止">■</button>
+          <span class="teb-sep"></span>
+          <button class="teb-btn teb-cut"   id="tebCutChorus"   title="選択をカット（クリップへ）" disabled>✂</button>
+          <button class="teb-btn teb-copy"  id="tebCopyChorus"  title="選択をコピー" disabled>⎘</button>
+          <button class="teb-btn teb-paste" id="tebPasteChorus" title="カーソル位置へ貼り付け" disabled>⎙</button>
+          <span class="teb-sep"></span>
+          <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-100" title="-100ms">«</button>
+          <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-10"  title="-10ms">‹</button>
+          <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="10"   title="+10ms">›</button>
+          <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="100"  title="+100ms">»</button>
+          <span class="teb-sep"></span>
+          <button class="teb-btn teb-fx" id="fxToggleChorus" title="エフェクト">FX</button>
+          <button class="teb-btn teb-undo" id="tebUndoChorus" title="元に戻す" disabled>↩</button>
+        </div>
+        <!-- FXパネル（トグル） -->
+        <div class="track-fx-panel" id="fxPanelChorus" style="display:none">
+          <div class="track-fx-row">
+            <span class="track-fx-label">Gain</span>
+            <input type="range" class="track-fx-slider" data-track="chorus" data-fx="gain" min="-24" max="24" step="0.5" value="0">
+            <span class="track-fx-val" data-track="chorus" data-fx="gain">0dB</span>
+          </div>
+          <div class="track-fx-row">
+            <span class="track-fx-label">Reverb</span>
+            <input type="range" class="track-fx-slider" data-track="chorus" data-fx="reverb" min="0" max="100" step="1" value="0">
+            <span class="track-fx-val" data-track="chorus" data-fx="reverb">0%</span>
+          </div>
+          <div class="track-fx-row">
+            <span class="track-fx-label">Delay</span>
+            <input type="range" class="track-fx-slider" data-track="chorus" data-fx="delay" min="0" max="100" step="1" value="0">
+            <span class="track-fx-val" data-track="chorus" data-fx="delay">0%</span>
+          </div>
+          <div class="track-fx-row">
+            <span class="track-fx-label">Double</span>
+            <input type="range" class="track-fx-slider" data-track="chorus" data-fx="double" min="0" max="100" step="1" value="0">
+            <span class="track-fx-val" data-track="chorus" data-fx="double">0%</span>
+          </div>
+          <div class="track-fx-row">
+            <span class="track-fx-label">Radio</span>
+            <input type="range" class="track-fx-slider" data-track="chorus" data-fx="radio" min="0" max="100" step="1" value="0">
+            <span class="track-fx-val" data-track="chorus" data-fx="radio">0%</span>
+          </div>
+          <div class="track-fx-actions">
+            <button class="teb-btn track-fx-apply" data-track="chorus" style="width:auto;padding:0 8px;font-size:10px;color:#fbbf24;border-color:rgba(251,191,36,.35)!important;">反映</button>
+            <button class="teb-btn track-fx-reset" data-track="chorus" style="width:auto;padding:0 8px;font-size:10px;">リセット</button>
+          </div>
+          <div class="track-offset-row" id="chorusOffsetPanel">
+            <div class="track-offset-label">タイミング補正：<strong id="chorusOffsetLabel">0 ms</strong></div>
+            <div class="track-offset-btns">
+              <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-100">-100</button>
+              <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-10">-10</button>
+              <button class="teb-btn teb-shift-l" data-track="chorus" data-ms="-1">-1</button>
+              <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="1">+1</button>
+              <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="10">+10</button>
+              <button class="teb-btn teb-shift-r" data-track="chorus" data-ms="100">+100</button>
+              <button class="teb-btn" id="resetChorusOffsetBtn" style="font-size:9px;width:auto;padding:0 5px;">reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
