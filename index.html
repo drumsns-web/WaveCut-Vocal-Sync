@@ -1158,6 +1158,7 @@ body.clip-edit-mode::before{
 .pan-center-btn{width:100%;margin-top:14px !important;padding:10px !important;border-radius:12px !important;
   background:rgba(255,255,255,.06) !important;border:1px solid rgba(255,255,255,.14) !important;color:#94a3b8 !important;}
 
+button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; color:#fff !important; border-color:rgba(216,180,254,.5) !important; }
 </style>
 </head>
 <body>
@@ -1236,6 +1237,14 @@ body.clip-edit-mode::before{
     </select>
     <input id="karaokeMonitorVolume" type="range" min="0" max="100" step="1" value="100" style="width:70px">
     <span id="karaokeMonitorVolumeLabel" style="font-size:11px;color:var(--muted);min-width:32px">100%</span>
+  </div>
+  <div class="monitor-bar" style="margin-top:6px">
+    <span class="monitor-bar-label">録音モード：</span>
+    <select id="recordMode">
+      <option value="overwrite" selected>上書き（トラックの音を置き換え）</option>
+      <option value="append">追加（新しいクリップとして足す）</option>
+    </select>
+    <span id="recordModeInfo" style="font-size:10px;color:var(--muted)"></span>
   </div>
   <div id="karaokeMonitorInfo" class="info" style="margin-bottom:6px"></div>
 
@@ -1591,17 +1600,13 @@ body.clip-edit-mode::before{
 <section class="card">
   <p class="section-title">
     Wave Edit
-    <span style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
-      <span style="font-size:10px;color:var(--muted);white-space:nowrap">表示するトラック:</span>
-      <button class="wave-track-tab active" data-track="main">🎵 カラオケ</button>
-      <button class="wave-track-tab" data-track="take">🎤 ボーカル</button>
-      <button class="wave-track-tab" data-track="chorus">🎶 コーラス</button>
-      <span class="pill" id="timeLabel">00:00 / 00:00</span>
-    </span>
+    <span class="pill" id="timeLabel">00:00 / 00:00</span>
   </p>
-  <div id="sourceStatus" class="info">🎵 カラオケ を表示中（タブで切り替え）</div>
-
-  <div class="row">
+  <div class="row" style="margin-bottom:6px">
+    <div>
+      <label>編集するトラック</label>
+      <select id="waveTrackSelect"></select>
+    </div>
     <div>
       <label>波形ズーム</label>
       <select id="zoomSelect">
@@ -1612,7 +1617,11 @@ body.clip-edit-mode::before{
         <option value="20">20x</option>
       </select>
     </div>
-    <div>
+  </div>
+  <div id="sourceStatus" class="info">トラックを選んで編集できます</div>
+
+  <div class="row">
+    <div style="flex:1">
       <label>表示位置：<span id="viewPositionLabel">先頭</span></label>
       <input id="viewScroll" type="range" min="0" max="1000" step="1" value="0">
     </div>
@@ -1654,6 +1663,9 @@ body.clip-edit-mode::before{
   <div class="row">
     <button id="cutBtn" disabled>選択範囲をカット</button>
     <button id="trimBtn" disabled>選択範囲だけ残す</button>
+  </div>
+  <div class="row">
+    <button id="splitAtCursorBtn" disabled class="purple">✀ 現在位置で分割</button>
   </div>
 
   <div class="nudge-panel">
@@ -2747,22 +2759,22 @@ async function startTrackRecording(track){
       const arrayBuffer = await blob.arrayBuffer();
       const decoded = await audioContext.decodeAudioData(arrayBuffer);
       if(track === "take"){
-        importBufferAsClip("take", decoded, "録音");
-        takeOffsetMs = 0; takeFxBaked = false; takeFxBackup = null;
+        takeInBuffer("take", decoded, "録音");
+        takeFxBaked = false; takeFxBackup = null;
         activeBufferType = "take";
         fileStatus.textContent = `ボーカル録音完了 / ${formatTime(decoded.duration)}`;
       }else if(track === "chorus"){
-        importBufferAsClip("chorus", decoded, "録音");
-        chorusOffsetMs = 0; chorusFxBaked = false; chorusFxBackup = null;
+        takeInBuffer("chorus", decoded, "録音");
+        chorusFxBaked = false; chorusFxBackup = null;
         activeBufferType = "chorus";
         fileStatus.textContent = `コーラス録音完了 / ${formatTime(decoded.duration)}`;
       }else if(isExtraTrack(track)){
-        importBufferAsClip(track, decoded, "録音");
-        const t = getExtraTrack(track); if(t){ t.offsetMs = 0; t.fxBaked = false; t.fxBackup = null; }
+        takeInBuffer(track, decoded, "録音");
+        const t = getExtraTrack(track); if(t){ t.fxBaked = false; t.fxBackup = null; }
         activeBufferType = track;
         fileStatus.textContent = `録音完了 / ${formatTime(decoded.duration)}`;
       }else{
-        importBufferAsClip("main", decoded, "録音");
+        takeInBuffer("main", decoded, "録音");
         mainFxBaked = false; mainFxBackup = null;
         activeBufferType = "main";
         fileStatus.textContent = `カラオケ録音完了 / ${formatTime(decoded.duration)}`;
@@ -3849,6 +3861,8 @@ function updateButtons(){
   const hasRange = hasSelection();
   cutBtn.disabled = !hasActive;
   trimBtn.disabled = !hasActive;
+  const splitAtCursorBtn = document.getElementById("splitAtCursorBtn");
+  if(splitAtCursorBtn) splitAtCursorBtn.disabled = !hasActive;
   cutToClipboardBtn.disabled = !hasRange;
   copyToClipboardBtn.disabled = !hasRange;
   pasteClipboardBtn.disabled = !(hasActive && clipboardBuffer);
@@ -4924,6 +4938,7 @@ function addExtraTrack(opts){
   }
   updateTrackCountInfo();
   saveExtraTracksMeta();
+  if(typeof rebuildWaveTrackSelect === "function") rebuildWaveTrackSelect();
   return id;
 }
 
@@ -4942,6 +4957,7 @@ function removeExtraTrack(id){
   if(lane && lane.parentNode) lane.parentNode.removeChild(lane);
   updateTrackCountInfo();
   saveExtraTracksMeta();
+  if(typeof rebuildWaveTrackSelect === "function") rebuildWaveTrackSelect();
   if(typeof drawStackedTimelines === "function") drawStackedTimelines();
 }
 
@@ -5045,6 +5061,35 @@ function importBufferAsClip(track, buffer, label){
   // 既存クリップは破棄して、この1つだけにする
   trackClips[track] = [ makeClip(buffer, 0, label) ];
   rebuildTrackBuffer(track);
+}
+
+// 録音/読込を「追加クリップ」として足す（既存クリップは残す）
+function appendBufferAsClip(track, buffer, label, atSec){
+  if(!buffer) return;
+  if(!trackClips[track]) trackClips[track] = [];
+  // 配置位置：指定があればそこ、なければ既存クリップの末尾の後ろ
+  let start = (typeof atSec === "number") ? atSec : 0;
+  if(typeof atSec !== "number"){
+    for(const cl of trackClips[track]){
+      const end = cl.startSec + cl.buffer.duration;
+      if(end > start) start = end;
+    }
+  }
+  trackClips[track].push(makeClip(buffer, start, label));
+  normalizeTrackClips(track); // 重なりは自動で後ろにずらす
+  rebuildTrackBuffer(track);
+}
+
+// 録音モードに応じてクリップを取り込む
+function takeInBuffer(track, buffer, label){
+  const modeEl = document.getElementById("recordMode");
+  const mode = modeEl ? modeEl.value : "overwrite";
+  const hasExisting = (trackClips[track] && trackClips[track].length > 0);
+  if(mode === "append" && hasExisting){
+    appendBufferAsClip(track, buffer, label);
+  } else {
+    importBufferAsClip(track, buffer, label);
+  }
 }
 
 function bufferForTrack(track){
@@ -7103,36 +7148,112 @@ if(document.readyState === 'loading'){
 }
 
 // ════════════════════════════════════════════════════════════════
-// ── Wave Editタブ切り替え ────────────────────────────────────────
+// ── Wave Edit トラック選択プルダウン ────────────────────────────
 // ════════════════════════════════════════════════════════════════
-(function(){
-  const tabs = document.querySelectorAll('.wave-track-tab');
-  tabs.forEach(tab=>{
-    tab.onclick = ()=>{
-      tabs.forEach(t=>t.classList.remove('active'));
-      tab.classList.add('active');
-      const track = tab.dataset.track;
-      switchActiveBufferTo(track);
-    };
+function rebuildWaveTrackSelect(){
+  const sel = document.getElementById("waveTrackSelect");
+  if(!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = "";
+  // 固定3トラック
+  const fixed = [
+    { id:"main",   label:"🎵 " + getTrackDisplayName("main", "カラオケ") },
+    { id:"take",   label:"🎤 " + getTrackDisplayName("take", "ボーカル") },
+    { id:"chorus", label:"🎶 " + getTrackDisplayName("chorus", "コーラス") },
+  ];
+  fixed.forEach(t=>{
+    const o = document.createElement("option");
+    o.value = t.id; o.textContent = t.label;
+    sel.appendChild(o);
   });
+  // 拡張トラック
+  if(typeof extraTracks !== "undefined"){
+    extraTracks.forEach(t=>{
+      const o = document.createElement("option");
+      o.value = t.id; o.textContent = t.emoji + " " + t.name;
+      sel.appendChild(o);
+    });
+  }
+  // 選択維持
+  if(prev && Array.from(sel.options).some(o=>o.value===prev)) sel.value = prev;
+  else sel.value = activeBufferType || "main";
+}
+
+// トラック表示名（localStorage反映）
+function getTrackDisplayName(track, def){
+  try{
+    const raw = localStorage.getItem("wavecut_track_names_v1");
+    const map = raw ? JSON.parse(raw) : {};
+    return map[track] || def;
+  }catch(e){ return def; }
+}
+
+(function(){
+  const sel = document.getElementById("waveTrackSelect");
+  if(sel){
+    rebuildWaveTrackSelect();
+    sel.addEventListener("change", ()=>{
+      switchActiveBufferTo(sel.value);
+    });
+  }
 })();
 
 // switchActiveBufferTo: アクティブバッファをトラックに切り替え
 function switchActiveBufferTo(track){
   activeBufferType = track;
-  // 既存の selectMainBtn等を叩いて波形を更新
+  // 拡張トラックは selectXXXBtn が無いので直接波形更新
   const map = { main:'selectMainBtn', take:'selectTakeBtn', chorus:'selectChorusBtn' };
   const btn = document.getElementById(map[track]);
-  if(btn) btn.click();
-  // タブのactive表示も更新
-  document.querySelectorAll('.wave-track-tab').forEach(t=>{
-    t.classList.toggle('active', t.dataset.track === track);
-  });
+  if(btn){
+    btn.click();
+  } else {
+    // 拡張トラック：直接波形を再描画
+    if(typeof invalidateWaveformCache === "function") invalidateWaveformCache();
+    if(typeof drawWaveform === "function") drawWaveform(bufferForTrack(track));
+    if(typeof updateTimeLabel === "function") updateTimeLabel(bufferForTrack(track));
+  }
+  // プルダウンの値も同期
+  const sel = document.getElementById("waveTrackSelect");
+  if(sel && sel.value !== track) sel.value = track;
   // sourceStatus更新
-  const names = {main:'🎵 カラオケ', take:'🎤 ボーカル', chorus:'🎶 コーラス'};
   const ss = document.getElementById('sourceStatus');
-  if(ss) ss.textContent = '表示中：' + (names[track]||track);
+  if(ss){
+    let label = track;
+    if(track === "main") label = "🎵 " + getTrackDisplayName("main","カラオケ");
+    else if(track === "take") label = "🎤 " + getTrackDisplayName("take","ボーカル");
+    else if(track === "chorus") label = "🎶 " + getTrackDisplayName("chorus","コーラス");
+    else if(typeof getExtraTrack === "function"){ const t=getExtraTrack(track); if(t) label = t.emoji+" "+t.name; }
+    ss.textContent = '編集中：' + label;
+  }
 }
+
+// Wave Edit の分割ボタン
+(function(){
+  const splitBtn = document.getElementById("splitAtCursorBtn");
+  if(!splitBtn) return;
+  splitBtn.onclick = ()=>{
+    const track = activeBufferType;
+    const buf = bufferForTrack(track);
+    if(!buf){ if(fileStatus) fileStatus.textContent = "音源がありません"; return; }
+    const st = getTrackState(track);
+    const ratio = (st && st.playheadRatio != null) ? st.playheadRatio : (playheadRatio || 0);
+    const splitSec = buf.duration * ratio - offsetForTrack(track);
+    if(typeof trackPushUndo === "function") trackPushUndo(track, "分割");
+    const ok = splitClipAtSec(track, splitSec);
+    if(ok){
+      if(track === "take")   { takeFxBaked = false; takeFxBackup = null; }
+      else if(track === "chorus"){ chorusFxBaked = false; chorusFxBackup = null; }
+      else if(isExtraTrack(track)){ const t=getExtraTrack(track); if(t){ t.fxBaked=false; t.fxBackup=null; } }
+      else { mainFxBaked = false; mainFxBackup = null; }
+      invalidateWaveformCache(); drawWaveform(bufferForTrack(track));
+      if(typeof drawStackedTimelines === "function") drawStackedTimelines();
+      const cnt = (trackClips[track]||[]).length;
+      if(fileStatus) fileStatus.textContent = `✀ 分割しました（クリップ数: ${cnt}）`;
+    } else {
+      if(fileStatus) fileStatus.textContent = "カーソル位置で分割できません（クリップの端や音源外）";
+    }
+  };
+})();
 
 // ════════════════════════════════════════════════════════════════
 // ── 再生中トラックのハイライト ──────────────────────────────────
@@ -7474,6 +7595,25 @@ function setupPanButtons(){
 if(document.readyState === "loading"){
   document.addEventListener("DOMContentLoaded", ()=>{ setupSoloMuteButtons(); setupPanButtons(); });
 } else { setupSoloMuteButtons(); setupPanButtons(); }
+
+
+// 録音モードの説明表示
+(function(){
+  function update(){
+    const el = document.getElementById("recordMode");
+    const info = document.getElementById("recordModeInfo");
+    if(!el || !info) return;
+    info.textContent = el.value === "append"
+      ? "既存の音を残して新クリップを足します"
+      : "録音するとトラックの音を置き換えます";
+  }
+  function setup(){
+    const el = document.getElementById("recordMode");
+    if(el){ el.addEventListener("change", update); update(); }
+  }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", setup);
+  else setup();
+})();
 
 </script>
 </body>
