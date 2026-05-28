@@ -1287,7 +1287,7 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
           <button class="teb-btn teb-cut"   id="tebCutMain"   title="選択をカット（クリップへ）" disabled>✂</button>
           <button class="teb-btn teb-copy"  id="tebCopyMain"  title="選択をコピー" disabled>⎘</button>
           <button class="teb-btn teb-paste" id="tebPasteMain" title="カーソル位置へ貼り付け" disabled>⎙</button>
-          <button class="teb-btn teb-split" id="tebSplitMain" title="カーソル位置で分割">✀</button>
+          <button class="teb-btn teb-split" id="tebSplitMain" title="カーソル位置で分割">✂️</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-restart" id="tebRestartMain" data-track="main" title="最初に戻る">⏮</button>
           <span class="teb-sep"></span>
@@ -1379,7 +1379,7 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
           <button class="teb-btn teb-cut"   id="tebCutTake"   title="選択をカット（クリップへ）" disabled>✂</button>
           <button class="teb-btn teb-copy"  id="tebCopyTake"  title="選択をコピー" disabled>⎘</button>
           <button class="teb-btn teb-paste" id="tebPasteTake" title="カーソル位置へ貼り付け" disabled>⎙</button>
-          <button class="teb-btn teb-split" id="tebSplitTake" title="カーソル位置で分割">✀</button>
+          <button class="teb-btn teb-split" id="tebSplitTake" title="カーソル位置で分割">✂️</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-restart" id="tebRestartTake" data-track="take" title="最初に戻る">⏮</button>
           <span class="teb-sep"></span>
@@ -1490,7 +1490,7 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
           <button class="teb-btn teb-cut"   id="tebCutChorus"   title="選択をカット（クリップへ）" disabled>✂</button>
           <button class="teb-btn teb-copy"  id="tebCopyChorus"  title="選択をコピー" disabled>⎘</button>
           <button class="teb-btn teb-paste" id="tebPasteChorus" title="カーソル位置へ貼り付け" disabled>⎙</button>
-          <button class="teb-btn teb-split" id="tebSplitChorus" title="カーソル位置で分割">✀</button>
+          <button class="teb-btn teb-split" id="tebSplitChorus" title="カーソル位置で分割">✂️</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-restart" id="tebRestartChorus" data-track="chorus" title="最初に戻る">⏮</button>
           <span class="teb-sep"></span>
@@ -1659,7 +1659,7 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
     <button id="trimBtn" disabled>選択範囲だけ残す</button>
   </div>
   <div class="row">
-    <button id="splitAtCursorBtn" disabled class="purple">✀ 現在位置で分割</button>
+    <button id="splitAtCursorBtn" disabled class="purple">✂️ 現在位置で分割</button>
   </div>
 
   <div class="nudge-panel">
@@ -4939,7 +4939,7 @@ function createExtraTrackHTML(id, emoji, name){
           <button class="teb-btn teb-cut"   id="tebCut${c1}"   title="選択をカット" disabled>✂</button>
           <button class="teb-btn teb-copy"  id="tebCopy${c1}"  title="選択をコピー" disabled>⎘</button>
           <button class="teb-btn teb-paste" id="tebPaste${c1}" title="カーソル位置へ貼り付け" disabled>⎙</button>
-          <button class="teb-btn teb-split" id="tebSplit${c1}" title="カーソル位置で分割">✀</button>
+          <button class="teb-btn teb-split" id="tebSplit${c1}" title="カーソル位置で分割">✂️</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-restart" id="tebRestart${c1}" data-track="${id}" title="最初に戻る">⏮</button>
           <span class="teb-sep"></span>
@@ -6349,7 +6349,7 @@ function setupTrackEditBar(track){
       if(activeBufferType === track){ invalidateWaveformCache(); refreshPreview(); }
       invalidateWaveformCache(); drawStackedTimelines(); updateTrackEditBar(track); updateButtons();
       const clipCount = (trackClips[track]||[]).length;
-      if(fileStatus) fileStatus.textContent = `✀ 分割しました（クリップ数: ${clipCount}）`;
+      if(fileStatus) fileStatus.textContent = `✂️ 分割しました（クリップ数: ${clipCount}）`;
     } else {
       if(fileStatus) fileStatus.textContent = "カーソル位置にクリップがないか、端のため分割できません";
     }
@@ -7309,7 +7309,7 @@ function switchActiveBufferTo(track){
       invalidateWaveformCache(); drawWaveform(bufferForTrack(track));
       if(typeof drawStackedTimelines === "function") drawStackedTimelines();
       const cnt = (trackClips[track]||[]).length;
-      if(fileStatus) fileStatus.textContent = `✀ 分割しました（クリップ数: ${cnt}）`;
+      if(fileStatus) fileStatus.textContent = `✂️ 分割しました（クリップ数: ${cnt}）`;
     } else {
       if(fileStatus) fileStatus.textContent = "カーソル位置で分割できません（クリップの端や音源外）";
     }
