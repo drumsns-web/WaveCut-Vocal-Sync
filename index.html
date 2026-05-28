@@ -1981,6 +1981,32 @@ const trackCheckLabelChorus = document.getElementById("trackCheckLabelChorus");
 
 // ── クリップ編集モード（ドラッグで移動） ─────────────────────
 let editClipMode = false;
+// 全トラック共通のプレイヘッド位置（トラックタイムライン上の絶対秒）
+let globalPlayheadSec = 0;
+// 共通プレイヘッドを設定し、全トラックのplayheadRatioを連動
+function setGlobalPlayhead(sec){
+  const total = getTrackTimelineDuration();
+  globalPlayheadSec = Math.max(0, Math.min(total, sec));
+  // 各トラックの playheadRatio を共通位置から逆算
+  ['main','take','chorus'].forEach(tr=>{
+    const buf = bufferForTrack(tr);
+    if(!buf){ return; }
+    const off = offsetForTrack(tr);
+    const inBuf = globalPlayheadSec - off;
+    const st = getTrackState(tr);
+    if(st) st.playheadRatio = Math.max(0, Math.min(1, inBuf / buf.duration));
+  });
+  if(typeof extraTracks !== "undefined"){
+    extraTracks.forEach(t=>{
+      const buf = bufferForTrack(t.id);
+      if(!buf) return;
+      const off = offsetForTrack(t.id);
+      const inBuf = globalPlayheadSec - off;
+      const st = getTrackState(t.id);
+      if(st) st.playheadRatio = Math.max(0, Math.min(1, inBuf / buf.duration));
+    });
+  }
+}
 let dragClipState = null; // { track, clipId, startSec, pointerStartRatio, canvas }
 function setEditClipMode(on){
   editClipMode = !!on;
@@ -4625,6 +4651,13 @@ function getTrackTimelineDuration(){
   if(mainBuffer) durations.push(mainBuffer.duration);
   if(takeBuffer) durations.push(Math.max(0, takeOffsetMs / 1000) + takeBuffer.duration);
   if(chorusBuffer) durations.push(Math.max(0, chorusOffsetMs / 1000) + chorusBuffer.duration);
+  // 拡張トラックも含める
+  if(typeof extraTracks !== "undefined"){
+    extraTracks.forEach(t=>{
+      const buf = buildTrackBufferFromClips(t.id);
+      if(buf) durations.push(Math.max(0, t.offsetMs/1000) + buf.duration);
+    });
+  }
   return Math.max(1, ...durations);
 }
 
@@ -5957,7 +5990,10 @@ function setupTrackCanvasInteraction(canvasEl, track){
     st.playheadRatio = r;
     activeBufferType = track;
     if(track === activeBufferType) playheadRatio = r;
-    drawMiniTrackWave(canvasEl, track, trackColor(track));
+    // 共通プレイヘッドも更新（このトラックのタップ位置を絶対秒に変換）
+    const total = getTrackTimelineDuration();
+    setGlobalPlayhead(total * r);
+    drawStackedTimelines();
     updateTrackEditBar(track);
   }
 
@@ -6014,8 +6050,11 @@ function setupTrackCanvasInteraction(canvasEl, track){
     const moved = Math.abs(st.selEnd - st.selStart) > 0.005;
     if(!moved){
       st.selStart = null; st.selEnd = null;
+      // タップ＝シーク：全トラックのプレイヘッドを揃える
+      drawStackedTimelines();
+    } else {
+      drawMiniTrackWave(canvasEl, track, trackColor(track));
     }
-    drawMiniTrackWave(canvasEl, track, trackColor(track));
     updateTrackEditBar(track);
   }
 
