@@ -4486,6 +4486,108 @@ function rebuildTrackBuffer(track){
   if(track === "chorus") chorusBuffer = buf;
 }
 
+
+// 指定した秒範囲を切り取って、クリップを分裂させる
+// 返値：切り取った範囲のサンプルを結合した AudioBuffer（クリップボード用）
+function cutTimeRangeFromClips(track, startSec, endSec){
+  if(endSec <= startSec) return null;
+  const clips = trackClips[track];
+  if(!clips || !clips.length || !audioContext) return null;
+
+  // 切り出し結果（クリップボード用）を貯める：startの早いクリップから順に
+  const clippedParts = [];
+  const newClips = [];
+
+  for(const cl of clips){
+    const clStart = cl.startSec;
+    const clEnd   = cl.startSec + cl.buffer.duration;
+
+    // ケース① 完全に範囲外（範囲の前）
+    if(clEnd <= startSec){
+      newClips.push(cl);
+      continue;
+    }
+    // ケース② 完全に範囲外（範囲の後）
+    if(clStart >= endSec){
+      newClips.push(cl); // 位置はそのまま保持（前に詰めない）
+      continue;
+    }
+    // ケース③ クリップが範囲に部分的/全体的にかかる → 分割
+    const sr = cl.buffer.sampleRate;
+    const numCh = cl.buffer.numberOfChannels;
+
+    // 範囲内の部分を切り出してクリップボードへ
+    const insideStartInClip = Math.max(0, startSec - clStart);
+    const insideEndInClip   = Math.min(cl.buffer.duration, endSec - clStart);
+    if(insideEndInClip > insideStartInClip){
+      const len = Math.floor((insideEndInClip - insideStartInClip) * sr);
+      if(len > 0){
+        const part = audioContext.createBuffer(numCh, len, sr);
+        const sStart = Math.floor(insideStartInClip * sr);
+        for(let ch = 0; ch < numCh; ch++){
+          const src = cl.buffer.getChannelData(ch);
+          part.getChannelData(ch).set(src.subarray(sStart, sStart + len));
+        }
+        // クリップボード用にはトラックタイムライン上の位置情報を付ける
+        clippedParts.push({
+          buffer: part,
+          startSecInTrack: Math.max(clStart, startSec)
+        });
+      }
+    }
+
+    // 前側（クリップ開始 〜 範囲開始）が残るなら新クリップに
+    if(clStart < startSec){
+      const headDur = startSec - clStart;
+      const headLen = Math.floor(headDur * sr);
+      if(headLen > 0){
+        const headBuf = audioContext.createBuffer(numCh, headLen, sr);
+        for(let ch = 0; ch < numCh; ch++){
+          headBuf.getChannelData(ch).set(cl.buffer.getChannelData(ch).subarray(0, headLen));
+        }
+        newClips.push(makeClip(headBuf, clStart, cl.label + "_a"));
+      }
+    }
+    // 後側（範囲終了 〜 クリップ終了）が残るなら新クリップに
+    if(clEnd > endSec){
+      const tailDur = clEnd - endSec;
+      const tailLen = Math.floor(tailDur * sr);
+      if(tailLen > 0){
+        const tailStartSample = Math.floor((endSec - clStart) * sr);
+        const tailBuf = audioContext.createBuffer(numCh, tailLen, sr);
+        for(let ch = 0; ch < numCh; ch++){
+          const src = cl.buffer.getChannelData(ch);
+          tailBuf.getChannelData(ch).set(src.subarray(tailStartSample, tailStartSample + tailLen));
+        }
+        // 後側のクリップは、元の位置（endSec）に置く ＝ 前に詰めない
+        newClips.push(makeClip(tailBuf, endSec, cl.label + "_b"));
+      }
+    }
+  }
+
+  trackClips[track] = newClips;
+  normalizeTrackClips(track);
+  rebuildTrackBuffer(track);
+
+  // クリップボード用：切り出した部分を時間順に連結
+  if(clippedParts.length === 0) return null;
+  if(clippedParts.length === 1) return clippedParts[0].buffer;
+  // 単純連結（時間ズレは無視して詰める）
+  const sr = clippedParts[0].buffer.sampleRate;
+  const numCh = clippedParts[0].buffer.numberOfChannels;
+  let totalLen = 0;
+  for(const p of clippedParts) totalLen += p.buffer.length;
+  const combined = audioContext.createBuffer(numCh, totalLen, sr);
+  let offset = 0;
+  for(const p of clippedParts){
+    for(let ch = 0; ch < numCh; ch++){
+      combined.getChannelData(ch).set(p.buffer.getChannelData(ch), offset);
+    }
+    offset += p.buffer.length;
+  }
+  return combined;
+}
+
 // 既存バッファをクリップとして取り込み（移行用）
 function importBufferAsClip(track, buffer, label){
   if(!buffer){ trackClips[track] = []; rebuildTrackBuffer(track); return; }
@@ -5356,6 +5458,35 @@ drawMiniTrackWave = function(canvasEl, track, labelColor){
     cctx.fillText(label, x + 2*dpr, 2*dpr);
   }
 
+  // ── クリップ境界とクリップ範囲の可視化 ──
+  const clips = trackClips[track] || [];
+  if(clips.length > 0){
+    // 各クリップの範囲を薄い緑/青/橙でハイライト＋境界線
+    const colorMap = { main:"rgba(53,224,161,.08)", take:"rgba(79,140,255,.08)", chorus:"rgba(245,158,11,.08)" };
+    const borderMap = { main:"rgba(53,224,161,.55)", take:"rgba(79,140,255,.55)", chorus:"rgba(245,158,11,.55)" };
+    const fillColor = colorMap[track] || "rgba(255,255,255,.05)";
+    const borderColor = borderMap[track] || "rgba(255,255,255,.4)";
+    for(const cl of clips){
+      const cs = offsetSec + cl.startSec;
+      const ce = cs + cl.buffer.duration;
+      if(ce < viewStartSec || cs > viewStartSec + viewDur) continue;
+      const x1 = Math.max(0, ((cs - viewStartSec) / viewDur) * w);
+      const x2 = Math.min(w, ((ce - viewStartSec) / viewDur) * w);
+      // クリップ範囲の薄いハイライト
+      cctx.fillStyle = fillColor;
+      cctx.fillRect(x1, 13*dpr, x2 - x1, h - 13*dpr);
+      // クリップ境界（左右の縦線）
+      cctx.strokeStyle = borderColor;
+      cctx.lineWidth = 1.5 * dpr;
+      if(cs >= viewStartSec){
+        cctx.beginPath(); cctx.moveTo(x1, 13*dpr); cctx.lineTo(x1, h); cctx.stroke();
+      }
+      if(ce <= viewStartSec + viewDur){
+        cctx.beginPath(); cctx.moveTo(x2, 13*dpr); cctx.lineTo(x2, h); cctx.stroke();
+      }
+    }
+  }
+
   // 選択ハイライト
   if(st.selStart !== null && st.selEnd !== null && st.selEnd > st.selStart){
     const s1sec = offsetSec + buf.duration * st.selStart;
@@ -5463,22 +5594,35 @@ function setupTrackEditBar(track){
   const stopBtn_ = document.getElementById(`tebStop${c}`);
   if(stopBtn_) stopBtn_.onclick = ()=>{ stopTrackPlayback(); audioEl.pause(); fileStatus.textContent="停止しました。"; };
 
-  // ✂ カット
+  // ✂ カット（クリップ分裂方式：選択範囲を削除、後ろの音は位置を保持）
   const cutBtn_ = document.getElementById(`tebCut${c}`);
   if(cutBtn_) cutBtn_.onclick = ()=>{
     const buf = bufferForTrack(track);
     const st  = getTrackState(track);
-    if(!buf || !st.selStart === null) return;
+    if(!buf || st.selStart === null || st.selEnd === null) return;
     trackPushUndo(track, "カット");
     const s = Math.min(st.selStart, st.selEnd);
     const e = Math.max(st.selStart, st.selEnd);
-    st.clipboard = copyAudioRange(buf, s, e);
-    clipboardBuffer = st.clipboard;  // グローバルにも共有
-    const newBuf = cutAudioBuffer(buf, s, e);
-    setTrackBuffer(track, newBuf);
-    st.selStart = null; st.selEnd = null; st.playheadRatio = Math.min(1, s);
+    const totalDur = buf.duration;
+    const startSec = s * totalDur;
+    const endSec   = e * totalDur;
+    const clipped = cutTimeRangeFromClips(track, startSec, endSec);
+    if(clipped){
+      st.clipboard = clipped;
+      clipboardBuffer = clipped;
+    }
+    // バッファ全体が変わったので、参照を更新
+    if(track === "take")   { takeFxBaked = false; takeFxBackup = null; }
+    else if(track === "chorus"){ chorusFxBaked = false; chorusFxBackup = null; }
+    else                   { mainFxBaked = false; mainFxBackup = null; }
+    if(activeBufferType === track){ invalidateWaveformCache(); refreshPreview(); }
+    st.selStart = null; st.selEnd = null;
+    // プレイヘッドは元の選択開始位置に
+    const newDur = bufferForTrack(track) ? bufferForTrack(track).duration : 1;
+    st.playheadRatio = Math.min(1, startSec / newDur);
     invalidateWaveformCache(); drawStackedTimelines(); updateTrackEditBar(track); updateButtons();
-    fileStatus.textContent = `✂ ${formatTimeMs((e-s)*buf.duration)} をカットしました`;
+    const clipCount = trackClips[track].length;
+    fileStatus.textContent = `✂ ${formatTimeMs(endSec - startSec)} をカット（クリップ数: ${clipCount}）`;
   };
 
   // ⎘ コピー
