@@ -1053,6 +1053,52 @@ body.clip-edit-mode::before{
   pointer-events:none;
 }
 
+/* ─── トラック名編集 ─── */
+.editable-track-name{
+  cursor:pointer;
+  border-bottom:1px dashed transparent;
+  transition:border-color .15s, color .15s;
+  padding:1px 2px;border-radius:3px;
+}
+.editable-track-name:hover{
+  border-bottom-color:rgba(255,255,255,.35);
+  color:#facc15 !important;
+}
+.editable-track-name.editing{
+  background:rgba(250,204,21,.18);
+  color:#facc15 !important;
+  outline:1px solid rgba(250,204,21,.55);
+  cursor:text;
+  border-bottom-color:transparent;
+}
+.editable-track-name input{
+  background:transparent;border:none;outline:none;
+  font-size:inherit;font-weight:inherit;font-family:inherit;color:inherit;
+  width:80px;padding:0;margin:0;
+}
+
+/* ─── トラック追加UI ─── */
+.add-track-row{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin-top:8px;padding:6px 4px;
+}
+.add-track-btn{
+  padding:8px 14px !important;margin:0 !important;
+  font-size:12px !important;font-weight:700 !important;
+  border-radius:10px !important;
+  background:linear-gradient(180deg,rgba(53,224,161,.22),rgba(53,224,161,.10)) !important;
+  border:1px solid rgba(53,224,161,.45) !important;
+  color:#35e0a1 !important;
+  cursor:pointer;
+}
+.add-track-btn:disabled{
+  opacity:.4;cursor:not-allowed;
+}
+.track-count-info{
+  font-size:11px;color:var(--muted);
+  font-family:ui-monospace,monospace;
+}
+
 </style>
 </head>
 <body>
@@ -1139,7 +1185,7 @@ body.clip-edit-mode::before{
       <!-- 波形エリア -->
       <div class="track-lane-side">
         <div class="track-lane-header">
-          <span class="track-lane-name">🎵 カラオケ</span>
+          <span class="track-lane-name editable-track-name" id="trackNameMain" data-track="main" data-emoji="🎵" data-default="カラオケ" title="タップで名前を変更">🎵 カラオケ</span>
           <span class="track-rec-badge">●REC</span>
         </div>
         <div class="track-lane-sub" id="laneMainInfo">未読み込み</div>
@@ -1224,7 +1270,7 @@ body.clip-edit-mode::before{
       <!-- 波形エリア -->
       <div class="track-lane-side">
         <div class="track-lane-header">
-          <span class="track-lane-name">🎤 ボーカル</span>
+          <span class="track-lane-name editable-track-name" id="trackNameTake" data-track="take" data-emoji="🎤" data-default="ボーカル" title="タップで名前を変更">🎤 ボーカル</span>
           <span class="track-rec-badge">●REC</span>
         </div>
         <div class="track-lane-sub" id="laneTakeInfo">未録音</div>
@@ -1328,7 +1374,7 @@ body.clip-edit-mode::before{
       <!-- サイドパネル -->
       <div class="track-lane-side">
         <div class="track-lane-header">
-          <span class="track-lane-name">🎶 コーラス</span>
+          <span class="track-lane-name editable-track-name" id="trackNameChorus" data-track="chorus" data-emoji="🎶" data-default="コーラス" title="タップで名前を変更">🎶 コーラス</span>
           <span class="track-rec-badge">●REC</span>
         </div>
         <div class="track-lane-sub" id="laneChorusInfo">未録音</div>
@@ -1428,6 +1474,11 @@ body.clip-edit-mode::before{
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="add-track-row">
+    <button id="addTrackBtn" class="add-track-btn">＋ トラック追加</button>
+    <span id="trackCountInfo" class="track-count-info">3 / 10 トラック</span>
   </div>
 
   <div id="fileStatus" class="info" style="margin-top:8px">トラックに音源を読み込むか録音してください。</div>
@@ -2035,20 +2086,33 @@ window.addEventListener("load", ()=>{
 function getTrackCanvas(track){
   if(track === "take") return trackCanvasTake;
   if(track === "chorus") return trackCanvasChorus;
+  if(isExtraTrack(track)){
+    const c1 = track.charAt(0).toUpperCase() + track.slice(1).replace(/_/g,"");
+    return document.getElementById("trackCanvas" + c1);
+  }
   return trackCanvasMain;
 }
 function getTrackBuffer(track){
   if(track === "take") return takeBuffer;
   if(track === "chorus") return chorusBuffer;
+  if(isExtraTrack(track)) return buildTrackBufferFromClips(track);
   return mainBuffer;
 }
 function getTrackOffsetMs(track){
   if(track === "take") return takeOffsetMs;
   if(track === "chorus") return chorusOffsetMs;
+  if(isExtraTrack(track)){ const t = getExtraTrack(track); return t ? t.offsetMs : 0; }
   return 0;
 }
 function getTrackVolume(track){
-  const el = track === "take" ? trackVolumeTake : track === "chorus" ? trackVolumeChorus : trackVolumeMain;
+  let el;
+  if(track === "take") el = trackVolumeTake;
+  else if(track === "chorus") el = trackVolumeChorus;
+  else if(isExtraTrack(track)){
+    const c1 = track.charAt(0).toUpperCase() + track.slice(1).replace(/_/g,"");
+    el = document.getElementById("trackVolume" + c1);
+  }
+  else el = trackVolumeMain;
   if(el) return Number(el.value) / 100;
   if(track === "main") return getBackingGain ? getBackingGain() : 1;
   return 1;
@@ -2598,6 +2662,11 @@ async function startTrackRecording(track){
         chorusOffsetMs = 0; chorusFxBaked = false; chorusFxBackup = null;
         activeBufferType = "chorus";
         fileStatus.textContent = `コーラス録音完了 / ${formatTime(decoded.duration)}`;
+      }else if(isExtraTrack(track)){
+        importBufferAsClip(track, decoded, "録音");
+        const t = getExtraTrack(track); if(t){ t.offsetMs = 0; t.fxBaked = false; t.fxBackup = null; }
+        activeBufferType = track;
+        fileStatus.textContent = `録音完了 / ${formatTime(decoded.duration)}`;
       }else{
         importBufferAsClip("main", decoded, "録音");
         mainFxBaked = false; mainFxBackup = null;
@@ -3579,6 +3648,11 @@ async function loadFileToTrack(file, track){
       chorusOffsetMs = 0; chorusFxBaked = false; chorusFxBackup = null;
       activeBufferType = "chorus";
       setFileStatus(file, "コーラストラックとして読み込み", decoded);
+    }else if(isExtraTrack(track)){
+      importBufferAsClip(track, decoded, file.name);
+      const t = getExtraTrack(track); if(t){ t.offsetMs = 0; t.fxBaked = false; t.fxBackup = null; }
+      activeBufferType = track;
+      setFileStatus(file, "追加トラックとして読み込み", decoded);
     }else{
       importBufferAsClip("main", decoded, file.name);
       mainFxBaked = false; mainFxBackup = null;
@@ -4524,10 +4598,12 @@ function buildTrackBufferFromClips(track){
 
 // クリップ系のリビルド：トラックの統合バッファを再生成して各種参照を更新
 function rebuildTrackBuffer(track){
+  // クリップから統合バッファを生成（拡張トラックは buildTrackBufferFromClipsで都度生成）
   const buf = buildTrackBufferFromClips(track);
   if(track === "main")   mainBuffer = buf;
   if(track === "take")   takeBuffer = buf;
   if(track === "chorus") chorusBuffer = buf;
+  // 拡張は buildTrackBufferFromClips を直接呼ぶので保存不要
 }
 
 
@@ -4632,6 +4708,186 @@ function cutTimeRangeFromClips(track, startSec, endSec){
   return combined;
 }
 
+
+// ════════════════════════════════════════════════════════════════
+// ── 拡張トラック（追加・削除可能、最大10トラックまで） ──────────
+// ════════════════════════════════════════════════════════════════
+const MAX_TRACKS_TOTAL = 10; // 固定3 + 拡張7 = 10
+const extraTracks = []; // [{ id, name, emoji, offsetMs, fxBaked, fxBackup }]
+let _extraIdCounter = 1;
+const EXTRA_STORAGE_KEY = "wavecut_extra_tracks_v1";
+
+function totalTrackCount(){ return 3 + extraTracks.length; }
+
+function isExtraTrack(track){ return typeof track === "string" && track.startsWith("extra_"); }
+
+function getExtraTrack(track){
+  return extraTracks.find(t => t.id === track);
+}
+
+function updateTrackCountInfo(){
+  const info = document.getElementById("trackCountInfo");
+  if(info) info.textContent = `${totalTrackCount()} / ${MAX_TRACKS_TOTAL} トラック`;
+  const btn = document.getElementById("addTrackBtn");
+  if(btn) btn.disabled = totalTrackCount() >= MAX_TRACKS_TOTAL;
+}
+
+function saveExtraTracksMeta(){
+  try{
+    const meta = extraTracks.map(t => ({ id:t.id, name:t.name, emoji:t.emoji }));
+    localStorage.setItem(EXTRA_STORAGE_KEY, JSON.stringify(meta));
+  }catch(e){}
+}
+function loadExtraTracksMeta(){
+  try{
+    const raw = localStorage.getItem(EXTRA_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+
+// 拡張トラック用のHTMLテンプレートを生成
+function createExtraTrackHTML(id, emoji, name){
+  const c1 = id.charAt(0).toUpperCase() + id.slice(1).replace(/_/g,"");
+  return `
+    <div class="track-lane" data-track="${id}" id="lane${c1}">
+      <div class="track-lane-side">
+        <div class="track-lane-header">
+          <span class="track-lane-name editable-track-name" id="trackName${c1}" data-track="${id}" data-emoji="${emoji}" data-default="${name}" title="タップで名前を変更">${emoji} ${name}</span>
+          <span class="track-rec-badge">●REC</span>
+        </div>
+        <div class="track-lane-sub" id="lane${c1}Info">未録音</div>
+        <div class="track-btns">
+          <input id="fileInput${c1}" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
+          <label for="fileInput${c1}" class="track-btn-load">📁</label>
+          <button class="track-btn-rec" id="rec${c1}Btn" title="録音開始">⏺</button>
+        </div>
+        <div class="track-vol-row">
+          <button class="vol-btn" id="volBtn${c1}" data-track="${id}">🔊<span id="trackVolume${c1}Label">100</span></button>
+          <input id="trackVolume${c1}" type="hidden" value="100">
+          <label class="track-select-label"><input id="trackSelect${c1}" type="checkbox" checked> MIX</label>
+        </div>
+        <button id="delete${c1}Btn" class="track-btn-delete" title="このトラックを削除">トラック削除</button>
+      </div>
+      <div class="track-wave-area">
+        <div class="track-wave-wrap">
+          <canvas class="track-wave-canvas" id="trackCanvas${c1}" data-track="${id}"></canvas>
+          <div class="track-empty">${emoji} 読込 または ⏺ 録音</div>
+          <div class="recording-wave-note">● 録音中…</div>
+        </div>
+        <div class="track-edit-bar" id="editBar${c1}" data-track="${id}">
+          <span class="track-time-label" id="timeLabel${c1}">--:--.--</span>
+          <button class="teb-btn teb-play" id="tebPlay${c1}" title="カーソル位置から再生" disabled>▶</button>
+          <button class="teb-btn teb-stop-play" id="tebStop${c1}" title="停止">■</button>
+          <span class="teb-sep"></span>
+          <button class="teb-btn teb-cut"   id="tebCut${c1}"   title="選択をカット" disabled>✂</button>
+          <button class="teb-btn teb-copy"  id="tebCopy${c1}"  title="選択をコピー" disabled>⎘</button>
+          <button class="teb-btn teb-paste" id="tebPaste${c1}" title="カーソル位置へ貼り付け" disabled>⎙</button>
+          <span class="teb-sep"></span>
+          <button class="teb-btn teb-restart" id="tebRestart${c1}" data-track="${id}" title="最初に戻る">⏮</button>
+          <span class="teb-sep"></span>
+          <button class="teb-btn teb-quick-shift neg" data-track="${id}" data-ms="-500" title="-500ms">⏪</button>
+          <button class="teb-btn teb-quick-shift neg" data-track="${id}" data-ms="-100" title="-100ms">‹</button>
+          <span class="teb-quick-label" id="quickOffsetLabel${c1}" data-track="${id}">±0</span>
+          <button class="teb-btn teb-quick-shift pos" data-track="${id}" data-ms="100"  title="+100ms">›</button>
+          <button class="teb-btn teb-quick-shift pos" data-track="${id}" data-ms="500"  title="+500ms">⏩</button>
+          <span class="teb-sep"></span>
+          <button class="teb-btn teb-edit" id="editClip${c1}" title="クリップ編集モード">✋</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// 拡張トラックを1つ追加（録音/読込はまだ）
+function addExtraTrack(opts){
+  if(totalTrackCount() >= MAX_TRACKS_TOTAL){
+    alert(`トラック上限（${MAX_TRACKS_TOTAL}個）に達しています`);
+    return null;
+  }
+  opts = opts || {};
+  const id = opts.id || ("extra_" + (_extraIdCounter++));
+  const emoji = opts.emoji || "🎙";
+  const name = opts.name || ("トラック" + (extraTracks.length + 4));
+  // 状態オブジェクト追加
+  extraTracks.push({ id, name, emoji, offsetMs: 0, fxBaked: false, fxBackup: null });
+  trackClips[id] = [];
+  trackState[id] = { playheadRatio: 0, selStart: null, selEnd: null, undoStack: [], clipboard: null };
+  // HTML挿入
+  const stack = document.getElementById("trackStack");
+  if(stack){
+    const tmp = document.createElement("div");
+    tmp.innerHTML = createExtraTrackHTML(id, emoji, name).trim();
+    const lane = tmp.firstChild;
+    stack.appendChild(lane);
+    // 各種イベント設定
+    wireUpExtraTrack(id);
+  }
+  updateTrackCountInfo();
+  saveExtraTracksMeta();
+  return id;
+}
+
+// 拡張トラックの削除
+function removeExtraTrack(id){
+  const idx = extraTracks.findIndex(t => t.id === id);
+  if(idx < 0) return;
+  const t = extraTracks[idx];
+  if(!confirm(`「${t.emoji} ${t.name}」を削除しますか？（音源も消えます）`)) return;
+  extraTracks.splice(idx, 1);
+  delete trackClips[id];
+  delete trackState[id];
+  // DOM削除
+  const c1 = id.charAt(0).toUpperCase() + id.slice(1).replace(/_/g,"");
+  const lane = document.getElementById("lane" + c1);
+  if(lane && lane.parentNode) lane.parentNode.removeChild(lane);
+  updateTrackCountInfo();
+  saveExtraTracksMeta();
+  if(typeof drawStackedTimelines === "function") drawStackedTimelines();
+}
+
+// 拡張トラックの各種イベントを既存setupに合わせて配線
+function wireUpExtraTrack(id){
+  const c1 = id.charAt(0).toUpperCase() + id.slice(1).replace(/_/g,"");
+  // 波形canvas
+  const canvas_ = document.getElementById("trackCanvas" + c1);
+  if(canvas_ && typeof setupTrackCanvasInteraction === "function"){
+    setupTrackCanvasInteraction(canvas_, id);
+  }
+  // edit-bar（再生・カット・ペースト等）
+  if(typeof setupTrackEditBar === "function") setupTrackEditBar(id);
+  // ファイル読込
+  const fileInput = document.getElementById("fileInput" + c1);
+  if(fileInput) fileInput.onchange = e => { loadFileToTrack(e.target.files[0], id); fileInput.value = ""; };
+  // 録音ボタン
+  const recBtn = document.getElementById("rec" + c1 + "Btn");
+  if(recBtn) recBtn.onclick = () => toggleTrackRecording(id);
+  // 音量ボタン → ポップアップ
+  const volBtn = document.getElementById("volBtn" + c1);
+  if(volBtn) volBtn.onclick = (e) => {
+    e.stopPropagation();
+    if(typeof window._openVolPopup === "function") window._openVolPopup(id);
+  };
+  // FX/編集モード/削除
+  const editBtn = document.getElementById("editClip" + c1);
+  if(editBtn) editBtn.onclick = () => setEditClipMode(!editClipMode);
+  const delBtn = document.getElementById("delete" + c1 + "Btn");
+  if(delBtn) delBtn.onclick = () => removeExtraTrack(id);
+  // トラック名編集
+  const nameEl = document.getElementById("trackName" + c1);
+  if(nameEl && typeof window._setupEditableTrackName === "function"){
+    window._setupEditableTrackName(nameEl);
+  }
+}
+
+// ── 拡張トラック対応の汎用ヘルパー ──
+function bufferForTrackExt(track){
+  if(!isExtraTrack(track)) return null;
+  return buildTrackBufferFromClips(track);
+}
+function getTrackOffsetMsExt(track){
+  const t = getExtraTrack(track);
+  return t ? t.offsetMs : 0;
+}
+
 // 既存バッファをクリップとして取り込み（移行用）
 function importBufferAsClip(track, buffer, label){
   if(!buffer){ trackClips[track] = []; rebuildTrackBuffer(track); return; }
@@ -4643,12 +4899,14 @@ function importBufferAsClip(track, buffer, label){
 function bufferForTrack(track){
   if(track === "take") return takeBuffer;
   if(track === "chorus") return chorusBuffer;
+  if(isExtraTrack(track)) return buildTrackBufferFromClips(track);
   return mainBuffer;
 }
 
 function offsetForTrack(track){
   if(track === "take") return takeOffsetMs / 1000;
   if(track === "chorus") return chorusOffsetMs / 1000;
+  if(isExtraTrack(track)){ const t = getExtraTrack(track); return t ? t.offsetMs/1000 : 0; }
   return 0;
 }
 
@@ -5552,6 +5810,12 @@ function setupTrackCanvasInteraction(canvasEl, track){
 function trackColor(track){
   if(track === "take")   return "#4f8cff";
   if(track === "chorus") return "#f59e0b";
+  if(isExtraTrack(track)){
+    // 拡張トラックは色相をローテーション
+    const idx = extraTracks.findIndex(t => t.id === track);
+    const palette = ["#a78bfa","#f472b6","#34d399","#fb923c","#22d3ee","#facc15","#f87171"];
+    return palette[Math.max(0, idx) % palette.length];
+  }
   return "#35e0a1";
 }
 
@@ -5822,13 +6086,24 @@ function setupTrackEditBar(track){
       } else if(track === "chorus"){
         chorusOffsetMs += ms;
         if(chorusOffsetLabel) chorusOffsetLabel.textContent = (chorusOffsetMs>=0?"+":"")+chorusOffsetMs+" ms";
+      } else if(isExtraTrack(track)){
+        const t = getExtraTrack(track); if(t) t.offsetMs += ms;
       }
       // ボタンに視覚フィードバック
       btn.classList.remove("flash"); void btn.offsetWidth; btn.classList.add("flash");
-      // edit-bar内のquick-labelも更新
-      const qlabel = document.getElementById("quickOffsetLabel"+cap(track));
+      // edit-bar内のquick-labelも更新（拡張トラック対応のcapを使う）
+      function _capOfTrack(tr){
+        if(tr === "take") return "Take";
+        if(tr === "chorus") return "Chorus";
+        if(tr === "main") return "Main";
+        return tr.charAt(0).toUpperCase() + tr.slice(1).replace(/_/g,"");
+      }
+      const qlabel = document.getElementById("quickOffsetLabel" + _capOfTrack(track));
       if(qlabel){
-        const cur = track==="take"?takeOffsetMs : track==="chorus"?chorusOffsetMs : 0;
+        let cur = 0;
+        if(track === "take") cur = takeOffsetMs;
+        else if(track === "chorus") cur = chorusOffsetMs;
+        else if(isExtraTrack(track)){ const t2 = getExtraTrack(track); cur = t2 ? t2.offsetMs : 0; }
         qlabel.textContent = (cur>=0?"+":"")+cur;
         qlabel.classList.toggle("nonzero", cur !== 0);
       }
@@ -5859,7 +6134,6 @@ function setupTrackEditBar(track){
 }
 
 function setTrackBuffer(track, buf){
-  // クリップを単一クリップとして置き換え（Step 1の互換動作）
   if(buf){
     trackClips[track] = [ makeClip(buf, 0, "edited") ];
   } else {
@@ -5868,7 +6142,10 @@ function setTrackBuffer(track, buf){
   rebuildTrackBuffer(track);
   if(track === "take")   { takeFxBaked = false; takeFxBackup = null; }
   else if(track === "chorus"){ chorusFxBaked = false; chorusFxBackup = null; }
-  else                   { mainFxBaked = false; mainFxBackup = null; }
+  else if(isExtraTrack(track)){
+    const t = getExtraTrack(track); if(t){ t.fxBaked = false; t.fxBackup = null; }
+  }
+  else { mainFxBaked = false; mainFxBackup = null; }
   if(activeBufferType === track){ invalidateWaveformCache(); refreshPreview(); }
 }
 
@@ -6022,6 +6299,15 @@ if(trackStackPlayBtn){
       defs.push({track:"take", buffer: takeBuffer, volume: getTrackVolume("take"), offsetMs: takeOffsetMs});
     if(trackSelectChorus && trackSelectChorus.checked && chorusBuffer)
       defs.push({track:"chorus", buffer: chorusBuffer, volume: getTrackVolume("chorus"), offsetMs: chorusOffsetMs});
+    // 拡張トラックでチェック入りのもの
+    extraTracks.forEach(t=>{
+      const c1 = t.id.charAt(0).toUpperCase() + t.id.slice(1).replace(/_/g,"");
+      const sel = document.getElementById("trackSelect" + c1);
+      const buf = buildTrackBufferFromClips(t.id);
+      if(sel && sel.checked && buf){
+        defs.push({track:t.id, buffer:buf, volume:getTrackVolume(t.id), offsetMs:t.offsetMs});
+      }
+    });
     if(!defs.length) return;
     playBuffersDirectly(defs, "▶ 選択トラックを同時再生中...");
   };
@@ -6032,6 +6318,11 @@ if(trackAllPlayBtn){
     if(mainBuffer) defs.push({track:"main", buffer: mainBuffer, volume: getTrackVolume("main"), offsetMs: 0});
     if(takeBuffer) defs.push({track:"take", buffer: takeBuffer, volume: getTrackVolume("take"), offsetMs: takeOffsetMs});
     if(chorusBuffer) defs.push({track:"chorus", buffer: chorusBuffer, volume: getTrackVolume("chorus"), offsetMs: chorusOffsetMs});
+    // 拡張トラック
+    extraTracks.forEach(t=>{
+      const buf = buildTrackBufferFromClips(t.id);
+      if(buf) defs.push({track:t.id, buffer:buf, volume:getTrackVolume(t.id), offsetMs:t.offsetMs});
+    });
     if(!defs.length) return;
     playBuffersDirectly(defs, "▶ 全トラックを再生中...");
   };
@@ -6509,6 +6800,8 @@ document.addEventListener("keydown", (e) => {
     const btn = document.getElementById("volBtn"+cap(track));
     if(btn) btn.onclick = e=>{ e.stopPropagation(); open(track); };
   });
+  // 拡張トラック用：グローバルに公開
+  window._openVolPopup = open;
 
   closeBtn.onclick = close;
   overlay.onclick  = close;
@@ -6748,6 +7041,123 @@ function switchActiveBufferTo(track){
   const ap2 = document.getElementById('appendTakeBtn2');
   const ap1 = document.getElementById('appendTakeBtn');
   if(ap2 && ap1) ap2.onclick = ()=>ap1.click();
+})();
+
+
+// ════════════════════════════════════════════════════════════════
+// ── トラック名の編集 ───────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+(function(){
+  const STORAGE_KEY = "wavecut_track_names_v1";
+
+  function loadNames(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    }catch(e){ return {}; }
+  }
+  function saveNames(map){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(map)); }catch(e){}
+  }
+  function renderName(el, emoji, name){
+    el.textContent = emoji + " " + name;
+  }
+
+  function setupEditable(el){
+    const track   = el.dataset.track;
+    const emoji   = el.dataset.emoji;
+    const defName = el.dataset.default;
+    // 初期値復元
+    const names = loadNames();
+    const curName = names[track] || defName;
+    renderName(el, emoji, curName);
+
+    // ダブルタップ・タップでインライン編集モード
+    el.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      if(el.classList.contains("editing")) return;
+      startEdit(el, emoji, defName, track);
+    });
+  }
+
+  function startEdit(el, emoji, defName, track){
+    const names = loadNames();
+    const current = names[track] || defName;
+    el.classList.add("editing");
+    el.innerHTML = emoji + " <input type='text' maxlength='14' />";
+    const input = el.querySelector("input");
+    input.value = current;
+    input.focus();
+    input.select();
+
+    function commit(){
+      let v = (input.value || "").trim();
+      if(!v) v = defName; // 空ならデフォルトに戻す
+      v = v.slice(0, 14); // 最大14文字
+      const names2 = loadNames();
+      if(v === defName){
+        delete names2[track];
+      } else {
+        names2[track] = v;
+      }
+      saveNames(names2);
+      el.classList.remove("editing");
+      renderName(el, emoji, v);
+      if(fileStatus) fileStatus.textContent = `トラック名を「${v}」に変更しました`;
+    }
+    function cancel(){
+      el.classList.remove("editing");
+      renderName(el, emoji, current);
+    }
+    input.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter"){ e.preventDefault(); commit(); }
+      else if(e.key === "Escape"){ e.preventDefault(); cancel(); }
+    });
+    input.addEventListener("blur", commit);
+  }
+
+  function init(){
+    document.querySelectorAll(".editable-track-name").forEach(setupEditable);
+  }
+  // 動的追加トラック用に公開
+  window._setupEditableTrackName = setupEditable;
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+
+
+// ════════════════════════════════════════════════════════════════
+// ── 追加トラック：起動時の復元と「+ トラック追加」ボタン ─────────
+// ════════════════════════════════════════════════════════════════
+(function(){
+  function setup(){
+    // 起動時に localStorage から拡張トラックのメタ情報を復元
+    // （注：buffer/clipsは復元しない。空のトラックだけ作る）
+    const meta = loadExtraTracksMeta();
+    meta.forEach((m, i)=>{
+      // IDカウンタを進めて id 衝突を防ぐ
+      const num = Number((m.id || "").replace("extra_","")) || 0;
+      if(num >= _extraIdCounter) _extraIdCounter = num + 1;
+      addExtraTrack({ id:m.id, name:m.name, emoji:m.emoji });
+    });
+    updateTrackCountInfo();
+    // ボタン
+    const addBtn = document.getElementById("addTrackBtn");
+    if(addBtn) addBtn.onclick = ()=>{
+      const n = extraTracks.length + 1;
+      const emoji = "🎙";
+      const name = "トラック" + (3 + n);
+      addExtraTrack({ name, emoji });
+    };
+  }
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", setup);
+  } else {
+    setup();
+  }
 })();
 
 </script>
