@@ -708,21 +708,16 @@ audio{width:100%;margin:8px 0}
   background:rgba(255,255,255,.025);
   border:1px solid rgba(255,255,255,.07);
   margin-bottom:8px;
-  max-height:128px;
 }
 .track-wave-area{
   display:flex;flex-direction:column;min-width:0;
   border-left:1px solid rgba(255,255,255,.06);
-  max-height:128px;
 }
-/* FXパネル展開時のみ高さ制限を解除 */
-.track-lane.fx-open{ max-height:none; }
-.track-lane.fx-open .track-wave-area{ max-height:none; }
 .track-wave-wrap{
   border-radius:0 !important;
   border:none !important;
-  flex:1 1 auto;
-  min-height:44px !important;
+  height:96px !important;
+  flex:0 0 auto;
   cursor:crosshair;
   position:relative;
   background:#020617;
@@ -1109,9 +1104,8 @@ body.clip-edit-mode::before{
 
 /* スマホでは波形をさらに低く、トラックをコンパクトに */
 @media(max-width:560px){
-  .track-lane{ max-height:104px; grid-template-columns:84px 1fr !important; }
-  .track-wave-area{ max-height:104px; }
-  .track-wave-wrap{ min-height:38px !important; }
+  .track-lane{ grid-template-columns:84px 1fr !important; }
+  .track-wave-wrap{ height:78px !important; }
   .track-lane-name{ font-size:10px; }
   .track-btn-load, .track-btn-rec, .track-btn-stop-rec{ width:30px;height:30px;font-size:15px; }
   .teb-btn{ width:24px;height:24px;font-size:11px; }
@@ -2634,6 +2628,21 @@ deleteTakeBtn.onclick = ()=>{
   takeFxBaked = false;
   takeFxBackup = null;
   if(activeBufferType === "take"){
+    activeBufferType = "main";
+  }
+  resetFx();
+  clearSelectionAndPreview();
+};
+
+if(deleteChorusBtn) deleteChorusBtn.onclick = ()=>{
+  if(!chorusBuffer) return;
+  if(!confirm("コーラス音源を削除しますか？")) return;
+  trackClips.chorus = [];
+  chorusBuffer = null;
+  chorusOffsetMs = 0;
+  chorusFxBaked = false;
+  chorusFxBackup = null;
+  if(activeBufferType === "chorus"){
     activeBufferType = "main";
   }
   resetFx();
@@ -4880,6 +4889,7 @@ function createExtraTrackHTML(id, emoji, name){
           <button class="sm-btn pan-btn" id="panBtn${c1}" data-track="${id}" title="パン">L◦R</button>
           <input id="trackPan${c1}" type="hidden" value="0">
         </div>
+        <button id="clearClip${c1}Btn" class="track-btn-delete" style="background:rgba(255,255,255,.05)!important;color:#94a3b8!important;border-color:rgba(255,255,255,.2)!important;" title="音源だけ削除（トラックは残す）">音源削除</button>
         <button id="delete${c1}Btn" class="track-btn-delete" title="このトラックを削除">トラック削除</button>
       </div>
       <div class="track-wave-area">
@@ -4988,6 +4998,18 @@ function wireUpExtraTrack(id){
   if(editBtn) editBtn.onclick = () => setEditClipMode(!editClipMode);
   const delBtn = document.getElementById("delete" + c1 + "Btn");
   if(delBtn) delBtn.onclick = () => removeExtraTrack(id);
+  // 音源クリア（トラックは残す）
+  const clearBtn = document.getElementById("clearClip" + c1 + "Btn");
+  if(clearBtn) clearBtn.onclick = ()=>{
+    if(!trackClips[id] || trackClips[id].length === 0){ if(fileStatus) fileStatus.textContent="このトラックに音源がありません"; return; }
+    if(!confirm("このトラックの音源を削除しますか？（トラックは残ります）")) return;
+    trackClips[id] = [];
+    rebuildTrackBuffer(id);
+    const t = getExtraTrack(id); if(t){ t.fxBaked=false; t.fxBackup=null; }
+    if(activeBufferType === id){ invalidateWaveformCache(); refreshPreview(); }
+    invalidateWaveformCache(); drawStackedTimelines(); updateButtons();
+    if(fileStatus) fileStatus.textContent = "音源を削除しました";
+  };
   // トラック名編集
   const nameEl = document.getElementById("trackName" + c1);
   if(nameEl && typeof window._setupEditableTrackName === "function"){
