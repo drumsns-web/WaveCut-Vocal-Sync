@@ -2398,6 +2398,7 @@ function clearSelectionAndPreview(){
 deleteMainBtn.onclick = ()=>{
   if(!mainBuffer) return;
   if(!confirm("メイン音源を削除しますか？")) return;
+  trackClips.main = [];
   mainBuffer = null;
   mainFxBaked = false;
   mainFxBackup = null;
@@ -2406,8 +2407,6 @@ deleteMainBtn.onclick = ()=>{
   }
   selectedFileName.textContent = "選択されていません";
   fileStatus.textContent = "メイン音源を削除しました";
-  selectedFileName.textContent = "選択されていません";
-  fileStatus.textContent = "追加録音を削除しました";
   resetFx();
   clearSelectionAndPreview();
 };
@@ -2415,6 +2414,7 @@ deleteMainBtn.onclick = ()=>{
 deleteTakeBtn.onclick = ()=>{
   if(!takeBuffer) return;
   if(!confirm("追加録音を削除しますか？")) return;
+  trackClips.take = [];
   takeBuffer = null;
   takeOffsetMs = 0;
   takeFxBaked = false;
@@ -2545,15 +2545,18 @@ async function startTrackRecording(track){
       const arrayBuffer = await blob.arrayBuffer();
       const decoded = await audioContext.decodeAudioData(arrayBuffer);
       if(track === "take"){
-        takeBuffer = decoded; takeOffsetMs = 0; takeFxBaked = false; takeFxBackup = null;
+        importBufferAsClip("take", decoded, "録音");
+        takeOffsetMs = 0; takeFxBaked = false; takeFxBackup = null;
         activeBufferType = "take";
         fileStatus.textContent = `ボーカル録音完了 / ${formatTime(decoded.duration)}`;
       }else if(track === "chorus"){
-        chorusBuffer = decoded; chorusOffsetMs = 0; chorusFxBaked = false; chorusFxBackup = null;
+        importBufferAsClip("chorus", decoded, "録音");
+        chorusOffsetMs = 0; chorusFxBaked = false; chorusFxBackup = null;
         activeBufferType = "chorus";
         fileStatus.textContent = `コーラス録音完了 / ${formatTime(decoded.duration)}`;
       }else{
-        mainBuffer = decoded; mainFxBaked = false; mainFxBackup = null;
+        importBufferAsClip("main", decoded, "録音");
+        mainFxBaked = false; mainFxBackup = null;
         activeBufferType = "main";
         fileStatus.textContent = `カラオケ録音完了 / ${formatTime(decoded.duration)}`;
       }
@@ -3523,15 +3526,18 @@ async function loadFileToTrack(file, track){
     fileStatus.innerHTML = `読み込み中... (${file.name})`;
     const decoded = await decodeFileToAudioBuffer(file);
     if(track === "take"){
-      takeBuffer = decoded; takeOffsetMs = 0; takeFxBaked = false; takeFxBackup = null;
+      importBufferAsClip("take", decoded, file.name);
+      takeOffsetMs = 0; takeFxBaked = false; takeFxBackup = null;
       activeBufferType = "take";
       setFileStatus(file, "ボーカルトラックとして読み込み", decoded);
     }else if(track === "chorus"){
-      chorusBuffer = decoded; chorusOffsetMs = 0; chorusFxBaked = false; chorusFxBackup = null;
+      importBufferAsClip("chorus", decoded, file.name);
+      chorusOffsetMs = 0; chorusFxBaked = false; chorusFxBackup = null;
       activeBufferType = "chorus";
       setFileStatus(file, "コーラストラックとして読み込み", decoded);
     }else{
-      mainBuffer = decoded; mainFxBaked = false; mainFxBackup = null;
+      importBufferAsClip("main", decoded, file.name);
+      mainFxBaked = false; mainFxBackup = null;
       activeBufferType = "main";
       setFileStatus(file, "カラオケトラックとして読み込み", decoded);
     }
@@ -4385,6 +4391,107 @@ function getTrackTimelineDuration(){
   if(takeBuffer) durations.push(Math.max(0, takeOffsetMs / 1000) + takeBuffer.duration);
   if(chorusBuffer) durations.push(Math.max(0, chorusOffsetMs / 1000) + chorusBuffer.duration);
   return Math.max(1, ...durations);
+}
+
+
+// ════════════════════════════════════════════════════════════════
+// ── クリップモデル（Step 1：データ構造とユーティリティ） ─────────
+// ════════════════════════════════════════════════════════════════
+// 各トラックに { id, buffer, startSec, label } の配列を持つ
+// startSec = トラックタイムライン上での開始位置（秒）
+// 重なりは禁止（buildTrackBufferで隣接位置に置き直す）
+
+const trackClips = { main: [], take: [], chorus: [] };
+let _clipIdCounter = 1;
+
+function makeClip(buffer, startSec, label){
+  return {
+    id: "clip_" + (_clipIdCounter++),
+    buffer: buffer,
+    startSec: Math.max(0, Number(startSec) || 0),
+    label: label || ""
+  };
+}
+
+// クリップ配列をstartSec順にソート＋重なり解消（後ろにずらす）
+function normalizeTrackClips(track){
+  const clips = trackClips[track];
+  if(!clips || !clips.length) return;
+  clips.sort((a,b)=> a.startSec - b.startSec);
+  // 重なり解消：直前クリップの終了時刻より後ろに押し出す
+  for(let i = 1; i < clips.length; i++){
+    const prev = clips[i-1];
+    const prevEnd = prev.startSec + prev.buffer.duration;
+    if(clips[i].startSec < prevEnd){
+      clips[i].startSec = prevEnd;
+    }
+  }
+}
+
+// クリップ配列から1つの統合AudioBufferを生成（既存ロジックとの互換用）
+function buildTrackBufferFromClips(track){
+  const clips = trackClips[track];
+  if(!clips || !clips.length || !audioContext) return null;
+  normalizeTrackClips(track);
+  // 全体長
+  let totalSec = 0;
+  let sampleRate = audioContext.sampleRate;
+  let numCh = 1;
+  for(const cl of clips){
+    if(cl.buffer.sampleRate > sampleRate) sampleRate = cl.buffer.sampleRate;
+    if(cl.buffer.numberOfChannels > numCh) numCh = cl.buffer.numberOfChannels;
+    const end = cl.startSec + cl.buffer.duration;
+    if(end > totalSec) totalSec = end;
+  }
+  if(totalSec <= 0) return null;
+  const totalLen = Math.ceil(totalSec * sampleRate);
+  const out = audioContext.createBuffer(numCh, totalLen, sampleRate);
+  for(const cl of clips){
+    const startSample = Math.floor(cl.startSec * sampleRate);
+    const buf = cl.buffer;
+    const sr = buf.sampleRate;
+    // 簡易リサンプリング：sampleRateが同じなら直接コピー、異なる場合はsrc/srでスキップ
+    const ratio = sr / sampleRate; // 入力1サンプルあたり出力ratioサンプル
+    for(let ch = 0; ch < numCh; ch++){
+      const inCh = Math.min(ch, buf.numberOfChannels - 1);
+      const inData = buf.getChannelData(inCh);
+      const outData = out.getChannelData(ch);
+      if(Math.abs(ratio - 1) < 1e-6){
+        const copyLen = Math.min(inData.length, outData.length - startSample);
+        if(copyLen > 0) outData.set(inData.subarray(0, copyLen), startSample);
+      } else {
+        // 線形補間リサンプル
+        const outSamples = Math.floor(inData.length / ratio);
+        for(let i = 0; i < outSamples; i++){
+          const srcIdx = i * ratio;
+          const i0 = Math.floor(srcIdx);
+          const i1 = Math.min(i0 + 1, inData.length - 1);
+          const frac = srcIdx - i0;
+          const dst = startSample + i;
+          if(dst >= 0 && dst < outData.length){
+            outData[dst] = (inData[i0] * (1 - frac) + inData[i1] * frac);
+          }
+        }
+      }
+    }
+  }
+  return out;
+}
+
+// クリップ系のリビルド：トラックの統合バッファを再生成して各種参照を更新
+function rebuildTrackBuffer(track){
+  const buf = buildTrackBufferFromClips(track);
+  if(track === "main")   mainBuffer = buf;
+  if(track === "take")   takeBuffer = buf;
+  if(track === "chorus") chorusBuffer = buf;
+}
+
+// 既存バッファをクリップとして取り込み（移行用）
+function importBufferAsClip(track, buffer, label){
+  if(!buffer){ trackClips[track] = []; rebuildTrackBuffer(track); return; }
+  // 既存クリップは破棄して、この1つだけにする
+  trackClips[track] = [ makeClip(buffer, 0, label) ];
+  rebuildTrackBuffer(track);
 }
 
 function bufferForTrack(track){
@@ -5461,10 +5568,16 @@ function setupTrackEditBar(track){
 }
 
 function setTrackBuffer(track, buf){
-  if(track === "take")   { takeBuffer = buf; takeFxBaked = false; takeFxBackup = null; }
-  else if(track === "chorus"){ chorusBuffer = buf; chorusFxBaked = false; chorusFxBackup = null; }
-  else                   { mainBuffer  = buf; mainFxBaked  = false; mainFxBackup  = null; }
-  // アクティブバッファが同じトラックならプレビューも更新
+  // クリップを単一クリップとして置き換え（Step 1の互換動作）
+  if(buf){
+    trackClips[track] = [ makeClip(buf, 0, "edited") ];
+  } else {
+    trackClips[track] = [];
+  }
+  rebuildTrackBuffer(track);
+  if(track === "take")   { takeFxBaked = false; takeFxBackup = null; }
+  else if(track === "chorus"){ chorusFxBaked = false; chorusFxBackup = null; }
+  else                   { mainFxBaked = false; mainFxBackup = null; }
   if(activeBufferType === track){ invalidateWaveformCache(); refreshPreview(); }
 }
 
