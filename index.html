@@ -1030,6 +1030,29 @@ audio{width:100%;margin:8px 0}
   100% { box-shadow:0 0 0 0 rgba(239,68,68,0); }
 }
 
+/* ─── クリップ編集モード ─── */
+.teb-btn.teb-edit{
+  color:#fbbf24; border-color:rgba(251,191,36,.3) !important;
+  font-size:13px;
+}
+.teb-btn.teb-edit.active{
+  background:linear-gradient(180deg,rgba(251,191,36,.32),rgba(251,191,36,.15)) !important;
+  color:#fbbf24 !important;
+  border-color:rgba(251,191,36,.6) !important;
+  box-shadow:0 0 10px rgba(251,191,36,.4);
+}
+body.clip-edit-mode .track-wave-canvas{ cursor:grab !important; }
+.track-wave-canvas.clip-dragging{ cursor:grabbing !important; }
+body.clip-edit-mode::before{
+  content:"✋ クリップ編集モード ON — クリップを長押し/ドラッグで移動";
+  position:fixed; top:8px; left:50%; transform:translateX(-50%);
+  background:rgba(251,191,36,.95); color:#000;
+  padding:6px 14px; border-radius:20px;
+  font-size:12px; font-weight:800; z-index:9999;
+  box-shadow:0 4px 16px rgba(0,0,0,.5);
+  pointer-events:none;
+}
+
 </style>
 </head>
 <body>
@@ -1159,6 +1182,7 @@ audio{width:100%;margin:8px 0}
           <button class="teb-btn teb-quick-shift pos" data-track="main" data-ms="100"  title="+100ms">›</button>
           <button class="teb-btn teb-quick-shift pos" data-track="main" data-ms="500"  title="トラック全体を+500ms">⏩</button>
           <span class="teb-sep"></span>
+          <button class="teb-btn teb-edit" id="editClipMain" title="クリップ編集モード（つかんで動かす）">✋</button>
           <button class="teb-btn teb-fx" id="fxToggleMain" title="エフェクト">FX</button>
           <button class="teb-btn teb-undo" id="tebUndoMain" title="元に戻す" disabled>↩</button>
         </div>
@@ -1243,6 +1267,7 @@ audio{width:100%;margin:8px 0}
           <button class="teb-btn teb-quick-shift pos" data-track="take" data-ms="100"  title="+100ms">›</button>
           <button class="teb-btn teb-quick-shift pos" data-track="take" data-ms="500"  title="トラック全体を+500ms">⏩</button>
           <span class="teb-sep"></span>
+          <button class="teb-btn teb-edit" id="editClipTake" title="クリップ編集モード（つかんで動かす）">✋</button>
           <button class="teb-btn teb-fx" id="fxToggleTake" title="エフェクト">FX</button>
           <button class="teb-btn teb-undo" id="tebUndoTake" title="元に戻す" disabled>↩</button>
         </div>
@@ -1346,6 +1371,7 @@ audio{width:100%;margin:8px 0}
           <button class="teb-btn teb-quick-shift pos" data-track="chorus" data-ms="100"  title="+100ms">›</button>
           <button class="teb-btn teb-quick-shift pos" data-track="chorus" data-ms="500"  title="トラック全体を+500ms">⏩</button>
           <span class="teb-sep"></span>
+          <button class="teb-btn teb-edit" id="editClipChorus" title="クリップ編集モード（つかんで動かす）">✋</button>
           <button class="teb-btn teb-fx" id="fxToggleChorus" title="エフェクト">FX</button>
           <button class="teb-btn teb-undo" id="tebUndoChorus" title="元に戻す" disabled>↩</button>
         </div>
@@ -1800,6 +1826,24 @@ const multiPlayChorus = document.getElementById("multiPlayChorus");
 const trackCheckLabelMain = document.getElementById("trackCheckLabelMain");
 const trackCheckLabelTake = document.getElementById("trackCheckLabelTake");
 const trackCheckLabelChorus = document.getElementById("trackCheckLabelChorus");
+
+
+// ── クリップ編集モード（ドラッグで移動） ─────────────────────
+let editClipMode = false;
+let dragClipState = null; // { track, clipId, startSec, pointerStartRatio, canvas }
+function setEditClipMode(on){
+  editClipMode = !!on;
+  document.body.classList.toggle("clip-edit-mode", editClipMode);
+  document.querySelectorAll(".teb-edit").forEach(b=>b.classList.toggle("active", editClipMode));
+  // 全トラック再描画
+  if(typeof drawStackedTimelines === "function") drawStackedTimelines();
+  // ステータス
+  if(fileStatus){
+    fileStatus.textContent = editClipMode
+      ? "✋ 編集モード：クリップを長押し or ドラッグで移動できます。範囲選択は無効です。"
+      : "通常モード：ドラッグで範囲選択、タップでシーク。";
+  }
+}
 
 function ensureAudioContext(){
   if(!audioContext) audioContext = new AudioContext();
@@ -5345,38 +5389,129 @@ function trackUndo(track){
 // ── per-track canvas interaction ─────────────────────────────────
 function setupTrackCanvasInteraction(canvasEl, track){
   if(!canvasEl) return;
-  let isDragging = false;
+  let isDragging = false;    // 範囲選択ドラッグ
   let dragStartRatio = 0;
+  let isClipDragging = false; // クリップ移動ドラッグ
+  let longPressTimer = null;
 
   function getRatio(e){
     const rect = canvasEl.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const x = (e.clientX != null ? e.clientX : (e.touches ? e.touches[0].clientX : 0)) - rect.left;
     return Math.max(0, Math.min(1, x / rect.width));
+  }
+  function ratioToSec(r){
+    const total = getTrackTimelineDuration();
+    return total * r;
+  }
+  // 指定座標位置にあるクリップを返す（無ければnull）
+  function clipAt(r){
+    const total = getTrackTimelineDuration();
+    if(total <= 0) return null;
+    const sec = total * r - offsetForTrack(track);
+    const clips = trackClips[track] || [];
+    for(const cl of clips){
+      if(sec >= cl.startSec && sec < cl.startSec + cl.buffer.duration) return cl;
+    }
+    return null;
+  }
+  // クリップを startSec に置けるか（隣のクリップと重なるかをチェック）
+  function clampClipPosition(clip, desiredStart){
+    const clips = trackClips[track] || [];
+    const dur = clip.buffer.duration;
+    let minStart = 0;
+    let maxStart = Infinity;
+    for(const other of clips){
+      if(other.id === clip.id) continue;
+      const oEnd = other.startSec + other.buffer.duration;
+      if(other.startSec + other.buffer.duration <= clip.startSec){
+        // 元々左にあったクリップ → このクリップは other の右端より右
+        if(oEnd > minStart) minStart = oEnd;
+      } else if(other.startSec >= clip.startSec + dur){
+        // 元々右にあったクリップ → このクリップは other の左端より dur 手前まで
+        const limit = other.startSec - dur;
+        if(limit < maxStart) maxStart = limit;
+      }
+    }
+    return Math.max(minStart, Math.min(maxStart, desiredStart));
+  }
+  function startClipDrag(clip, r){
+    isClipDragging = true;
+    isDragging = false;
+    const st = getTrackState(track);
+    st.selStart = null; st.selEnd = null;
+    dragClipState = {
+      track,
+      clipId: clip.id,
+      origStartSec: clip.startSec,
+      pointerStartSec: ratioToSec(r),
+      canvas: canvasEl
+    };
+    canvasEl.classList.add("clip-dragging");
+    // 触覚フィードバック
+    if(navigator.vibrate) try{ navigator.vibrate(15); }catch(_){}
   }
 
   function onDown(e){
     const buf = bufferForTrack(track);
     if(!buf) return;
     e.preventDefault();
+    const r = getRatio(e);
+    // 編集モードならクリップドラッグ
+    if(editClipMode){
+      const cl = clipAt(r);
+      if(cl){
+        startClipDrag(cl, r);
+        return;
+      }
+    }
+    // 通常モード：長押しで編集モードに自動切替＋クリップつかむ
+    longPressTimer = setTimeout(()=>{
+      const cl = clipAt(r);
+      if(cl){
+        setEditClipMode(true);
+        startClipDrag(cl, r);
+      }
+    }, 500);
+    // 通常の範囲選択も準備
     isDragging = true;
-    dragStartRatio = getRatio(e);
+    dragStartRatio = r;
     const st = getTrackState(track);
-    st.selStart = dragStartRatio;
-    st.selEnd   = dragStartRatio;
-    st.playheadRatio = dragStartRatio;
+    st.selStart = r;
+    st.selEnd   = r;
+    st.playheadRatio = r;
     activeBufferType = track;
-    // メインwave editのplayheadも同期
-    if(track === activeBufferType) playheadRatio = dragStartRatio;
+    if(track === activeBufferType) playheadRatio = r;
     drawMiniTrackWave(canvasEl, track, trackColor(track));
     updateTrackEditBar(track);
   }
 
   function onMove(e){
+    if(isClipDragging && dragClipState && dragClipState.track === track){
+      e.preventDefault();
+      const r = getRatio(e);
+      const curSec = ratioToSec(r);
+      const delta = curSec - dragClipState.pointerStartSec;
+      const clip = (trackClips[track] || []).find(c=>c.id === dragClipState.clipId);
+      if(clip){
+        let desired = dragClipState.origStartSec + delta;
+        desired = clampClipPosition(clip, desired);
+        clip.startSec = Math.max(0, desired);
+        rebuildTrackBuffer(track);
+        invalidateWaveformCache();
+        drawStackedTimelines();
+        // ドラッグ中のステータス
+        if(fileStatus) fileStatus.textContent = `🤚 ${formatTimeMs(clip.startSec)} に移動中...`;
+      }
+      return;
+    }
     if(!isDragging) return;
+    // ポインタが少し動いたら長押しはキャンセル
+    if(longPressTimer){
+      clearTimeout(longPressTimer); longPressTimer = null;
+    }
     e.preventDefault();
     const st = getTrackState(track);
     const r = getRatio(e);
-    st.selEnd = r;
     if(r < dragStartRatio){ st.selStart = r; st.selEnd = dragStartRatio; }
     else { st.selStart = dragStartRatio; st.selEnd = r; }
     drawMiniTrackWave(canvasEl, track, trackColor(track));
@@ -5384,12 +5519,24 @@ function setupTrackCanvasInteraction(canvasEl, track){
   }
 
   function onUp(e){
+    if(longPressTimer){ clearTimeout(longPressTimer); longPressTimer = null; }
+    if(isClipDragging){
+      isClipDragging = false;
+      canvasEl.classList.remove("clip-dragging");
+      const clip = dragClipState ? (trackClips[track] || []).find(c=>c.id === dragClipState.clipId) : null;
+      dragClipState = null;
+      if(clip && fileStatus){
+        fileStatus.textContent = `✓ クリップを ${formatTimeMs(clip.startSec)} に配置`;
+      }
+      // 再描画して最終位置を反映
+      drawStackedTimelines();
+      return;
+    }
     if(!isDragging) return;
     isDragging = false;
     const st = getTrackState(track);
     const moved = Math.abs(st.selEnd - st.selStart) > 0.005;
     if(!moved){
-      // タップ → シークのみ
       st.selStart = null; st.selEnd = null;
     }
     drawMiniTrackWave(canvasEl, track, trackColor(track));
@@ -5724,6 +5871,12 @@ function setTrackBuffer(track, buf){
   else                   { mainFxBaked = false; mainFxBackup = null; }
   if(activeBufferType === track){ invalidateWaveformCache(); refreshPreview(); }
 }
+
+// クリップ編集モードボタン
+['Main','Take','Chorus'].forEach(c1=>{
+  const btn = document.getElementById('editClip'+c1);
+  if(btn) btn.onclick = ()=>{ setEditClipMode(!editClipMode); };
+});
 
 // ── 初期化 ──────────────────────────────────────────────────────
 ["main","take","chorus"].forEach(track=>{
