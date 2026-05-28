@@ -708,11 +708,16 @@ audio{width:100%;margin:8px 0}
   background:rgba(255,255,255,.025);
   border:1px solid rgba(255,255,255,.07);
   margin-bottom:8px;
+  max-height:128px;
 }
 .track-wave-area{
   display:flex;flex-direction:column;min-width:0;
   border-left:1px solid rgba(255,255,255,.06);
+  max-height:128px;
 }
+/* FXパネル展開時のみ高さ制限を解除 */
+.track-lane.fx-open{ max-height:none; }
+.track-lane.fx-open .track-wave-area{ max-height:none; }
 .track-wave-wrap{
   border-radius:0 !important;
   border:none !important;
@@ -1099,6 +1104,60 @@ body.clip-edit-mode::before{
   font-family:ui-monospace,monospace;
 }
 
+.teb-btn.teb-split{ color:#f0abfc; border-color:rgba(240,171,252,.3) !important; }
+.teb-btn.teb-split:not(:disabled):active{ background:rgba(240,171,252,.2) !important; }
+
+/* スマホでは波形をさらに低く、トラックをコンパクトに */
+@media(max-width:560px){
+  .track-lane{ max-height:104px; grid-template-columns:84px 1fr !important; }
+  .track-wave-area{ max-height:104px; }
+  .track-wave-wrap{ min-height:38px !important; }
+  .track-lane-name{ font-size:10px; }
+  .track-btn-load, .track-btn-rec, .track-btn-stop-rec{ width:30px;height:30px;font-size:15px; }
+  .teb-btn{ width:24px;height:24px;font-size:11px; }
+  .track-time-label{ min-width:40px;font-size:8px; }
+}
+
+/* ─── ソロ/ミュート/パン ─── */
+.track-sm-row{
+  display:flex;gap:3px;align-items:center;margin-top:2px;
+}
+.sm-btn{
+  flex:1;padding:3px 0 !important;margin:0 !important;min-height:0 !important;
+  font-size:10px !important;font-weight:800 !important;border-radius:6px !important;
+  background:rgba(255,255,255,.06) !important;
+  border:1px solid rgba(255,255,255,.14) !important;
+  color:#94a3b8 !important;cursor:pointer;
+}
+.sm-btn.solo-btn.active{
+  background:linear-gradient(180deg,#fde047,#eab308) !important;
+  color:#000 !important;border-color:#fde047 !important;
+}
+.sm-btn.mute-btn.active{
+  background:linear-gradient(180deg,#f87171,#dc2626) !important;
+  color:#fff !important;border-color:#fca5a5 !important;
+}
+.sm-btn.pan-btn{ font-size:9px !important; }
+.sm-btn.pan-btn.panned{
+  color:#35e0a1 !important;border-color:rgba(53,224,161,.45) !important;
+}
+/* パンポップアップ */
+.pan-popup{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:min(420px,100%);z-index:999;
+  background:linear-gradient(180deg,#1e2940,#111827);
+  border:1px solid rgba(255,255,255,.12);border-bottom:none;
+  border-radius:22px 22px 0 0;padding:20px 24px 36px;
+  box-shadow:0 -12px 48px rgba(0,0,0,.6);
+}
+.pan-popup-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.pan-popup-title{font-size:15px;font-weight:800;color:#f8fafc;}
+.pan-big-value{font-family:ui-monospace,monospace;font-size:32px;font-weight:900;color:#35e0a1;text-align:center;margin-bottom:14px;}
+.pan-slider{width:100%;height:8px;accent-color:#35e0a1;cursor:pointer;}
+.pan-marks{width:100%;display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-top:6px;}
+.pan-center-btn{width:100%;margin-top:14px !important;padding:10px !important;border-radius:12px !important;
+  background:rgba(255,255,255,.06) !important;border:1px solid rgba(255,255,255,.14) !important;color:#94a3b8 !important;}
+
 </style>
 </head>
 <body>
@@ -1196,8 +1255,14 @@ body.clip-edit-mode::before{
         </div>
         <div class="track-vol-row">
           <button class="vol-btn" id="volBtnMain" data-track="main">🔊<span id="trackVolumeMainLabel">100</span></button>
-          <input id="trackVolumeMain" type="hidden" value="100">
           <label class="track-select-label"><input id="trackSelectMain" type="checkbox" checked> MIX</label>
+          <input id="trackVolumeMain" type="hidden" value="100">
+        </div>
+        <div class="track-sm-row">
+          <button class="sm-btn solo-btn" id="soloMain" data-track="main" title="ソロ（このトラックだけ再生）">S</button>
+          <button class="sm-btn mute-btn" id="muteMain" data-track="main" title="ミュート（このトラックを消音）">M</button>
+          <button class="sm-btn pan-btn" id="panBtnMain" data-track="main" title="パン（左右定位）">L◦R</button>
+          <input id="trackPanMain" type="hidden" value="0">
         </div>
         <button id="deleteMainBtn" disabled class="track-btn-delete">削除</button>
         <span id="multiPlayMain" style="display:none"></span>
@@ -1219,6 +1284,7 @@ body.clip-edit-mode::before{
           <button class="teb-btn teb-cut"   id="tebCutMain"   title="選択をカット（クリップへ）" disabled>✂</button>
           <button class="teb-btn teb-copy"  id="tebCopyMain"  title="選択をコピー" disabled>⎘</button>
           <button class="teb-btn teb-paste" id="tebPasteMain" title="カーソル位置へ貼り付け" disabled>⎙</button>
+          <button class="teb-btn teb-split" id="tebSplitMain" title="カーソル位置で分割">✀</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-restart" id="tebRestartMain" data-track="main" title="最初に戻る">⏮</button>
           <span class="teb-sep"></span>
@@ -1281,8 +1347,14 @@ body.clip-edit-mode::before{
         </div>
         <div class="track-vol-row">
           <button class="vol-btn" id="volBtnTake" data-track="take">🔊<span id="trackVolumeTakeLabel">100</span></button>
-          <input id="trackVolumeTake" type="hidden" value="100">
           <label class="track-select-label"><input id="trackSelectTake" type="checkbox" checked> MIX</label>
+          <input id="trackVolumeTake" type="hidden" value="100">
+        </div>
+        <div class="track-sm-row">
+          <button class="sm-btn solo-btn" id="soloTake" data-track="take" title="ソロ（このトラックだけ再生）">S</button>
+          <button class="sm-btn mute-btn" id="muteTake" data-track="take" title="ミュート（このトラックを消音）">M</button>
+          <button class="sm-btn pan-btn" id="panBtnTake" data-track="take" title="パン（左右定位）">L◦R</button>
+          <input id="trackPanTake" type="hidden" value="0">
         </div>
         <button id="deleteTakeBtn" disabled class="track-btn-delete">削除</button>
         <span id="multiPlayTake" style="display:none"></span>
@@ -1304,6 +1376,7 @@ body.clip-edit-mode::before{
           <button class="teb-btn teb-cut"   id="tebCutTake"   title="選択をカット（クリップへ）" disabled>✂</button>
           <button class="teb-btn teb-copy"  id="tebCopyTake"  title="選択をコピー" disabled>⎘</button>
           <button class="teb-btn teb-paste" id="tebPasteTake" title="カーソル位置へ貼り付け" disabled>⎙</button>
+          <button class="teb-btn teb-split" id="tebSplitTake" title="カーソル位置で分割">✀</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-restart" id="tebRestartTake" data-track="take" title="最初に戻る">⏮</button>
           <span class="teb-sep"></span>
@@ -1385,8 +1458,14 @@ body.clip-edit-mode::before{
         </div>
         <div class="track-vol-row">
           <button class="vol-btn" id="volBtnChorus" data-track="chorus">🔊<span id="trackVolumeChorusLabel">100</span></button>
-          <input id="trackVolumeChorus" type="hidden" value="100">
           <label class="track-select-label"><input id="trackSelectChorus" type="checkbox" checked> MIX</label>
+          <input id="trackVolumeChorus" type="hidden" value="100">
+        </div>
+        <div class="track-sm-row">
+          <button class="sm-btn solo-btn" id="soloChorus" data-track="chorus" title="ソロ（このトラックだけ再生）">S</button>
+          <button class="sm-btn mute-btn" id="muteChorus" data-track="chorus" title="ミュート（このトラックを消音）">M</button>
+          <button class="sm-btn pan-btn" id="panBtnChorus" data-track="chorus" title="パン（左右定位）">L◦R</button>
+          <input id="trackPanChorus" type="hidden" value="0">
         </div>
         <button id="deleteChorusBtn" disabled class="track-btn-delete">削除</button>
         <span id="multiPlayChorus" style="display:none"></span>
@@ -1408,6 +1487,7 @@ body.clip-edit-mode::before{
           <button class="teb-btn teb-cut"   id="tebCutChorus"   title="選択をカット（クリップへ）" disabled>✂</button>
           <button class="teb-btn teb-copy"  id="tebCopyChorus"  title="選択をコピー" disabled>⎘</button>
           <button class="teb-btn teb-paste" id="tebPasteChorus" title="カーソル位置へ貼り付け" disabled>⎙</button>
+          <button class="teb-btn teb-split" id="tebSplitChorus" title="カーソル位置で分割">✀</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-restart" id="tebRestartChorus" data-track="chorus" title="最初に戻る">⏮</button>
           <span class="teb-sep"></span>
@@ -1615,6 +1695,19 @@ body.clip-edit-mode::before{
 </section>
 
 </main>
+
+<!-- パンポップアップ -->
+<div id="panOverlay" style="display:none;position:fixed;inset:0;z-index:998;background:rgba(0,0,0,.5);"></div>
+<div id="panPopup" class="pan-popup" style="display:none">
+  <div class="pan-popup-header">
+    <span class="pan-popup-title">🎚 <span id="panPopupTrackName"></span> パン（左右定位）</span>
+    <button class="vol-popup-close" id="panPopupClose">✕</button>
+  </div>
+  <div class="pan-big-value" id="panBigValue">中央</div>
+  <input class="pan-slider" id="panSlider" type="range" min="-100" max="100" step="1" value="0">
+  <div class="pan-marks"><span>L 左</span><span>中央</span><span>右 R</span></div>
+  <button class="pan-center-btn" id="panCenterBtn">中央に戻す</button>
+</div>
 <!-- JS互換ダミー -->
 <button id="selectMainBtn"  style="display:none"></button>
 <button id="selectTakeBtn"  style="display:none"></button>
@@ -1696,6 +1789,7 @@ let trackPlaybackStartAt = 0;
 let trackPlaybackDuration = 0;
 // 再生中のゲインノードを track別に保持 → 音量スライダーでリアルタイム反映
 let trackPlaybackGains = { main:null, take:null, chorus:null };
+let trackPlaybackPanners = {};
 let micAnalyser = null;
 let micLevelSource = null;
 let micLevelAnimationId = null;
@@ -4763,8 +4857,14 @@ function createExtraTrackHTML(id, emoji, name){
         </div>
         <div class="track-vol-row">
           <button class="vol-btn" id="volBtn${c1}" data-track="${id}">🔊<span id="trackVolume${c1}Label">100</span></button>
-          <input id="trackVolume${c1}" type="hidden" value="100">
           <label class="track-select-label"><input id="trackSelect${c1}" type="checkbox" checked> MIX</label>
+          <input id="trackVolume${c1}" type="hidden" value="100">
+        </div>
+        <div class="track-sm-row">
+          <button class="sm-btn solo-btn" id="solo${c1}" data-track="${id}" title="ソロ">S</button>
+          <button class="sm-btn mute-btn" id="mute${c1}" data-track="${id}" title="ミュート">M</button>
+          <button class="sm-btn pan-btn" id="panBtn${c1}" data-track="${id}" title="パン">L◦R</button>
+          <input id="trackPan${c1}" type="hidden" value="0">
         </div>
         <button id="delete${c1}Btn" class="track-btn-delete" title="このトラックを削除">トラック削除</button>
       </div>
@@ -4782,6 +4882,7 @@ function createExtraTrackHTML(id, emoji, name){
           <button class="teb-btn teb-cut"   id="tebCut${c1}"   title="選択をカット" disabled>✂</button>
           <button class="teb-btn teb-copy"  id="tebCopy${c1}"  title="選択をコピー" disabled>⎘</button>
           <button class="teb-btn teb-paste" id="tebPaste${c1}" title="カーソル位置へ貼り付け" disabled>⎙</button>
+          <button class="teb-btn teb-split" id="tebSplit${c1}" title="カーソル位置で分割">✀</button>
           <span class="teb-sep"></span>
           <button class="teb-btn teb-restart" id="tebRestart${c1}" data-track="${id}" title="最初に戻る">⏮</button>
           <span class="teb-sep"></span>
@@ -4876,6 +4977,13 @@ function wireUpExtraTrack(id){
   if(nameEl && typeof window._setupEditableTrackName === "function"){
     window._setupEditableTrackName(nameEl);
   }
+  // ソロ/ミュート/パン
+  const soloBtn = document.getElementById("solo" + c1);
+  if(soloBtn) soloBtn.onclick = ()=>{ trackSolo[id] = !trackSolo[id]; refreshSoloMuteUI(); applySoloMuteToPlayback(); };
+  const muteBtn = document.getElementById("mute" + c1);
+  if(muteBtn) muteBtn.onclick = ()=>{ trackMute[id] = !trackMute[id]; refreshSoloMuteUI(); applySoloMuteToPlayback(); };
+  const panBtn = document.getElementById("panBtn" + c1);
+  if(panBtn) panBtn.onclick = (e)=>{ e.stopPropagation(); if(window._openPanPopup) window._openPanPopup(id); };
 }
 
 // ── 拡張トラック対応の汎用ヘルパー ──
@@ -4889,6 +4997,49 @@ function getTrackOffsetMsExt(track){
 }
 
 // 既存バッファをクリップとして取り込み（移行用）
+
+// カーソル位置でクリップを2つに分割（位置はそのまま、後ろは詰めない）
+function splitClipAtSec(track, splitSec){
+  const clips = trackClips[track];
+  if(!clips || !clips.length || !audioContext) return false;
+  let didSplit = false;
+  const newClips = [];
+  for(const cl of clips){
+    const clStart = cl.startSec;
+    const clEnd   = cl.startSec + cl.buffer.duration;
+    // 分割位置がこのクリップの内部（端は除く）にあるか
+    if(splitSec > clStart + 0.001 && splitSec < clEnd - 0.001){
+      const sr = cl.buffer.sampleRate;
+      const numCh = cl.buffer.numberOfChannels;
+      const splitInClip = splitSec - clStart;
+      const splitSample = Math.floor(splitInClip * sr);
+      // 前半
+      const headLen = splitSample;
+      const headBuf = audioContext.createBuffer(numCh, headLen, sr);
+      for(let ch=0; ch<numCh; ch++){
+        headBuf.getChannelData(ch).set(cl.buffer.getChannelData(ch).subarray(0, headLen));
+      }
+      // 後半
+      const tailLen = cl.buffer.length - splitSample;
+      const tailBuf = audioContext.createBuffer(numCh, tailLen, sr);
+      for(let ch=0; ch<numCh; ch++){
+        tailBuf.getChannelData(ch).set(cl.buffer.getChannelData(ch).subarray(splitSample));
+      }
+      newClips.push(makeClip(headBuf, clStart, cl.label + "_1"));
+      newClips.push(makeClip(tailBuf, splitSec, cl.label + "_2"));
+      didSplit = true;
+    } else {
+      newClips.push(cl);
+    }
+  }
+  if(didSplit){
+    trackClips[track] = newClips;
+    normalizeTrackClips(track);
+    rebuildTrackBuffer(track);
+  }
+  return didSplit;
+}
+
 function importBufferAsClip(track, buffer, label){
   if(!buffer){ trackClips[track] = []; rebuildTrackBuffer(track); return; }
   // 既存クリップは破棄して、この1つだけにする
@@ -6074,6 +6225,30 @@ function setupTrackEditBar(track){
   const undoBtn_ = document.getElementById(`tebUndo${c}`);
   if(undoBtn_) undoBtn_.onclick = ()=>{ trackUndo(track); };
 
+  // ✀ 分割（カーソル位置でクリップを2つに割る）
+  const splitBtn_ = document.getElementById(`tebSplit${c}`);
+  if(splitBtn_) splitBtn_.onclick = ()=>{
+    const buf = bufferForTrack(track);
+    const st  = getTrackState(track);
+    if(!buf){ if(fileStatus) fileStatus.textContent = "このトラックに音源がありません"; return; }
+    const total = buf.duration;
+    const splitSec = total * (st.playheadRatio || 0) - offsetForTrack(track);
+    trackPushUndo(track, "分割");
+    const ok = splitClipAtSec(track, splitSec);
+    if(ok){
+      if(track === "take")   { takeFxBaked = false; takeFxBackup = null; }
+      else if(track === "chorus"){ chorusFxBaked = false; chorusFxBackup = null; }
+      else if(isExtraTrack(track)){ const t=getExtraTrack(track); if(t){ t.fxBaked=false; t.fxBackup=null; } }
+      else { mainFxBaked = false; mainFxBackup = null; }
+      if(activeBufferType === track){ invalidateWaveformCache(); refreshPreview(); }
+      invalidateWaveformCache(); drawStackedTimelines(); updateTrackEditBar(track); updateButtons();
+      const clipCount = (trackClips[track]||[]).length;
+      if(fileStatus) fileStatus.textContent = `✀ 分割しました（クリップ数: ${clipCount}）`;
+    } else {
+      if(fileStatus) fileStatus.textContent = "カーソル位置にクリップがないか、端のため分割できません";
+    }
+  };
+
   // «‹›» シフトボタン（トラック全体を前後に移動）
   // 旧.teb-shift-l/r と 新.offset-big-btn 両対応
   document.querySelectorAll(`.teb-shift-l[data-track="${track}"], .teb-shift-r[data-track="${track}"], .offset-big-btn[data-track="${track}"], .teb-quick-shift[data-track="${track}"]`).forEach(btn=>{
@@ -6226,24 +6401,33 @@ async function playBuffersDirectly(trackDefs, label){
   let maxDur = 0;
   const nodes = [];
   trackPlaybackGains = { main:null, take:null, chorus:null };
+  trackPlaybackPanners = {};
 
   for(const def of trackDefs){
     if(!def.buffer) continue;
-    const vol = (def.volume != null) ? def.volume : 1;
+    // ソロ/ミュートを考慮した実効音量
+    let vol = (def.volume != null) ? def.volume : 1;
+    if(def.track){
+      if(trackMute[def.track]) vol = 0;
+      else if(anySolo() && !trackSolo[def.track]) vol = 0;
+    }
     const offsetSec = (def.offsetMs || 0) / 1000;
     const startAt = baseAt + Math.max(0, offsetSec);
-    const startOffset = Math.max(0, -offsetSec); // 負オフセット=バッファの途中から
+    const startOffset = Math.max(0, -offsetSec);
 
     const gain = audioContext.createGain();
     gain.gain.value = vol;
-    gain.connect(audioContext.destination);
+    // パンナーを挟む
+    const panner = audioContext.createStereoPanner();
+    panner.pan.value = def.track ? (trackPan[def.track] || 0) : 0;
+    gain.connect(panner);
+    panner.connect(audioContext.destination);
     const src = audioContext.createBufferSource();
     src.buffer = def.buffer;
     src.connect(gain);
     src.start(startAt, startOffset);
     nodes.push(src);
-    // track識別子があればgainを保存（リアルタイム反映用）
-    if(def.track) trackPlaybackGains[def.track] = gain;
+    if(def.track){ trackPlaybackGains[def.track] = gain; trackPlaybackPanners[def.track] = panner; }
 
     const endTime = offsetSec + def.buffer.duration;
     if(endTime > maxDur) maxDur = endTime;
@@ -6833,6 +7017,9 @@ function _initTrackFX(){
       const opening = panel.style.display === 'none';
       panel.style.display = opening ? 'block' : 'none';
       toggleBtn.classList.toggle('active', opening);
+      // 親レーンに fx-open を付けて高さ制限を解除
+      const lane = toggleBtn.closest('.track-lane');
+      if(lane) lane.classList.toggle('fx-open', opening);
     };
   });
 
@@ -7159,6 +7346,134 @@ function switchActiveBufferTo(track){
     setup();
   }
 })();
+
+
+// ════════════════════════════════════════════════════════════════
+// ── ソロ / ミュート / パン ──────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+const trackSolo = {};  // { trackId: true } ソロ中
+const trackMute = {};  // { trackId: true } ミュート中
+const trackPan  = {};  // { trackId: -1.0〜1.0 } パン
+
+function anySolo(){ return Object.values(trackSolo).some(v=>v); }
+
+// このトラックが今、音を出すべきか（ソロ/ミュート考慮）
+function isTrackAudible(track){
+  if(trackMute[track]) return false;
+  if(anySolo()) return !!trackSolo[track]; // ソロがある時はソロのみ
+  return true;
+}
+// 実効ゲイン（音量×可聴判定）
+function effectiveTrackVolume(track){
+  if(!isTrackAudible(track)) return 0;
+  return getTrackVolume(track);
+}
+
+function capTrack(track){
+  if(track==="main") return "Main";
+  if(track==="take") return "Take";
+  if(track==="chorus") return "Chorus";
+  return track.charAt(0).toUpperCase()+track.slice(1).replace(/_/g,"");
+}
+
+function refreshSoloMuteUI(){
+  document.querySelectorAll(".solo-btn").forEach(b=>{
+    b.classList.toggle("active", !!trackSolo[b.dataset.track]);
+  });
+  document.querySelectorAll(".mute-btn").forEach(b=>{
+    b.classList.toggle("active", !!trackMute[b.dataset.track]);
+  });
+}
+
+// 再生中のゲインノードに即時反映
+function applySoloMuteToPlayback(){
+  if(!trackPlaybackGains || !audioContext) return;
+  Object.keys(trackPlaybackGains).forEach(track=>{
+    const g = trackPlaybackGains[track];
+    if(!g) return;
+    const v = effectiveTrackVolume(track);
+    try{ g.gain.setTargetAtTime(v, audioContext.currentTime, 0.02); }catch(e){}
+  });
+}
+
+function setupSoloMuteButtons(){
+  document.querySelectorAll(".solo-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      const t = btn.dataset.track;
+      trackSolo[t] = !trackSolo[t];
+      refreshSoloMuteUI();
+      applySoloMuteToPlayback();
+    };
+  });
+  document.querySelectorAll(".mute-btn").forEach(btn=>{
+    btn.onclick = ()=>{
+      const t = btn.dataset.track;
+      trackMute[t] = !trackMute[t];
+      refreshSoloMuteUI();
+      applySoloMuteToPlayback();
+    };
+  });
+}
+
+// ── パンポップアップ ──
+(function(){
+  const overlay = document.getElementById("panOverlay");
+  const popup   = document.getElementById("panPopup");
+  const slider  = document.getElementById("panSlider");
+  const bigVal  = document.getElementById("panBigValue");
+  const titleEl = document.getElementById("panPopupTrackName");
+  const closeBtn= document.getElementById("panPopupClose");
+  const centerBtn= document.getElementById("panCenterBtn");
+  if(!popup) return;
+  const NAMES={main:"カラオケ",take:"ボーカル",chorus:"コーラス"};
+  let cur = null;
+
+  function panText(v){
+    if(v === 0) return "中央";
+    if(v < 0) return "L " + Math.abs(v);
+    return "R " + v;
+  }
+  function open(track){
+    cur = track;
+    titleEl.textContent = NAMES[track] || track;
+    const v = Math.round((trackPan[track]||0)*100);
+    slider.value = v; bigVal.textContent = panText(v);
+    popup.style.display="block"; overlay.style.display="block";
+  }
+  function close(){ popup.style.display="none"; overlay.style.display="none"; cur=null; }
+  window._openPanPopup = open;
+
+  slider.addEventListener("input", ()=>{
+    const v = Number(slider.value);
+    bigVal.textContent = panText(v);
+    if(!cur) return;
+    trackPan[cur] = v/100;
+    // ボタン表示更新
+    const c1 = capTrack(cur);
+    const btn = document.getElementById("panBtn"+c1);
+    if(btn){
+      btn.classList.toggle("panned", v !== 0);
+      btn.textContent = v===0 ? "L◦R" : (v<0 ? "L"+Math.abs(v) : "R"+v);
+    }
+    // 再生中のパンノードに反映
+    if(trackPlaybackPanners && trackPlaybackPanners[cur] && audioContext){
+      try{ trackPlaybackPanners[cur].pan.setTargetAtTime(v/100, audioContext.currentTime, 0.02); }catch(e){}
+    }
+  });
+  closeBtn.onclick = close; overlay.onclick = close;
+  centerBtn.onclick = ()=>{ slider.value=0; slider.dispatchEvent(new Event("input")); };
+})();
+
+function setupPanButtons(){
+  document.querySelectorAll(".pan-btn").forEach(btn=>{
+    btn.onclick = (e)=>{ e.stopPropagation(); if(window._openPanPopup) window._openPanPopup(btn.dataset.track); };
+  });
+}
+
+// 初期化
+if(document.readyState === "loading"){
+  document.addEventListener("DOMContentLoaded", ()=>{ setupSoloMuteButtons(); setupPanButtons(); });
+} else { setupSoloMuteButtons(); setupPanButtons(); }
 
 </script>
 </body>
