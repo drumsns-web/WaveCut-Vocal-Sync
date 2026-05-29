@@ -1247,7 +1247,7 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
       <!-- 波形エリア -->
       <div class="track-lane-side">
         <div class="track-lane-header">
-          <span class="track-lane-name editable-track-name" id="trackNameMain" data-track="main" data-emoji="🎵" data-default="カラオケ" title="タップで名前を変更">🎵 カラオケ</span>
+          <span class="track-lane-name editable-track-name" id="trackNameMain" data-track="main" data-emoji="🎵" data-default="トラック1" title="タップで名前を変更">🎵 トラック1</span>
           <span class="track-rec-badge">●REC</span>
         </div>
         <div class="track-lane-sub" id="laneMainInfo">未読み込み</div>
@@ -1339,7 +1339,7 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
       <!-- 波形エリア -->
       <div class="track-lane-side">
         <div class="track-lane-header">
-          <span class="track-lane-name editable-track-name" id="trackNameTake" data-track="take" data-emoji="🎤" data-default="ボーカル" title="タップで名前を変更">🎤 ボーカル</span>
+          <span class="track-lane-name editable-track-name" id="trackNameTake" data-track="take" data-emoji="🎤" data-default="トラック2" title="タップで名前を変更">🎤 トラック2</span>
           <span class="track-rec-badge">●REC</span>
         </div>
         <div class="track-lane-sub" id="laneTakeInfo">未録音</div>
@@ -1450,7 +1450,7 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
       <!-- サイドパネル -->
       <div class="track-lane-side">
         <div class="track-lane-header">
-          <span class="track-lane-name editable-track-name" id="trackNameChorus" data-track="chorus" data-emoji="🎶" data-default="コーラス" title="タップで名前を変更">🎶 コーラス</span>
+          <span class="track-lane-name editable-track-name" id="trackNameChorus" data-track="chorus" data-emoji="🎶" data-default="トラック3" title="タップで名前を変更">🎶 トラック3</span>
           <span class="track-rec-badge">●REC</span>
         </div>
         <div class="track-lane-sub" id="laneChorusInfo">未録音</div>
@@ -2631,7 +2631,7 @@ function clearSelectionAndPreview(){
 
 deleteMainBtn.onclick = ()=>{
   if(!mainBuffer) return;
-  if(!confirm("メイン音源を削除しますか？")) return;
+  if(!confirm("トラック1の音源を削除しますか？")) return;
   trackClips.main = [];
   mainBuffer = null;
   mainFxBaked = false;
@@ -2640,14 +2640,14 @@ deleteMainBtn.onclick = ()=>{
     activeBufferType = takeBuffer ? "take" : "main";
   }
   selectedFileName.textContent = "選択されていません";
-  fileStatus.textContent = "メイン音源を削除しました";
+  fileStatus.textContent = "トラック1の音源を削除しました";
   resetFx();
   clearSelectionAndPreview();
 };
 
 deleteTakeBtn.onclick = ()=>{
   if(!takeBuffer) return;
-  if(!confirm("追加録音を削除しますか？")) return;
+  if(!confirm("トラック2の音源を削除しますか？")) return;
   trackClips.take = [];
   takeBuffer = null;
   takeOffsetMs = 0;
@@ -2662,7 +2662,7 @@ deleteTakeBtn.onclick = ()=>{
 
 if(deleteChorusBtn) deleteChorusBtn.onclick = ()=>{
   if(!chorusBuffer) return;
-  if(!confirm("コーラス音源を削除しますか？")) return;
+  if(!confirm("トラック3の音源を削除しますか？")) return;
   trackClips.chorus = [];
   chorusBuffer = null;
   chorusOffsetMs = 0;
@@ -2797,12 +2797,12 @@ async function startTrackRecording(track){
         takeInBuffer("take", decoded, "録音");
         takeFxBaked = false; takeFxBackup = null;
         activeBufferType = "take";
-        fileStatus.textContent = `ボーカル録音完了 / ${formatTime(decoded.duration)}`;
+        fileStatus.textContent = `トラック2 録音完了 / ${formatTime(decoded.duration)}`;
       }else if(track === "chorus"){
         takeInBuffer("chorus", decoded, "録音");
         chorusFxBaked = false; chorusFxBackup = null;
         activeBufferType = "chorus";
-        fileStatus.textContent = `コーラス録音完了 / ${formatTime(decoded.duration)}`;
+        fileStatus.textContent = `トラック3 録音完了 / ${formatTime(decoded.duration)}`;
       }else if(isExtraTrack(track)){
         takeInBuffer(track, decoded, "録音");
         const t = getExtraTrack(track); if(t){ t.fxBaked = false; t.fxBackup = null; }
@@ -2812,7 +2812,7 @@ async function startTrackRecording(track){
         takeInBuffer("main", decoded, "録音");
         mainFxBaked = false; mainFxBackup = null;
         activeBufferType = "main";
-        fileStatus.textContent = `カラオケ録音完了 / ${formatTime(decoded.duration)}`;
+        fileStatus.textContent = `トラック1 録音完了 / ${formatTime(decoded.duration)}`;
       }
       invalidateWaveformCache(); playheadRatio = 0;
       saveInitialEditState(track==="take"?"ボーカル録音直後":track==="chorus"?"コーラス録音直後":"カラオケ録音直後");
@@ -3783,12 +3783,12 @@ async function loadFileToTrack(file, track){
       importBufferAsClip("take", decoded, file.name);
       takeOffsetMs = 0; takeFxBaked = false; takeFxBackup = null;
       activeBufferType = "take";
-      setFileStatus(file, "ボーカルトラックとして読み込み", decoded);
+      setFileStatus(file, "トラック2として読み込み", decoded);
     }else if(track === "chorus"){
       importBufferAsClip("chorus", decoded, file.name);
       chorusOffsetMs = 0; chorusFxBaked = false; chorusFxBackup = null;
       activeBufferType = "chorus";
-      setFileStatus(file, "コーラストラックとして読み込み", decoded);
+      setFileStatus(file, "トラック3として読み込み", decoded);
     }else if(isExtraTrack(track)){
       importBufferAsClip(track, decoded, file.name);
       const t = getExtraTrack(track); if(t){ t.offsetMs = 0; t.fxBaked = false; t.fxBackup = null; }
@@ -3798,7 +3798,7 @@ async function loadFileToTrack(file, track){
       importBufferAsClip("main", decoded, file.name);
       mainFxBaked = false; mainFxBackup = null;
       activeBufferType = "main";
-      setFileStatus(file, "カラオケトラックとして読み込み", decoded);
+      setFileStatus(file, "トラック1として読み込み", decoded);
     }
     saveInitialEditState(track==="take"?"ボーカル読込直後":track==="chorus"?"コーラス読込直後":"カラオケ読込直後");
     resetFx(); selectedStart=null; selectedEnd=null; playheadRatio=0; viewportStart=0;
@@ -3847,14 +3847,14 @@ if(_dummyFileInput && _dummyFileInput !== fileInputMain) _dummyFileInput.onchang
       takeFxBaked = false;
       takeFxBackup = null;
       activeBufferType = "take";
-      targetText = "ボーカルトラックとして読み込み";
+      targetText = "トラック2として読み込み";
     }else if(fileTarget.value === "chorus"){
       chorusBuffer = decoded;
       chorusOffsetMs = 0;
       chorusFxBaked = false;
       chorusFxBackup = null;
       activeBufferType = "chorus";
-      targetText = "コーラストラックとして読み込み";
+      targetText = "トラック3として読み込み";
     }else{
       mainBuffer = decoded;
       mainFxBaked = false;
@@ -6253,7 +6253,7 @@ function setupTrackEditBar(track){
     trackPlaybackGains[track] = gain;
     trackPlaybackStartAt = startAt;
     trackPlaybackDuration = buf.duration - startInBuf;
-    fileStatus.textContent = `▶ ${track === "main" ? "カラオケ" : track === "take" ? "ボーカル" : "コーラス"} 再生中...`;
+    fileStatus.textContent = `▶ ${track === "main" ? "トラック1" : track === "take" ? "トラック2" : track === "chorus" ? "トラック3" : "トラック"} 再生中...`;
     const remain = (buf.duration - startInBuf + 0.2) * 1000;
     setTimeout(()=>{ trackPlaybackNodes=[]; fileStatus.textContent="再生完了。"; }, remain);
   };
@@ -6391,7 +6391,7 @@ function setupTrackEditBar(track){
       invalidateWaveformCache(); drawStackedTimelines(); updateTrackEditBar(track);
       const cur = track==="take"?takeOffsetMs:chorusOffsetMs;
       const sign = cur>=0?"+":"";
-      fileStatus.textContent = `${track === "take" ? "ボーカル" : "コーラス"} オフセット: ${sign}${cur} ms（${ms>0?"+":""}${ms}ms 適用）`;
+      fileStatus.textContent = `${track === "take" ? "トラック2" : track==="chorus" ? "トラック3" : "トラック"} オフセット: ${sign}${cur} ms（${ms>0?"+":""}${ms}ms 適用）`;
     };
     // 長押しリピート
     let hold=null, rep=null;
@@ -6408,7 +6408,7 @@ function setupTrackEditBar(track){
       st.playheadRatio = 0;
       drawMiniTrackWave(document.getElementById(`trackCanvas${cap(track)}`), track, trackColor(track));
       updateTrackEditBar(track);
-      const names = {main:'カラオケ',take:'ボーカル',chorus:'コーラス'};
+      const names = {main:'トラック1',take:'トラック2',chorus:'トラック3'};
       fileStatus.textContent = `${names[track]} を最初に戻しました`;
     };
   }
@@ -6569,14 +6569,14 @@ if(playTakeOnlyBtn){
   playTakeOnlyBtn.onclick = ()=>{
     const buf = buildSingleTrackPlayback("take");
     if(!buf) return;
-    playBuffersDirectly([{buffer:buf, volume:1}], "▶ メインボーカルを再生中...");
+    playBuffersDirectly([{buffer:buf, volume:1}], "▶ トラック2を再生中...");
   };
 }
 if(playChorusOnlyBtn){
   playChorusOnlyBtn.onclick = ()=>{
     const buf = buildSingleTrackPlayback("chorus");
     if(!buf) return;
-    playBuffersDirectly([{buffer:buf, volume:1}], "▶ コーラスを再生中...");
+    playBuffersDirectly([{buffer:buf, volume:1}], "▶ トラック3を再生中...");
   };
 }
 if(trackStackPlayBtn){
@@ -7015,7 +7015,7 @@ document.addEventListener("keydown", (e) => {
   const closeBtn = document.getElementById("volPopupClose");
   if(!popup || !slider) return;
 
-  const NAMES = { main:"カラオケ", take:"ボーカル", chorus:"コーラス" };
+  const NAMES = { main:"トラック1", take:"トラック2", chorus:"トラック3" };
   let currentTrack = null;
 
   function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
@@ -7218,9 +7218,9 @@ function rebuildWaveTrackSelect(){
   sel.innerHTML = "";
   // 固定3トラック
   const fixed = [
-    { id:"main",   label:"🎵 " + getTrackDisplayName("main", "カラオケ") },
-    { id:"take",   label:"🎤 " + getTrackDisplayName("take", "ボーカル") },
-    { id:"chorus", label:"🎶 " + getTrackDisplayName("chorus", "コーラス") },
+    { id:"main",   label:"🎵 " + getTrackDisplayName("main", "トラック1") },
+    { id:"take",   label:"🎤 " + getTrackDisplayName("take", "トラック2") },
+    { id:"chorus", label:"🎶 " + getTrackDisplayName("chorus", "トラック3") },
   ];
   fixed.forEach(t=>{
     const o = document.createElement("option");
@@ -7280,9 +7280,9 @@ function switchActiveBufferTo(track){
   const ss = document.getElementById('sourceStatus');
   if(ss){
     let label = track;
-    if(track === "main") label = "🎵 " + getTrackDisplayName("main","カラオケ");
-    else if(track === "take") label = "🎤 " + getTrackDisplayName("take","ボーカル");
-    else if(track === "chorus") label = "🎶 " + getTrackDisplayName("chorus","コーラス");
+    if(track === "main") label = "🎵 " + getTrackDisplayName("main","トラック1");
+    else if(track === "take") label = "🎤 " + getTrackDisplayName("take","トラック2");
+    else if(track === "chorus") label = "🎶 " + getTrackDisplayName("chorus","トラック3");
     else if(typeof getExtraTrack === "function"){ const t=getExtraTrack(track); if(t) label = t.emoji+" "+t.name; }
     ss.textContent = '編集中：' + label;
   }
@@ -7607,7 +7607,7 @@ function setupSoloMuteButtons(){
   const closeBtn= document.getElementById("panPopupClose");
   const centerBtn= document.getElementById("panCenterBtn");
   if(!popup) return;
-  const NAMES={main:"カラオケ",take:"ボーカル",chorus:"コーラス"};
+  const NAMES={main:"トラック1",take:"トラック2",chorus:"トラック3"};
   let cur = null;
 
   function panText(v){
