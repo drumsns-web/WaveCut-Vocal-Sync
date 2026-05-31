@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Wave Cut Pro</title>
+<title>WaveCut Vocal Sync</title>
 <link rel="icon" type="image/png" sizes="192x192" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
-<meta name="apple-mobile-web-app-title" content="Wave Cut Pro">
+<meta name="apple-mobile-web-app-title" content="WaveCut Vocal Sync">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="application-name" content="Wave Cut Pro">
+<meta name="application-name" content="WaveCut Vocal Sync">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0b1020">
 <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
@@ -1453,7 +1453,7 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
 <body>
 
 <header>
-  <div class="logo">Wave <span>Cut</span> <span class="logo-pro">Pro</span></div>
+  <div class="logo">Wave<span>Cut</span> <span class="logo-pro">Vocal Sync</span></div>
   <div class="sub">マルチトラック録音 · 編集 · MIX</div>
 </header>
 
@@ -1993,9 +1993,9 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
   <p class="section-title">
     🎬 カラオケ動画 <span class="pill" id="karaokeVideoLabel" style="font-weight:600"></span>
   </p>
-  <video id="karaokeVideo" playsinline controls
+  <video id="karaokeVideo" playsinline webkit-playsinline controls preload="auto"
     style="width:100%;border-radius:12px;background:#000;max-height:42vh;display:block"></video>
-  <div class="info" style="margin-top:6px">動画を見ながら録音できます（次の段階で録音連動を追加予定）。音声波形は各トラックで編集できます。</div>
+  <div id="karaokeVideoStatus" class="info" style="margin-top:6px">動画を見ながら録音できます（次の段階で録音連動を追加予定）。音声波形は各トラックで編集できます。</div>
 </section>
 
 <section class="card">
@@ -4338,10 +4338,35 @@ function setKaraokeVideo(file, track){
   }
   const wrap = document.getElementById("karaokeVideoWrap");
   const video = document.getElementById("karaokeVideo");
+  const status = document.getElementById("karaokeVideoStatus");
   if(wrap && video){
-    video.src = karaokeVideoUrl;
-    video.load();
     wrap.style.display = "block";
+    if(status) status.textContent = "動画を読み込み中…";
+
+    // 読み込み成功
+    video.onloadeddata = ()=>{
+      if(status) status.textContent = "▶ を押すと動画を再生できます。見ながら録音する機能は次の段階で追加します。";
+    };
+    video.oncanplay = ()=>{
+      if(status) status.textContent = "▶ を押すと動画を再生できます。見ながら録音する機能は次の段階で追加します。";
+    };
+    // 読み込み失敗（コーデック非対応など）
+    video.onerror = ()=>{
+      if(status){
+        status.textContent = "⚠ この動画はブラウザで再生できない形式の可能性があります（音声波形の編集は可能です）。";
+        status.style.color = "#fca5a5";
+      }
+    };
+
+    // iOS Safari対策：src を type 付きの source 要素で設定
+    video.removeAttribute("src");
+    video.innerHTML = "";
+    const source = document.createElement("source");
+    source.src = karaokeVideoUrl;
+    if(file.type) source.type = file.type;
+    video.appendChild(source);
+    video.muted = false;
+    video.load();
   }
   updateKaraokeVideoLabel();
 }
@@ -4349,8 +4374,16 @@ function setKaraokeVideo(file, track){
 function clearKaraokeVideo(){
   const wrap = document.getElementById("karaokeVideoWrap");
   const video = document.getElementById("karaokeVideo");
-  if(video){ try{ video.pause(); }catch(_){} video.removeAttribute("src"); video.load(); }
+  const status = document.getElementById("karaokeVideoStatus");
+  if(video){
+    try{ video.pause(); }catch(_){}
+    video.onloadeddata = null; video.oncanplay = null; video.onerror = null;
+    video.removeAttribute("src");
+    video.innerHTML = "";
+    try{ video.load(); }catch(_){}
+  }
   if(wrap) wrap.style.display = "none";
+  if(status) status.style.color = "";
   if(karaokeVideoUrl){ try{ URL.revokeObjectURL(karaokeVideoUrl); }catch(_){} }
   karaokeVideoUrl = null;
   karaokeVideoTrack = null;
