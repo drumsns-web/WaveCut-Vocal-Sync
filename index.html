@@ -1995,7 +1995,14 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
   </p>
   <video id="karaokeVideo" playsinline webkit-playsinline controls preload="auto"
     style="width:100%;border-radius:12px;background:#000;max-height:42vh;display:block"></video>
-  <div id="karaokeVideoStatus" class="info" style="margin-top:6px">動画を見ながら録音できます（次の段階で録音連動を追加予定）。音声波形は各トラックで編集できます。</div>
+  <div class="mic-gain-row" style="margin-top:10px">
+    <label style="margin:0">🔊 動画の音量：<span id="karaokeVideoVolLabel" style="color:#35e0a1;font-family:ui-monospace,monospace;font-weight:700">100%</span></label>
+    <div class="mic-gain-row-top">
+      <input id="karaokeVideoVol" type="range" min="0" max="100" step="1" value="100">
+      <button id="karaokeVideoVolReset" class="mic-gain-reset">100%</button>
+    </div>
+  </div>
+  <div id="karaokeVideoStatus" class="info" style="margin-top:6px">動画を見ながら録音できます（次の段階で録音連動を追加予定）。</div>
 </section>
 
 <section class="card">
@@ -2215,6 +2222,7 @@ let activeBufferType = "main";
 // ── カラオケ動画（mainトラック）保持用 ──
 let karaokeVideoUrl = null;   // Blob URL（動画プレビュー用）
 let karaokeVideoTrack = null; // どのトラックに動画があるか（"main" 等 / null=動画なし）
+let karaokeVideoVolume = 1.0; // 動画の音量（0〜1）
 let mainFxBaked = false;
 let takeFxBaked = false;
 let chorusFxBaked = false;
@@ -4366,6 +4374,7 @@ function setKaraokeVideo(file, track){
     if(file.type) source.type = file.type;
     video.appendChild(source);
     video.muted = false;
+    video.volume = karaokeVideoVolume;
     video.load();
   }
   updateKaraokeVideoLabel();
@@ -4399,20 +4408,67 @@ function updateKaraokeVideoLabel(){
   }
 }
 
+// 動画音量スライダーのセットアップ
+(function setupKaraokeVideoVolume(){
+  function init(){
+    const slider = document.getElementById("karaokeVideoVol");
+    const label  = document.getElementById("karaokeVideoVolLabel");
+    const reset  = document.getElementById("karaokeVideoVolReset");
+    const video  = document.getElementById("karaokeVideo");
+    if(!slider) return;
+    function apply(){
+      const v = Number(slider.value);
+      karaokeVideoVolume = v / 100;
+      if(video) video.volume = karaokeVideoVolume;
+      if(label) label.textContent = v + "%";
+    }
+    slider.addEventListener("input", apply);
+    if(reset) reset.onclick = ()=>{ slider.value = 100; apply(); };
+    apply();
+  }
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", init);
+  }else{ init(); }
+})();
+
 async function loadFileToTrack(file, track){
   if(!file) return;
   if(selectedFileName) selectedFileName.textContent = file.name;
   ensureAudioContext();
-  // 動画ファイルなら動画本体も保持（音声抽出は従来通り続行）
   const fileIsVideo = isVideoFile(file);
+
+  // ── 動画ファイル：音声抽出をスキップし、動画プレビュー＋音量調整のみ ──
+  // （iPhoneでの抽出失敗・クラッシュを回避。動画は「見る・聴く・音量」用）
+  if(fileIsVideo){
+    try{
+      setKaraokeVideo(file, track);
+      // 動画トラックの波形クリップは空にする（動画は再生で鳴らす）
+      if(track === "main"){ trackClips.main = []; mainBuffer = null; mainFxBaked=false; mainFxBackup=null; }
+      else if(track === "take"){ trackClips.take = []; takeBuffer = null; takeFxBaked=false; takeFxBackup=null; }
+      else if(track === "chorus"){ trackClips.chorus = []; chorusBuffer = null; chorusFxBaked=false; chorusFxBackup=null; }
+      else if(isExtraTrack(track)){ trackClips[track] = []; const t=getExtraTrack(track); if(t){ t.fxBaked=false; t.fxBackup=null; } if(typeof rebuildTrackBuffer==="function") rebuildTrackBuffer(track); }
+      if(fileStatus){
+        fileStatus.classList.remove("extracting");
+        fileStatus.textContent = `🎬 動画を読み込みました（${trackDisplayName(track)}）。見ながら録音できます。`;
+      }
+      invalidateWaveformCache();
+      if(typeof drawStackedTimelines === "function") drawStackedTimelines();
+      updateButtons();
+      return;
+    }catch(err){
+      console.error(err);
+      alert("動画を読み込めませんでした。形式を確認してください。");
+      if(fileStatus) fileStatus.classList.remove("extracting");
+      return;
+    }
+  }
+
+  // ── 音声ファイル：従来通り音声抽出して波形化 ──
   try{
     fileStatus.classList.add("extracting");
     fileStatus.innerHTML = `読み込み中... (${file.name})`;
     const decoded = await decodeFileToAudioBuffer(file);
-    if(fileIsVideo){
-      // 動画はそのトラックに保持してプレビュー表示
-      setKaraokeVideo(file, track);
-    }else if(karaokeVideoTrack === track){
+    if(karaokeVideoTrack === track){
       // 同じトラックに音声を入れ直した場合は動画を解除
       clearKaraokeVideo();
     }
