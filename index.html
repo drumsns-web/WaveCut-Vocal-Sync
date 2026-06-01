@@ -2388,6 +2388,27 @@ let trackPlaybackRaf = null;
 let trackPlaybackStartAt = 0;
 let trackPlaybackDuration = 0;
 let currentPlaybackTrack = null; // 現在再生中のトラックID（トグルボタン用）
+
+// 全トラックの再生ボタン表示を、currentPlaybackTrack を見て一括更新（クロージャ非依存）
+function refreshAllPlayButtons(){
+  ['main','take','chorus'].forEach(tr=>{
+    const btn = document.getElementById('tebPlay'+tr.charAt(0).toUpperCase()+tr.slice(1));
+    if(!btn) return;
+    const playing = (currentPlaybackTrack === tr);
+    btn.textContent = playing ? "■ 停止" : "▶ 再生";
+    btn.classList.toggle("tt-playing", playing);
+  });
+  if(typeof extraTracks !== "undefined"){
+    extraTracks.forEach(t=>{
+      const c = t.id.charAt(0).toUpperCase()+t.id.slice(1);
+      const btn = document.getElementById('tebPlay'+c);
+      if(!btn) return;
+      const playing = (currentPlaybackTrack === t.id);
+      btn.textContent = playing ? "■ 停止" : "▶ 再生";
+      btn.classList.toggle("tt-playing", playing);
+    });
+  }
+}
 // 再生中のゲインノードを track別に保持 → 音量スライダーでリアルタイム反映
 let trackPlaybackGains = { main:null, take:null, chorus:null };
 let trackPlaybackPanners = {};
@@ -6363,7 +6384,7 @@ function updateTrackLaneInfo(){
   if(trackCheckLabelTake) trackCheckLabelTake.classList.toggle("disabled", !takeBuffer);
   if(trackCheckLabelChorus) trackCheckLabelChorus.classList.toggle("disabled", !chorusBuffer);
   if(trackStackPlayBtn) trackStackPlayBtn.disabled = !((trackSelectMain&&trackSelectMain.checked&&mainBuffer) || (trackSelectTake&&trackSelectTake.checked&&takeBuffer) || (trackSelectChorus&&trackSelectChorus.checked&&chorusBuffer));
-  if(trackAllPlayBtn) trackAllPlayBtn.disabled = !(mainBuffer || takeBuffer || chorusBuffer);
+  if(trackAllPlayBtn) trackAllPlayBtn.disabled = !(mainBuffer || takeBuffer || chorusBuffer || karaokeVideoTrack);
   if(trackStackStopBtn) trackStackStopBtn.disabled = !(mainBuffer || takeBuffer || chorusBuffer);
   if(trackStackMixBtn) trackStackMixBtn.disabled = !(mainBuffer && (takeBuffer || chorusBuffer));
   updateTrackVolumeLabels();
@@ -8281,21 +8302,11 @@ function installTrackEditMenuButtons(track){
 function setupTrackEditBar(track){
   const c = cap(track);
 
-  // ▶/⏸ 再生・停止トグル
+  // ▶/■ 再生・停止トグル
   const playBtn = document.getElementById(`tebPlay${c}`);
-  function setPlayBtnState(playing){
-    if(!playBtn) return;
-    if(playing){
-      playBtn.textContent = "■ 停止";
-      playBtn.classList.add("tt-playing");
-    }else{
-      playBtn.textContent = "▶ 再生";
-      playBtn.classList.remove("tt-playing");
-    }
-  }
   if(playBtn) playBtn.onclick = async ()=>{
     // 再生中（このトラック）なら停止
-    if(currentPlaybackTrack === track && trackPlaybackNodes.length){
+    if(currentPlaybackTrack === track){
       stopTrackPlayback();
       audioEl.pause();
       fileStatus.textContent = "停止しました。";
@@ -8307,7 +8318,7 @@ function setupTrackEditBar(track){
     const startInBuf = buf.duration * st.playheadRatio;
     ensureAudioContext();
     if(audioContext.state === "suspended") await audioContext.resume();
-    stopTrackPlayback();  // ここで全ボタンが「▶ 再生」に戻る
+    stopTrackPlayback();
     if(preferredSinkId) await applyAudioOutputSinkId(preferredSinkId).catch(()=>{});
     const gain = audioContext.createGain();
     gain.gain.value = getTrackVolume(track);
@@ -8317,7 +8328,6 @@ function setupTrackEditBar(track){
     src.connect(gain);
     const startAt = audioContext.currentTime + 0.05;
     src.start(startAt, startInBuf);
-    // 再生セッションID（古いonendedによる誤リセットを防ぐ）
     const sessionId = (window._playSession = (window._playSession||0) + 1);
     trackPlaybackNodes = [src];
     trackPlaybackGains = { main:null, take:null, chorus:null };
@@ -8326,13 +8336,12 @@ function setupTrackEditBar(track){
     trackPlaybackDuration = buf.duration - startInBuf;
     currentPlaybackTrack = track;
     fileStatus.textContent = `▶ ${trackDisplayName(track)} 再生中...`;
-    setPlayBtnState(true);
+    refreshAllPlayButtons();  // ← 全ボタン一括更新で確実に「■ 停止」に
     const remain = (buf.duration - startInBuf + 0.2) * 1000;
     src.onended = ()=>{
-      // このセッションが最新で、まだ同じトラックを再生中のときだけリセット
       if(window._playSession === sessionId && currentPlaybackTrack === track){
         currentPlaybackTrack = null;
-        setPlayBtnState(false);
+        refreshAllPlayButtons();
       }
     };
     setTimeout(()=>{
@@ -8340,14 +8349,12 @@ function setupTrackEditBar(track){
         trackPlaybackNodes=[];
         if(currentPlaybackTrack === track){
           currentPlaybackTrack = null;
-          setPlayBtnState(false);
+          refreshAllPlayButtons();
           fileStatus.textContent="再生完了。";
         }
       }
     }, remain);
   };
-  // トラック別に再生状態をリセットする関数を公開（stopTrackPlaybackから呼ぶ）
-  if(playBtn) playBtn._setPlayState = setPlayBtnState;
 
   // ■ 停止（隠しボタン・互換用）
   const stopBtn_ = document.getElementById(`tebStop${c}`);
@@ -8476,12 +8483,8 @@ function stopTrackPlayback(){
   trackPlaybackNodes = [];
   trackPlaybackGains = { main:null, take:null, chorus:null };
   if(trackPlaybackRaf){ cancelAnimationFrame(trackPlaybackRaf); trackPlaybackRaf = null; }
-  // 全トラックの再生ボタンを「▶ 再生」に戻す
   currentPlaybackTrack = null;
-  document.querySelectorAll(".tt-btn.tt-play").forEach(btn=>{
-    if(typeof btn._setPlayState === "function") btn._setPlayState(false);
-    else { btn.textContent = "▶ 再生"; btn.classList.remove("tt-playing"); }
-  });
+  if(typeof refreshAllPlayButtons === "function") refreshAllPlayButtons();
   drawStackedTimelines();
 }
 
@@ -8640,19 +8643,30 @@ if(trackAllPlayBtn){
     if(mainBuffer) defs.push({track:"main", buffer: mainBuffer, volume: getTrackVolume("main"), offsetMs: 0});
     if(takeBuffer) defs.push({track:"take", buffer: takeBuffer, volume: getTrackVolume("take"), offsetMs: takeOffsetMs});
     if(chorusBuffer) defs.push({track:"chorus", buffer: chorusBuffer, volume: getTrackVolume("chorus"), offsetMs: chorusOffsetMs});
-    // 拡張トラック
     extraTracks.forEach(t=>{
       const buf = buildTrackBufferFromClips(t.id);
       if(buf) defs.push({track:t.id, buffer:buf, volume:getTrackVolume(t.id), offsetMs:t.offsetMs});
     });
-    if(!defs.length) return;
-    playBuffersDirectly(defs, "▶ 全トラックを再生中...");
+    // カラオケ動画があれば一緒に頭から再生
+    const video = document.getElementById("karaokeVideo");
+    const hasVideo = (karaokeVideoTrack && video && video.src);
+    if(!defs.length && !hasVideo) return;
+    if(hasVideo){
+      try{ video.currentTime = 0; video.play().catch(()=>{}); }catch(_){}
+    }
+    if(defs.length){
+      playBuffersDirectly(defs, "▶ 全トラックを再生中...（動画＋歌声）");
+    }else{
+      if(fileStatus) fileStatus.textContent = "▶ カラオケ動画を再生中...";
+    }
   };
 }
 if(trackStackStopBtn){
   trackStackStopBtn.onclick = ()=>{
     stopTrackPlayback();
     audioEl.pause();
+    const video = document.getElementById("karaokeVideo");
+    if(video){ try{ video.pause(); }catch(_){} }
     fileStatus.innerHTML = "再生を停止しました。";
   };
 }
@@ -9391,14 +9405,21 @@ function _updateWaveEditBadge(track){
 })();
 
 // ════════════════════════════════════════════════════════════════
-// ── tebPlay: シーク位置から再生（playing-nowハイライト付き） ────
+// ── tebPlay: シーク位置から再生／停止トグル（playing-nowハイライト付き） ────
 // ════════════════════════════════════════════════════════════════
-// setupTrackEditBarのtebPlay部分を上書き
+// setupTrackEditBarのtebPlay部分を上書き（こちらが最終版）
 ['main','take','chorus'].forEach(track=>{
   const c2 = track.charAt(0).toUpperCase()+track.slice(1);
   const playBtn = document.getElementById('tebPlay'+c2);
   if(!playBtn) return;
   playBtn.onclick = async ()=>{
+    // 再生中（このトラック）なら停止
+    if(currentPlaybackTrack === track){
+      stopTrackPlayback();
+      audioEl.pause();
+      if(fileStatus) fileStatus.textContent = "停止しました。";
+      return;
+    }
     const buf = bufferForTrack(track);
     if(!buf) return;
     const st = getTrackState(track);
@@ -9411,9 +9432,6 @@ function _updateWaveEditBadge(track){
     document.querySelectorAll('.track-lane').forEach(l=>l.classList.remove('playing-now'));
     const lane = document.getElementById('lane'+c2);
     if(lane) lane.classList.add('playing-now');
-    // 他のtebPlayボタンのplaying状態を外す
-    document.querySelectorAll('.teb-play').forEach(b=>b.classList.remove('playing'));
-    playBtn.classList.add('playing');
 
     const gain = audioContext.createGain();
     gain.gain.value = getTrackVolume(track);
@@ -9423,20 +9441,36 @@ function _updateWaveEditBadge(track){
     src.connect(gain);
     const startAt = audioContext.currentTime + 0.05;
     src.start(startAt, startInBuf);
+    const sessionId = (window._playSession = (window._playSession||0) + 1);
     trackPlaybackNodes = [src];
     trackPlaybackGains = { main:null, take:null, chorus:null };
     trackPlaybackGains[track] = gain;
     trackPlaybackStartAt = startAt;
     trackPlaybackDuration = buf.duration - startInBuf;
+    currentPlaybackTrack = track;
     // プレイヘッドアニメーション開始（このトラックだけ）
     startTrackPlaybackHeadAnimation(track);
+    // ボタンを「■ 停止」に切り替え
+    refreshAllPlayButtons();
     if(fileStatus) fileStatus.textContent = `▶ ${track==='main'?'カラオケ':track==='take'?'ボーカル':'コーラス'} 再生中...`;
+    src.onended = ()=>{
+      if(window._playSession === sessionId && currentPlaybackTrack === track){
+        currentPlaybackTrack = null;
+        if(lane) lane.classList.remove('playing-now');
+        refreshAllPlayButtons();
+      }
+    };
     const remain = (buf.duration - startInBuf + 0.25) * 1000;
     setTimeout(()=>{
-      trackPlaybackNodes=[];
-      lane && lane.classList.remove('playing-now');
-      playBtn.classList.remove('playing');
-      if(fileStatus) fileStatus.textContent='再生完了。';
+      if(window._playSession === sessionId){
+        trackPlaybackNodes=[];
+        if(currentPlaybackTrack === track){
+          currentPlaybackTrack = null;
+          lane && lane.classList.remove('playing-now');
+          refreshAllPlayButtons();
+          if(fileStatus) fileStatus.textContent='再生完了。';
+        }
+      }
     }, remain);
   };
 });
