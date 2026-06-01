@@ -4696,18 +4696,16 @@ async function loadFileToTrack(file, track){
   ensureAudioContext();
   const fileIsVideo = isVideoFile(file);
 
-  // ── 動画ファイル：音声抽出をスキップし、動画プレビュー＋音量調整のみ ──
-  if(fileIsVideo){
+  // ── 動画ファイル × トラック1（カラオケ）：動画プレビュー＋音量のみ ──
+  // （音声抽出をスキップ。iPhoneでの抽出失敗を回避。動画は見る・聴く用）
+  // ※ トラック2・3で動画を読み込んだ場合は、下の通常処理で音声を波形化する
+  if(fileIsVideo && track === "main"){
     try{
       setKaraokeVideo(file, track);
-      // 動画トラックの波形クリップは空にする（動画は再生で鳴らす）
-      if(track === "main"){ trackClips.main = []; mainBuffer = null; mainFxBaked=false; mainFxBackup=null; }
-      else if(track === "take"){ trackClips.take = []; takeBuffer = null; takeFxBaked=false; takeFxBackup=null; }
-      else if(track === "chorus"){ trackClips.chorus = []; chorusBuffer = null; chorusFxBaked=false; chorusFxBackup=null; }
-      else if(isExtraTrack(track)){ trackClips[track] = []; const t=getExtraTrack(track); if(t){ t.fxBaked=false; t.fxBackup=null; } if(typeof rebuildTrackBuffer==="function") rebuildTrackBuffer(track); }
+      trackClips.main = []; mainBuffer = null; mainFxBaked=false; mainFxBackup=null;
       if(fileStatus){
         fileStatus.classList.remove("extracting");
-        fileStatus.textContent = `🎬 動画を読み込みました（${trackDisplayName(track)}）。見ながら録音できます。`;
+        fileStatus.textContent = `🎬 カラオケ動画を読み込みました。見ながら録音できます。`;
       }
       invalidateWaveformCache();
       if(typeof drawStackedTimelines === "function") drawStackedTimelines();
