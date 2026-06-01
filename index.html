@@ -1666,8 +1666,48 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
           <div class="track-empty">🎵 読込 または ⏺ 録音</div>
           <div class="recording-wave-note">● 録音中…</div>
         </div>
-        <!-- カラオケ案内 -->
-        <div class="karaoke-lane-hint" id="karaokeLaneHint">📹 動画を読み込むと、下の「カラオケ動画」エリアで再生・ループ・速度調整ができます</div>
+        <!-- カラオケ案内（動画なしのとき表示） -->
+        <div class="karaoke-lane-hint" id="karaokeLaneHint">📹 動画を読み込むと、ここで再生・ABループ・速度調整ができます</div>
+
+        <!-- カラオケ動画プレビュー（動画読み込み時に表示） -->
+        <div id="karaokeVideoWrap" style="display:none;padding:8px">
+          <video id="karaokeVideo" playsinline webkit-playsinline controls preload="auto"
+            style="width:100%;border-radius:12px;background:#000;max-height:42vh;display:block"></video>
+          <!-- 巻き戻し / 再生 / 早送り -->
+          <div class="kv-transport">
+            <button class="kv-tp-btn" id="kvSeekBack" title="10秒戻る">⏪<span class="kv-tp-sub">10s</span></button>
+            <button class="kv-tp-btn kv-tp-play" id="kvPlayPause" title="再生 / 一時停止">▶</button>
+            <button class="kv-tp-btn" id="kvSeekFwd" title="10秒進む">⏩<span class="kv-tp-sub">10s</span></button>
+          </div>
+          <!-- ABループ -->
+          <div class="kv-loop-row">
+            <button class="kv-loop-btn" id="kvSetA" title="A地点を設定">A</button>
+            <span class="kv-loop-label" id="kvLoopLabel">A–B未設定</span>
+            <button class="kv-loop-btn" id="kvSetB" title="B地点を設定">B</button>
+            <button class="kv-loop-btn kv-loop-toggle" id="kvLoopToggle" title="ABループ ON/OFF">🔁 ループ</button>
+            <button class="kv-loop-btn" id="kvLoopClear" title="ループ解除">✕</button>
+          </div>
+          <!-- 再生速度 -->
+          <div class="kv-speed-row">
+            <span class="kv-speed-caption">⏩ 再生速度</span>
+            <div class="kv-speed-btns" id="kvSpeedBtns">
+              <button class="kv-speed-btn" data-spd="0.5">0.5x</button>
+              <button class="kv-speed-btn" data-spd="0.75">0.75x</button>
+              <button class="kv-speed-btn active" data-spd="1">1x</button>
+              <button class="kv-speed-btn" data-spd="1.25">1.25x</button>
+              <button class="kv-speed-btn" data-spd="1.5">1.5x</button>
+              <button class="kv-speed-btn" data-spd="2">2x</button>
+            </div>
+          </div>
+          <div class="mic-gain-row" style="margin-top:10px">
+            <label style="margin:0">🔊 動画の音量：<span id="karaokeVideoVolLabel" style="color:#35e0a1;font-family:ui-monospace,monospace;font-weight:700">100%</span></label>
+            <div class="mic-gain-row-top">
+              <input id="karaokeVideoVol" type="range" min="0" max="100" step="1" value="100">
+              <button id="karaokeVideoVolReset" class="mic-gain-reset">100%</button>
+            </div>
+          </div>
+          <div id="karaokeVideoStatus" class="info" style="margin-top:6px">動画を見ながら録音できます。A/Bでループ区間を決め、🔁でくり返し練習できます。</div>
+        </div>
         <!-- 波形下 edit-bar（カラオケトラックでは非表示） -->
         <div class="track-edit-bar" id="editBarMain" data-track="main" style="display:none">
           <!-- 行1：再生 / 編集操作 / undo -->
@@ -2054,53 +2094,6 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
   <button id="appendTakeBtn" style="display:none"></button>
   <span id="takeOffsetLabel2" style="display:none"></span>
   <span id="chorusOffsetLabelDummy" style="display:none"></span>
-</section>
-
-<!-- ═══ カラオケ動画プレビュー ═══════════════════════════════ -->
-<section class="card" id="karaokeVideoWrap" style="display:none">
-  <p class="section-title">
-    🎬 カラオケ動画 <span class="pill" id="karaokeVideoLabel" style="font-weight:600"></span>
-  </p>
-  <video id="karaokeVideo" playsinline webkit-playsinline controls preload="auto"
-    style="width:100%;border-radius:12px;background:#000;max-height:42vh;display:block"></video>
-
-  <!-- 巻き戻し / 再生 / 早送り -->
-  <div class="kv-transport">
-    <button class="kv-tp-btn" id="kvSeekBack" title="10秒戻る">⏪<span class="kv-tp-sub">10s</span></button>
-    <button class="kv-tp-btn kv-tp-play" id="kvPlayPause" title="再生 / 一時停止">▶</button>
-    <button class="kv-tp-btn" id="kvSeekFwd" title="10秒進む">⏩<span class="kv-tp-sub">10s</span></button>
-  </div>
-
-  <!-- ABループ -->
-  <div class="kv-loop-row">
-    <button class="kv-loop-btn" id="kvSetA" title="A地点を設定">A</button>
-    <span class="kv-loop-label" id="kvLoopLabel">A–B未設定</span>
-    <button class="kv-loop-btn" id="kvSetB" title="B地点を設定">B</button>
-    <button class="kv-loop-btn kv-loop-toggle" id="kvLoopToggle" title="ABループ ON/OFF">🔁 ループ</button>
-    <button class="kv-loop-btn" id="kvLoopClear" title="ループ解除">✕</button>
-  </div>
-
-  <!-- 再生速度 -->
-  <div class="kv-speed-row">
-    <span class="kv-speed-caption">⏩ 再生速度</span>
-    <div class="kv-speed-btns" id="kvSpeedBtns">
-      <button class="kv-speed-btn" data-spd="0.5">0.5x</button>
-      <button class="kv-speed-btn" data-spd="0.75">0.75x</button>
-      <button class="kv-speed-btn active" data-spd="1">1x</button>
-      <button class="kv-speed-btn" data-spd="1.25">1.25x</button>
-      <button class="kv-speed-btn" data-spd="1.5">1.5x</button>
-      <button class="kv-speed-btn" data-spd="2">2x</button>
-    </div>
-  </div>
-
-  <div class="mic-gain-row" style="margin-top:10px">
-    <label style="margin:0">🔊 動画の音量：<span id="karaokeVideoVolLabel" style="color:#35e0a1;font-family:ui-monospace,monospace;font-weight:700">100%</span></label>
-    <div class="mic-gain-row-top">
-      <input id="karaokeVideoVol" type="range" min="0" max="100" step="1" value="100">
-      <button id="karaokeVideoVolReset" class="mic-gain-reset">100%</button>
-    </div>
-  </div>
-  <div id="karaokeVideoStatus" class="info" style="margin-top:6px">動画を見ながら録音できます。A/Bでループ区間を決め、🔁でくり返し練習できます。</div>
 </section>
 
 <section class="card">
@@ -4451,33 +4444,31 @@ function setKaraokeVideo(file, track){
   const status = document.getElementById("karaokeVideoStatus");
   if(wrap && video){
     wrap.style.display = "block";
-    if(status) status.textContent = "動画を読み込み中…";
+    if(status){ status.textContent = "動画を読み込み中…"; status.style.color = ""; }
 
-    // 読み込み成功
     video.onloadeddata = ()=>{
-      if(status) status.textContent = "▶ を押すと動画を再生できます。見ながら録音する機能は次の段階で追加します。";
+      if(status){ status.textContent = "▶ を押すと再生できます。A/Bでループ、速度も変えられます。"; status.style.color = ""; }
     };
     video.oncanplay = ()=>{
-      if(status) status.textContent = "▶ を押すと動画を再生できます。見ながら録音する機能は次の段階で追加します。";
+      if(status){ status.textContent = "▶ を押すと再生できます。A/Bでループ、速度も変えられます。"; status.style.color = ""; }
     };
-    // 読み込み失敗（コーデック非対応など）
     video.onerror = ()=>{
       if(status){
-        status.textContent = "⚠ この動画はブラウザで再生できない形式の可能性があります（音声波形の編集は可能です）。";
+        status.textContent = "⚠ この動画はブラウザで再生できない形式かもしれません。別の動画でお試しください。";
         status.style.color = "#fca5a5";
       }
     };
 
-    // iOS Safari対策：src を type 付きの source 要素で設定
-    video.removeAttribute("src");
+    // src を直接指定（最も互換性が高い）
     video.innerHTML = "";
-    const source = document.createElement("source");
-    source.src = karaokeVideoUrl;
-    if(file.type) source.type = file.type;
-    video.appendChild(source);
+    video.removeAttribute("src");
+    video.src = karaokeVideoUrl;
     video.muted = false;
     video.volume = karaokeVideoVolume;
+    video.playbackRate = 1.0;
     video.load();
+    // プレビューが見えるようスクロール
+    try{ wrap.scrollIntoView({behavior:"smooth", block:"center"}); }catch(_){}
   }
   updateKaraokeVideoLabel();
   // カラオケトラックのヒントを隠し、情報表示を更新
