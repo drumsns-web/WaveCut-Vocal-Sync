@@ -3551,12 +3551,30 @@ async function startTrackRecording(track){
   setTrackRecordingUI(track, true);
 
   // ボーカル/コーラス録音時はカラオケを同時再生
-  if((track === "take" || track === "chorus") && mainBuffer && karaokeMonitorMode && karaokeMonitorMode.value !== "off"){
-    try{
-      await startKaraokePlaybackDuringRecord();
-      fileStatus.innerHTML = `カラオケを再生しながら録音中（イヤホン推奨）`;
-    }catch(e){
-      fileStatus.innerHTML = `録音中（カラオケ自動再生に失敗しました）`;
+  if((track === "take" || track === "chorus") && karaokeMonitorMode && karaokeMonitorMode.value !== "off"){
+    const video = document.getElementById("karaokeVideo");
+    const hasVideo = (karaokeVideoTrack && video && video.src);
+    if(hasVideo){
+      // カラオケが動画の場合：動画を頭から再生（音量はモニター音量に従う）
+      try{
+        const monVol = karaokeMonitorVolume ? Number(karaokeMonitorVolume.value)/100 : 1;
+        video.volume = monVol;
+        video.currentTime = 0;
+        await video.play();
+        fileStatus.innerHTML = `🎬 カラオケ動画を再生しながら録音中（イヤホン推奨）`;
+      }catch(e){
+        fileStatus.innerHTML = `録音中（動画の自動再生に失敗しました。画面の▶を押してください）`;
+      }
+    }else if(mainBuffer){
+      // カラオケが音声波形の場合：従来通り
+      try{
+        await startKaraokePlaybackDuringRecord();
+        fileStatus.innerHTML = `カラオケを再生しながら録音中（イヤホン推奨）`;
+      }catch(e){
+        fileStatus.innerHTML = `録音中（カラオケ自動再生に失敗しました）`;
+      }
+    }else{
+      fileStatus.innerHTML = `録音中...（カラオケ未読み込み）`;
     }
   }else{
     fileStatus.innerHTML = `録音中...`;
@@ -3566,6 +3584,9 @@ async function startTrackRecording(track){
 
 function stopTrackRecording(track){
   stopKaraokePlaybackDuringRecord();
+  // 録音中に再生していたカラオケ動画も止める
+  const video = document.getElementById("karaokeVideo");
+  if(video && karaokeVideoTrack){ try{ video.pause(); }catch(_){} }
   if(mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
   setTrackRecordingUI(track, false);
 }
