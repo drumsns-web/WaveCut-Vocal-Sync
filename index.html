@@ -791,21 +791,22 @@ audio{width:100%;margin:8px 0}
 /* 再生・停止の専用トランスポート行（分かりやすく大きく） */
 .track-transport-row{
   display:flex;align-items:center;gap:8px;
-  padding:6px 8px;
+  padding:8px;
   background:rgba(2,6,23,.6);
   border-top:1px solid rgba(255,255,255,.06);
+  flex-wrap:nowrap;
 }
 .track-transport-row .tt-time{
   font-family:ui-monospace,monospace;font-size:11px;color:#cbd5e1;
-  font-weight:700;min-width:62px;
+  font-weight:700;min-width:54px;flex-shrink:0;
 }
 .tt-btn{
-  width:auto !important;margin:0 !important;
-  padding:8px 18px !important;font-size:16px !important;
+  width:auto !important;margin:0 !important;flex-shrink:0;
+  padding:8px 14px !important;font-size:15px !important;
   border-radius:10px !important;font-weight:800 !important;
   background:rgba(255,255,255,.08) !important;
   border:1px solid rgba(255,255,255,.16) !important;color:#e2e8f0 !important;
-  -webkit-tap-highlight-color:transparent;
+  -webkit-tap-highlight-color:transparent;white-space:nowrap;
 }
 .tt-btn.tt-play{
   flex:1;
@@ -4397,9 +4398,9 @@ function extractAudioViaPlayableMedia(file, mediaInfo){
           if(media.duration && isFinite(media.duration)){
             const pct = Math.min(100, Math.round((media.currentTime / media.duration) * 100));
             fileStatus.innerHTML =
-              `MOV/MP4をブラウザ再生方式で読み込み中... ${pct}%<br>` +
-              `動画部分は使わず、音声のみを抽出しています。<br>` +
-              `${formatTime(media.currentTime)} / ${formatTime(media.duration)}`;
+              `🎬 音声を抽出中... <strong style="color:#35e0a1">${pct}%</strong><br>` +
+              `<div style="height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;margin:4px 0"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#35e0a1,#4f8cff);transition:width .2s"></div></div>` +
+              `<span style="font-family:ui-monospace,monospace;font-size:11px">${formatTime(media.currentTime)} / ${formatTime(media.duration)}</span>`;
           }
         };
 
@@ -4722,8 +4723,23 @@ async function loadFileToTrack(file, track){
   // ── 音声ファイル：従来通り音声抽出して波形化 ──
   try{
     fileStatus.classList.add("extracting");
-    fileStatus.innerHTML = `読み込み中... (${file.name})`;
-    const decoded = await decodeFileToAudioBuffer(file);
+    // 経過時間カウンター付きの読み込み表示（固まっていないことを示す）
+    let _loadStart = Date.now();
+    let _loadDots = 0;
+    fileStatus.innerHTML = `<span id="loadProgressMsg">⏳ 読み込み中</span> <span id="loadProgressDots">●</span> <span id="loadProgressTime" style="font-family:ui-monospace,monospace;color:#35e0a1">0.0秒</span><br><span style="font-size:11px;color:var(--muted)">${file.name}</span><br><span style="font-size:10px;color:var(--muted)">※動画はファイルが大きいほど時間がかかります。バーが動いていれば処理中です。</span>`;
+    const _loadTimer = setInterval(()=>{
+      const el = document.getElementById("loadProgressTime");
+      const dotsEl = document.getElementById("loadProgressDots");
+      if(el){ el.textContent = ((Date.now()-_loadStart)/1000).toFixed(1) + "秒"; }
+      if(dotsEl){ _loadDots = (_loadDots+1)%4; dotsEl.textContent = "●".repeat(_loadDots+1) + "○".repeat(3-_loadDots); }
+    }, 200);
+    const _clearLoadTimer = ()=>{ try{ clearInterval(_loadTimer); }catch(_){} };
+    let decoded;
+    try{
+      decoded = await decodeFileToAudioBuffer(file);
+    }finally{
+      _clearLoadTimer();
+    }
     if(karaokeVideoTrack === track){
       // 同じトラックに音声を入れ直した場合は動画を解除
       clearKaraokeVideo();
@@ -7745,6 +7761,9 @@ function updateTrackEditBar(track){
     delClip: `tebDeleteClip${cap(track)}`,
   };
   const el = id => document.getElementById(id);
+  // ▶ 再生ボタン：音源があれば有効化（再生中の表示はトグル側が管理）
+  const playEl = el(`tebPlay${cap(track)}`);
+  if(playEl) playEl.disabled = !buf;
   if(el(ids.menu))  el(ids.menu).disabled  = !buf;
   if(el(ids.cut))   el(ids.cut).disabled   = !hasSel;
   if(el(ids.copy))  el(ids.copy).disabled  = !hasSel;
@@ -8288,7 +8307,7 @@ function setupTrackEditBar(track){
     const startInBuf = buf.duration * st.playheadRatio;
     ensureAudioContext();
     if(audioContext.state === "suspended") await audioContext.resume();
-    stopTrackPlayback();
+    stopTrackPlayback();  // ここで全ボタンが「▶ 再生」に戻る
     if(preferredSinkId) await applyAudioOutputSinkId(preferredSinkId).catch(()=>{});
     const gain = audioContext.createGain();
     gain.gain.value = getTrackVolume(track);
@@ -8298,27 +8317,32 @@ function setupTrackEditBar(track){
     src.connect(gain);
     const startAt = audioContext.currentTime + 0.05;
     src.start(startAt, startInBuf);
+    // 再生セッションID（古いonendedによる誤リセットを防ぐ）
+    const sessionId = (window._playSession = (window._playSession||0) + 1);
     trackPlaybackNodes = [src];
     trackPlaybackGains = { main:null, take:null, chorus:null };
     trackPlaybackGains[track] = gain;
     trackPlaybackStartAt = startAt;
     trackPlaybackDuration = buf.duration - startInBuf;
     currentPlaybackTrack = track;
-    setPlayBtnState(true);
     fileStatus.textContent = `▶ ${trackDisplayName(track)} 再生中...`;
+    setPlayBtnState(true);
     const remain = (buf.duration - startInBuf + 0.2) * 1000;
     src.onended = ()=>{
-      if(currentPlaybackTrack === track){
+      // このセッションが最新で、まだ同じトラックを再生中のときだけリセット
+      if(window._playSession === sessionId && currentPlaybackTrack === track){
         currentPlaybackTrack = null;
         setPlayBtnState(false);
       }
     };
     setTimeout(()=>{
-      trackPlaybackNodes=[];
-      if(currentPlaybackTrack === track){
-        currentPlaybackTrack = null;
-        setPlayBtnState(false);
-        fileStatus.textContent="再生完了。";
+      if(window._playSession === sessionId){
+        trackPlaybackNodes=[];
+        if(currentPlaybackTrack === track){
+          currentPlaybackTrack = null;
+          setPlayBtnState(false);
+          fileStatus.textContent="再生完了。";
+        }
       }
     }, remain);
   };
@@ -8447,6 +8471,7 @@ installTrackEditPopup();
 
 // ── トラック直接再生（AudioContext方式）────────────────────────────
 function stopTrackPlayback(){
+  window._playSession = (window._playSession||0) + 1; // 古いonended/timeoutを無効化
   trackPlaybackNodes.forEach(n=>{ try{ n.stop(); }catch(_){} });
   trackPlaybackNodes = [];
   trackPlaybackGains = { main:null, take:null, chorus:null };
