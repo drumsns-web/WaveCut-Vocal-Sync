@@ -2674,12 +2674,27 @@ function setEditClipMode(on){
 }
 
 function ensureAudioContext(){
-  if(!audioContext) audioContext = new AudioContext();
+  if(!audioContext){
+    // Chromeでは生成時に sinkId を渡せる。選択済みなら最初から反映する。
+    try{
+      if(preferredSinkId){
+        audioContext = new AudioContext({ sinkId: preferredSinkId });
+      }else{
+        audioContext = new AudioContext();
+      }
+    }catch(e){
+      audioContext = new AudioContext();
+    }
+  }
 }
 
 async function applyAudioOutputSinkId(sinkId){
   ensureAudioContext();
   let applied = false;
+  // サスペンド中だと出力先が反映されないことがあるので先に再開
+  if(audioContext.state === "suspended"){
+    try{ await audioContext.resume(); }catch(_){}
+  }
   // AudioContext.setSinkId（トラック再生・ミックス再生の出力先）
   try{
     if(typeof audioContext.setSinkId === "function"){
@@ -2688,6 +2703,16 @@ async function applyAudioOutputSinkId(sinkId){
     }
   }catch(e){
     console.warn("audioContext.setSinkId failed:", e);
+    // setSinkIdが失敗した場合、sinkId指定でAudioContextを作り直す（Chrome向け最終手段）
+    try{
+      const old = audioContext;
+      audioContext = sinkId ? new AudioContext({ sinkId }) : new AudioContext();
+      if(audioContext.state === "suspended") await audioContext.resume();
+      applied = true;
+      try{ if(old && old !== audioContext) old.close(); }catch(_){}
+    }catch(e2){
+      console.warn("AudioContext recreate failed:", e2);
+    }
   }
   // audio要素のsetSinkId（プレビュー再生の出力先）も必ず合わせる
   try{
@@ -3283,8 +3308,10 @@ if(applyOutputBtn){
       ? (audioOutputSelect.options[audioOutputSelect.selectedIndex]?.textContent || "デフォルト")
       : "デフォルト";
     if(outputStatus){
+      const actualSink = (typeof audioContext.sinkId !== "undefined") ? audioContext.sinkId : "(不明)";
+      const sinkLabel = (actualSink === "" || actualSink == null) ? "システム既定" : (typeof actualSink === "string" ? actualSink.slice(0,8)+"…" : "オブジェクト");
       if(contextSupported){
-        outputStatus.innerHTML = `✅ 出力先を変更しました：<strong>${label}</strong>`;
+        outputStatus.innerHTML = `✅ 出力先を変更しました：<strong>${label}</strong><br><span style="font-size:10px;color:var(--muted)">適用先ID: ${sinkLabel} / 状態: ${audioContext.state}</span><br><span style="font-size:10px;color:var(--muted)">音が出ない場合は、Windowsの「サウンド設定」で既定の出力をPCスピーカーに変更してみてください。</span>`;
       } else {
         let elOk = false;
         if(audioEl && typeof audioEl.setSinkId === "function"){
