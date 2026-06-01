@@ -3582,8 +3582,18 @@ async function decodeFileToAudioBuffer(file){
 
   const isMov = isProbablyMovFile(file);
 
-  // 1. MOVは動画形式変換を試さず、先に「再生しながら抽出」へ進める。
-  // iPhoneカメラロールMOVでは、この方式の方が安定しやすかったため。
+  // 1. まず直接デコードを試す（MOVを含む全形式）。
+  //    iOS SafariでもMOV音声がAAC等なら成功し、「無音/聴きながら」を出さずに取り込める。
+  try{
+    const decoded = await decodeBlobDirectly(file);
+    decoded._wavecutLoadMethod = "direct";
+    decoded._wavecutMediaDuration = mediaInfo?.duration || decoded.duration;
+    return decoded;
+  }catch(primaryError){
+    console.warn("Direct decode failed.", primaryError);
+  }
+
+  // 2. 直接デコードが失敗したMOVは、再生しながら抽出（ここで初めて無音/聴きながら表示）
   if(isMov){
     try{
       const captured = await extractAudioViaUserTapMediaCapture(file, mediaInfo);
@@ -3595,17 +3605,7 @@ async function decodeFileToAudioBuffer(file){
     }
   }
 
-  // 2. MP3 / WAV / M4A / MP4など、ブラウザが直接読めるものは直接AudioBuffer化
-  try{
-    const decoded = await decodeBlobDirectly(file);
-    decoded._wavecutLoadMethod = "direct";
-    decoded._wavecutMediaDuration = mediaInfo?.duration || decoded.duration;
-    return decoded;
-  }catch(primaryError){
-    console.warn("Direct decode failed.", primaryError);
-  }
-
-  // 3. MOV以外の動画は、再生キャプチャを優先
+  // 3. MOV以外の動画も、直接デコード失敗なら再生キャプチャ
   if((file.type || "").toLowerCase().startsWith("video/")){
     try{
       const captured = await extractAudioViaUserTapMediaCapture(file, mediaInfo);
@@ -3617,7 +3617,7 @@ async function decodeFileToAudioBuffer(file){
     }
   }
 
-  // 4. 最終フォールバック：通常のブラウザ再生経由
+  // 4. 最終フォールバック：形式変換 → 再生経由
   if(shouldTryRemux(file)){
     try{
       const remuxed = await 形式変換MovToMp4WithFfmpeg(file);
