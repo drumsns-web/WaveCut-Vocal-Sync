@@ -1346,6 +1346,72 @@ body.clip-edit-mode::before{
   -webkit-tap-highlight-color:transparent;
 }
 
+/* ─── カラオケ（動画）トラック ─── */
+.karaoke-video-lane .track-btn-rec{
+  background:linear-gradient(180deg,#60a5fa,#2563eb 60%,#1e40af) !important;
+  border:1px solid rgba(147,197,253,.4) !important;
+}
+/* 動画コントロール */
+.kv-transport{
+  display:flex;align-items:center;justify-content:center;gap:14px;margin-top:10px;
+}
+.kv-tp-btn{
+  width:auto !important;padding:8px 14px !important;margin:0 !important;
+  font-size:18px !important;border-radius:12px !important;
+  background:rgba(255,255,255,.07) !important;
+  border:1px solid rgba(255,255,255,.15) !important;color:#e2e8f0 !important;
+  display:flex;flex-direction:column;align-items:center;gap:0;line-height:1;
+  -webkit-tap-highlight-color:transparent;
+}
+.kv-tp-btn .kv-tp-sub{ font-size:8px;color:var(--muted);font-weight:700;margin-top:2px; }
+.kv-tp-btn.kv-tp-play{
+  font-size:22px !important;padding:8px 22px !important;
+  background:linear-gradient(180deg,#34d399,#059669) !important;
+  border-color:rgba(52,211,153,.5) !important;color:#001b10 !important;
+}
+.kv-tp-btn:active{ transform:scale(.94); }
+.kv-loop-row{
+  display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap;justify-content:center;
+}
+.kv-loop-btn{
+  width:auto !important;padding:6px 10px !important;margin:0 !important;
+  font-size:12px !important;font-weight:800 !important;border-radius:9px !important;
+  background:rgba(255,255,255,.07) !important;
+  border:1px solid rgba(255,255,255,.16) !important;color:#cbd5e1 !important;
+  -webkit-tap-highlight-color:transparent;white-space:nowrap;
+}
+.kv-loop-btn:active{ background:rgba(250,204,21,.2) !important; }
+.kv-loop-btn.kv-loop-toggle.active{
+  background:linear-gradient(180deg,#fde047,#eab308) !important;color:#000 !important;
+  border-color:rgba(253,224,71,.5) !important;
+}
+.kv-loop-label{
+  font-size:11px;color:#fbbf24;font-family:ui-monospace,monospace;font-weight:700;
+  min-width:96px;text-align:center;
+}
+.kv-speed-row{ margin-top:12px; }
+.kv-speed-caption{ font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:5px; }
+.kv-speed-btns{ display:flex;gap:5px;flex-wrap:wrap; }
+.kv-speed-btn{
+  flex:1;min-width:48px;width:auto !important;padding:7px 4px !important;margin:0 !important;
+  font-size:12px !important;font-weight:800 !important;border-radius:9px !important;
+  background:rgba(255,255,255,.06) !important;
+  border:1px solid rgba(255,255,255,.14) !important;color:#cbd5e1 !important;
+  -webkit-tap-highlight-color:transparent;
+}
+.kv-speed-btn.active{
+  background:linear-gradient(180deg,#60a5fa,#2563eb) !important;color:#fff !important;
+  border-color:rgba(96,165,250,.6) !important;
+}
+.karaoke-lane-hint{
+  display:flex;align-items:center;justify-content:center;
+  text-align:center;font-size:10px;color:var(--muted);
+  padding:10px 12px;line-height:1.5;
+  background:rgba(79,140,255,.06);
+  border:1px dashed rgba(79,140,255,.25);
+  border-radius:10px;margin:4px;min-height:48px;
+}
+
 /* ─── トラック追加UI ─── */
 .add-track-row{
   display:flex;align-items:center;justify-content:space-between;gap:8px;
@@ -1565,43 +1631,45 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
   <div id="karaokeMonitorInfo" class="info" style="margin-bottom:6px"></div>
 
   <div class="track-stack" id="trackStack">
-    <div class="track-lane" data-track="main" id="laneMain">
+    <div class="track-lane karaoke-video-lane" data-track="main" id="laneMain">
       <!-- 波形エリア -->
       <div class="track-lane-side">
         <div class="track-lane-header">
           <span class="track-lane-name editable-track-name" id="trackNameMain" data-track="main" data-emoji="" data-default="カラオケ" title="タップで名前を変更">カラオケ</span>
           <span class="track-rec-badge">●REC</span>
         </div>
-        <div class="track-lane-sub" id="laneMainInfo">未読み込み</div>
+        <div class="track-lane-sub" id="laneMainInfo">動画なし</div>
         <div class="track-btns">
-          <input id="fileInputMain" class="file-hidden" type="file" accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.webm,.mp4,.mov,.m4v,.avi,.mkv" />
-          <label for="fileInputMain" class="track-btn-load">📁</label>
-          <button class="track-btn-rec" id="recMainBtn" title="録音開始">⏺</button>
+          <input id="fileInputMain" class="file-hidden" type="file" accept="video/*,.mp4,.mov,.m4v,.webm" />
+          <label for="fileInputMain" class="track-btn-load" title="動画を読み込む">📁</label>
+          <button class="track-btn-rec" id="recMainBtn" title="画面録画について">📹</button>
         </div>
         <div class="track-vol-row">
           <button class="vol-btn" id="volBtnMain" data-track="main">🔊<span id="trackVolumeMainLabel">100</span></button>
-          <label class="track-select-label"><input id="trackSelectMain" type="checkbox" checked> MIX</label>
+          <label class="track-select-label" style="display:none"><input id="trackSelectMain" type="checkbox" checked> MIX</label>
           <input id="trackVolumeMain" type="hidden" value="100">
         </div>
-        <div class="track-sm-row">
+        <div class="track-sm-row" style="display:none">
           <button class="sm-btn solo-btn" id="soloMain" data-track="main" title="ソロ（このトラックだけ再生）">S</button>
           <button class="sm-btn mute-btn" id="muteMain" data-track="main" title="ミュート（このトラックを消音）">M</button>
           <button class="sm-btn pan-btn" id="panBtnMain" data-track="main" title="パン（左右定位）">L◦R</button>
           <input id="trackPanMain" type="hidden" value="0">
         </div>
-        <button id="deleteMainBtn" disabled class="track-btn-delete">削除</button>
+        <button id="deleteMainBtn" disabled class="track-btn-delete">動画を削除</button>
         <span id="multiPlayMain" style="display:none"></span>
         <span id="trackCheckLabelMain" style="display:none"></span>
       </div>
-      <!-- サイドパネル -->
+      <!-- サイドパネル（カラオケトラックでは波形・編集バーを隠す） -->
       <div class="track-wave-area">
-        <div class="track-wave-wrap">
+        <div class="track-wave-wrap" style="display:none">
           <canvas class="track-wave-canvas" id="trackCanvasMain" data-track="main"></canvas>
           <div class="track-empty">🎵 読込 または ⏺ 録音</div>
           <div class="recording-wave-note">● 録音中…</div>
         </div>
-        <!-- 波形下 edit-bar（再生・編集の全操作） -->
-        <div class="track-edit-bar" id="editBarMain" data-track="main">
+        <!-- カラオケ案内 -->
+        <div class="karaoke-lane-hint" id="karaokeLaneHint">📹 動画を読み込むと、下の「カラオケ動画」エリアで再生・ループ・速度調整ができます</div>
+        <!-- 波形下 edit-bar（カラオケトラックでは非表示） -->
+        <div class="track-edit-bar" id="editBarMain" data-track="main" style="display:none">
           <!-- 行1：再生 / 編集操作 / undo -->
           <div class="track-edit-bar-row">
             <span class="track-time-label" id="timeLabelMain">--:--.--</span>
@@ -1925,7 +1993,7 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
     </div>
   </div>
 
-  <div class="add-track-row">
+  <div class="add-track-row" style="display:none">
     <button id="addTrackBtn" class="add-track-btn">＋ トラック追加</button>
     <span id="trackCountInfo" class="track-count-info">3 / 10 トラック</span>
   </div>
@@ -1995,6 +2063,36 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
   </p>
   <video id="karaokeVideo" playsinline webkit-playsinline controls preload="auto"
     style="width:100%;border-radius:12px;background:#000;max-height:42vh;display:block"></video>
+
+  <!-- 巻き戻し / 再生 / 早送り -->
+  <div class="kv-transport">
+    <button class="kv-tp-btn" id="kvSeekBack" title="10秒戻る">⏪<span class="kv-tp-sub">10s</span></button>
+    <button class="kv-tp-btn kv-tp-play" id="kvPlayPause" title="再生 / 一時停止">▶</button>
+    <button class="kv-tp-btn" id="kvSeekFwd" title="10秒進む">⏩<span class="kv-tp-sub">10s</span></button>
+  </div>
+
+  <!-- ABループ -->
+  <div class="kv-loop-row">
+    <button class="kv-loop-btn" id="kvSetA" title="A地点を設定">A</button>
+    <span class="kv-loop-label" id="kvLoopLabel">A–B未設定</span>
+    <button class="kv-loop-btn" id="kvSetB" title="B地点を設定">B</button>
+    <button class="kv-loop-btn kv-loop-toggle" id="kvLoopToggle" title="ABループ ON/OFF">🔁 ループ</button>
+    <button class="kv-loop-btn" id="kvLoopClear" title="ループ解除">✕</button>
+  </div>
+
+  <!-- 再生速度 -->
+  <div class="kv-speed-row">
+    <span class="kv-speed-caption">⏩ 再生速度</span>
+    <div class="kv-speed-btns" id="kvSpeedBtns">
+      <button class="kv-speed-btn" data-spd="0.5">0.5x</button>
+      <button class="kv-speed-btn" data-spd="0.75">0.75x</button>
+      <button class="kv-speed-btn active" data-spd="1">1x</button>
+      <button class="kv-speed-btn" data-spd="1.25">1.25x</button>
+      <button class="kv-speed-btn" data-spd="1.5">1.5x</button>
+      <button class="kv-speed-btn" data-spd="2">2x</button>
+    </div>
+  </div>
+
   <div class="mic-gain-row" style="margin-top:10px">
     <label style="margin:0">🔊 動画の音量：<span id="karaokeVideoVolLabel" style="color:#35e0a1;font-family:ui-monospace,monospace;font-weight:700">100%</span></label>
     <div class="mic-gain-row-top">
@@ -2002,7 +2100,7 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
       <button id="karaokeVideoVolReset" class="mic-gain-reset">100%</button>
     </div>
   </div>
-  <div id="karaokeVideoStatus" class="info" style="margin-top:6px">動画を見ながら録音できます（次の段階で録音連動を追加予定）。</div>
+  <div id="karaokeVideoStatus" class="info" style="margin-top:6px">動画を見ながら録音できます。A/Bでループ区間を決め、🔁でくり返し練習できます。</div>
 </section>
 
 <section class="card">
@@ -3154,8 +3252,9 @@ function clearSelectionAndPreview(){
 }
 
 deleteMainBtn.onclick = ()=>{
-  if(!mainBuffer) return;
-  if(!confirm("カラオケの音源を削除しますか？")) return;
+  const hasVideo = (karaokeVideoTrack === "main");
+  if(!mainBuffer && !hasVideo) return;
+  if(!confirm(hasVideo ? "カラオケ動画を削除しますか？" : "カラオケの音源を削除しますか？")) return;
   trackClips.main = [];
   mainBuffer = null;
   mainFxBaked = false;
@@ -3165,7 +3264,7 @@ deleteMainBtn.onclick = ()=>{
     activeBufferType = takeBuffer ? "take" : "main";
   }
   selectedFileName.textContent = "選択されていません";
-  fileStatus.textContent = "トラック1の音源を削除しました";
+  fileStatus.textContent = hasVideo ? "カラオケ動画を削除しました" : "トラック1の音源を削除しました";
   resetFx();
   clearSelectionAndPreview();
 };
@@ -3403,7 +3502,10 @@ function toggleTrackRecording(track){
     startTrackRecording(track);
   }
 }
-if(recMainBtn)   recMainBtn.onclick   = ()=> toggleTrackRecording("main");
+if(recMainBtn)   recMainBtn.onclick   = ()=>{
+  // トラック1（カラオケ）は録音ではなく、画面録画の案内を表示
+  alert("🎬 動画つきで残したいときは\n\niPhoneの「画面収録」機能を使ってください。\n\n1. コントロールセンターを開く\n2. 画面収録ボタンを押す\n3. このアプリに戻って全体を再生\n\n動画・歌声すべてが入った動画が「写真」に保存されます。\n\n※歌声だけの音声ファイルが欲しい場合は、下の書き出し機能を使ってください。");
+};
 if(recTakeBtn)   recTakeBtn.onclick   = ()=> toggleTrackRecording("take");
 if(recChorusBtn) recChorusBtn.onclick = ()=> toggleTrackRecording("chorus");
 // 旧stopBtn参照は無効化（HTMLから削除済み）
@@ -4378,6 +4480,15 @@ function setKaraokeVideo(file, track){
     video.load();
   }
   updateKaraokeVideoLabel();
+  // カラオケトラックのヒントを隠し、情報表示を更新
+  const hint = document.getElementById("karaokeLaneHint");
+  if(hint && track === "main") hint.style.display = "none";
+  const laneInfo = document.getElementById("laneMainInfo");
+  if(laneInfo && track === "main") laneInfo.textContent = "動画あり";
+  const delBtn = document.getElementById("deleteMainBtn");
+  if(delBtn && track === "main") delBtn.disabled = false;
+  // 新しい動画なのでループ・速度をリセット
+  if(typeof window._resetKaraokeVideoControls === "function") window._resetKaraokeVideoControls();
 }
 
 function clearKaraokeVideo(){
@@ -4396,6 +4507,13 @@ function clearKaraokeVideo(){
   if(karaokeVideoUrl){ try{ URL.revokeObjectURL(karaokeVideoUrl); }catch(_){} }
   karaokeVideoUrl = null;
   karaokeVideoTrack = null;
+  // カラオケトラックのヒントを再表示
+  const hint = document.getElementById("karaokeLaneHint");
+  if(hint) hint.style.display = "";
+  const laneInfo = document.getElementById("laneMainInfo");
+  if(laneInfo) laneInfo.textContent = "動画なし";
+  const delBtn = document.getElementById("deleteMainBtn");
+  if(delBtn) delBtn.disabled = true;
 }
 
 function updateKaraokeVideoLabel(){
@@ -4431,6 +4549,118 @@ function updateKaraokeVideoLabel(){
   }else{ init(); }
 })();
 
+// ════════════════════════════════════════════════════════════════
+// ── カラオケ動画：再生/シーク・ABループ・速度コントロール ──────
+// ════════════════════════════════════════════════════════════════
+let kvLoopA = null;   // ループA地点（秒）
+let kvLoopB = null;   // ループB地点（秒）
+let kvLoopOn = false; // ループ有効
+let kvSpeed = 1.0;    // 再生速度
+
+(function setupKaraokeVideoControls(){
+  function fmt(t){
+    if(t==null || isNaN(t)) return "--:--";
+    const m = Math.floor(t/60), s = Math.floor(t%60);
+    return `${m}:${String(s).padStart(2,"0")}`;
+  }
+  function init(){
+    const video = document.getElementById("karaokeVideo");
+    if(!video) return;
+    const playPause = document.getElementById("kvPlayPause");
+    const seekBack  = document.getElementById("kvSeekBack");
+    const seekFwd   = document.getElementById("kvSeekFwd");
+    const setA      = document.getElementById("kvSetA");
+    const setB      = document.getElementById("kvSetB");
+    const loopToggle= document.getElementById("kvLoopToggle");
+    const loopClear = document.getElementById("kvLoopClear");
+    const loopLabel = document.getElementById("kvLoopLabel");
+    const speedBtns = document.getElementById("kvSpeedBtns");
+
+    function updateLoopLabel(){
+      if(kvLoopA!=null && kvLoopB!=null){
+        loopLabel.textContent = `${fmt(kvLoopA)} – ${fmt(kvLoopB)}`;
+      }else if(kvLoopA!=null){
+        loopLabel.textContent = `A:${fmt(kvLoopA)} → B?`;
+      }else{
+        loopLabel.textContent = "A–B未設定";
+      }
+      if(loopToggle) loopToggle.classList.toggle("active", kvLoopOn && kvLoopA!=null && kvLoopB!=null);
+    }
+
+    // 再生 / 一時停止
+    if(playPause) playPause.onclick = ()=>{
+      if(video.paused){ video.play().catch(()=>{}); }
+      else { video.pause(); }
+    };
+    video.addEventListener("play",  ()=>{ if(playPause) playPause.textContent = "⏸"; });
+    video.addEventListener("pause", ()=>{ if(playPause) playPause.textContent = "▶"; });
+
+    // 10秒戻る / 進む
+    if(seekBack) seekBack.onclick = ()=>{ video.currentTime = Math.max(0, video.currentTime - 10); };
+    if(seekFwd)  seekFwd.onclick  = ()=>{ video.currentTime = Math.min(video.duration||1e9, video.currentTime + 10); };
+
+    // A / B 地点
+    if(setA) setA.onclick = ()=>{
+      kvLoopA = video.currentTime;
+      if(kvLoopB!=null && kvLoopB <= kvLoopA) kvLoopB = null;
+      updateLoopLabel();
+    };
+    if(setB) setB.onclick = ()=>{
+      if(kvLoopA==null){ kvLoopA = 0; }
+      const t = video.currentTime;
+      if(t > kvLoopA){ kvLoopB = t; }
+      updateLoopLabel();
+    };
+    if(loopToggle) loopToggle.onclick = ()=>{
+      if(kvLoopA!=null && kvLoopB!=null){
+        kvLoopOn = !kvLoopOn;
+        if(kvLoopOn && (video.currentTime < kvLoopA || video.currentTime >= kvLoopB)){
+          video.currentTime = kvLoopA;
+        }
+      }else{
+        kvLoopOn = false;
+      }
+      updateLoopLabel();
+    };
+    if(loopClear) loopClear.onclick = ()=>{
+      kvLoopA = null; kvLoopB = null; kvLoopOn = false;
+      updateLoopLabel();
+    };
+
+    // ループ監視
+    video.addEventListener("timeupdate", ()=>{
+      if(kvLoopOn && kvLoopA!=null && kvLoopB!=null && video.currentTime >= kvLoopB){
+        video.currentTime = kvLoopA;
+        if(video.paused) video.play().catch(()=>{});
+      }
+    });
+
+    // 速度ボタン
+    if(speedBtns) speedBtns.querySelectorAll(".kv-speed-btn").forEach(btn=>{
+      btn.onclick = ()=>{
+        kvSpeed = Number(btn.dataset.spd);
+        video.playbackRate = kvSpeed;
+        speedBtns.querySelectorAll(".kv-speed-btn").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+      };
+    });
+
+    updateLoopLabel();
+    window._resetKaraokeVideoControls = ()=>{
+      kvLoopA=null; kvLoopB=null; kvLoopOn=false; kvSpeed=1.0;
+      if(video) video.playbackRate = 1.0;
+      if(speedBtns){
+        speedBtns.querySelectorAll(".kv-speed-btn").forEach(b=>b.classList.toggle("active", b.dataset.spd==="1"));
+      }
+      if(playPause) playPause.textContent = "▶";
+      updateLoopLabel();
+    };
+  }
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", init);
+  }else{ init(); }
+})();
+
 async function loadFileToTrack(file, track){
   if(!file) return;
   if(selectedFileName) selectedFileName.textContent = file.name;
@@ -4438,7 +4668,6 @@ async function loadFileToTrack(file, track){
   const fileIsVideo = isVideoFile(file);
 
   // ── 動画ファイル：音声抽出をスキップし、動画プレビュー＋音量調整のみ ──
-  // （iPhoneでの抽出失敗・クラッシュを回避。動画は「見る・聴く・音量」用）
   if(fileIsVideo){
     try{
       setKaraokeVideo(file, track);
@@ -4616,9 +4845,11 @@ function updateButtons(){
   }
   if(resetInitialBtn) resetInitialBtn.disabled = !initialEditState;
   updateClipboardStatus();
-  saveWavBtn.disabled = !mainBuffer;
-  saveMp3Btn.disabled = !mainBuffer;
-  deleteMainBtn.disabled = !mainBuffer;
+  // 書き出しはいずれかの音声トラックがあれば有効（カラオケは動画なので除外）
+  const hasAnyAudio = !!(takeBuffer || chorusBuffer || mainBuffer);
+  saveWavBtn.disabled = !hasAnyAudio;
+  saveMp3Btn.disabled = !hasAnyAudio;
+  deleteMainBtn.disabled = !(mainBuffer || karaokeVideoTrack === "main");
   deleteTakeBtn.disabled = !takeBuffer;
   if(deleteChorusBtn) deleteChorusBtn.disabled = !chorusBuffer;
   applyFxBtn.disabled = !hasActive;
@@ -6029,7 +6260,13 @@ function drawMiniTrackWave(canvasEl, track, labelColor){
 function updateTrackLaneInfo(){
   const total = getTrackTimelineDuration();
   if(trackTimelineTotal) trackTimelineTotal.textContent = formatTime(total);
-  if(laneMainInfo) laneMainInfo.textContent = mainBuffer ? `${formatTime(mainBuffer.duration)} / 基準` : "未読み込み";
+  if(laneMainInfo){
+    if(karaokeVideoTrack === "main"){
+      laneMainInfo.textContent = "動画あり";
+    }else{
+      laneMainInfo.textContent = mainBuffer ? `${formatTime(mainBuffer.duration)} / 基準` : "動画なし";
+    }
+  }
   if(laneTakeInfo){
     const sign = takeOffsetMs > 0 ? "+" : "";
     laneTakeInfo.textContent = takeBuffer ? `${formatTime(takeBuffer.duration)} / 補正 ${sign}${takeOffsetMs}ms` : "未録音";
