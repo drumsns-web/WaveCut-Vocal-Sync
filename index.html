@@ -788,6 +788,37 @@ audio{width:100%;margin:8px 0}
   border-top:1px solid rgba(255,255,255,.04);
   background:rgba(0,0,0,.25);
 }
+/* 再生・停止の専用トランスポート行（分かりやすく大きく） */
+.track-transport-row{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 8px;
+  background:rgba(2,6,23,.6);
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.track-transport-row .tt-time{
+  font-family:ui-monospace,monospace;font-size:11px;color:#cbd5e1;
+  font-weight:700;min-width:62px;
+}
+.tt-btn{
+  width:auto !important;margin:0 !important;
+  padding:8px 18px !important;font-size:16px !important;
+  border-radius:10px !important;font-weight:800 !important;
+  background:rgba(255,255,255,.08) !important;
+  border:1px solid rgba(255,255,255,.16) !important;color:#e2e8f0 !important;
+  -webkit-tap-highlight-color:transparent;
+}
+.tt-btn.tt-play{
+  flex:1;
+  background:linear-gradient(180deg,#34d399,#059669) !important;
+  border-color:rgba(52,211,153,.5) !important;color:#001b10 !important;
+}
+.tt-btn.tt-stop{
+  flex:1;
+  background:rgba(248,113,113,.16) !important;
+  border-color:rgba(248,113,113,.4) !important;color:#fca5a5 !important;
+}
+.tt-btn:active{ transform:scale(.96); }
+.tt-btn:disabled{ opacity:.4; }
 
 .track-edit-popup-backdrop{
   position:fixed;
@@ -1818,11 +1849,14 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
         </div>
         <!-- 波形下 edit-bar（再生・編集の全操作） -->
         <div class="track-edit-bar" id="editBarTake" data-track="take">
+          <!-- 再生・停止 専用行 -->
+          <div class="track-transport-row">
+            <span class="tt-time" id="timeLabelTake">--:--.--</span>
+            <button class="tt-btn tt-play" id="tebPlayTake" title="カーソル位置から再生" disabled>▶ 再生</button>
+            <button class="tt-btn tt-stop" id="tebStopTake" title="停止">■ 停止</button>
+            <button class="tt-btn" id="tebRestartTake" data-track="take" title="最初に戻る">⏮</button>
+          </div>
           <div class="track-edit-bar-row">
-            <span class="track-time-label" id="timeLabelTake">--:--.--</span>
-            <button class="teb-btn teb-play" id="tebPlayTake" title="カーソル位置から再生" disabled>▶</button>
-            <button class="teb-btn teb-stop-play" id="tebStopTake" title="停止">■</button>
-            <span class="teb-sep"></span>
             <button class="teb-btn teb-menu" id="tebMenuTake" data-track="take" title="編集メニュー" disabled>編集</button>
             <button class="teb-btn teb-edit" id="editClipTake" title="クリップ編集モード（つかんで動かす）">✋</button>
             <button class="teb-btn teb-fx" id="fxToggleTake" title="エフェクト">FX</button>
@@ -1838,8 +1872,6 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
             <span class="teb-sep"></span>
             <button class="teb-btn teb-ab" id="tebSetATake" data-track="take" title="A地点を設定" disabled>A</button>
             <button class="teb-btn teb-ab" id="tebSetBTake" data-track="take" title="B地点を設定" disabled>B</button>
-            <span class="teb-sep"></span>
-            <button class="teb-btn teb-restart" id="tebRestartTake" data-track="take" title="最初に戻る">⏮</button>
           </div>
           <div class="track-edit-bar-row">
             <span style="font-size:9px;color:var(--muted);font-weight:700;white-space:nowrap;flex-shrink:0">🎚 全体シフト</span>
@@ -1943,11 +1975,14 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
         </div>
         <!-- 波形下 edit-bar（再生・編集の全操作） -->
         <div class="track-edit-bar" id="editBarChorus" data-track="chorus">
+          <!-- 再生・停止 専用行 -->
+          <div class="track-transport-row">
+            <span class="tt-time" id="timeLabelChorus">--:--.--</span>
+            <button class="tt-btn tt-play" id="tebPlayChorus" title="カーソル位置から再生" disabled>▶ 再生</button>
+            <button class="tt-btn tt-stop" id="tebStopChorus" title="停止">■ 停止</button>
+            <button class="tt-btn" id="tebRestartChorus" data-track="chorus" title="最初に戻る">⏮</button>
+          </div>
           <div class="track-edit-bar-row">
-            <span class="track-time-label" id="timeLabelChorus">--:--.--</span>
-            <button class="teb-btn teb-play" id="tebPlayChorus" title="カーソル位置から再生" disabled>▶</button>
-            <button class="teb-btn teb-stop-play" id="tebStopChorus" title="停止">■</button>
-            <span class="teb-sep"></span>
             <button class="teb-btn teb-menu" id="tebMenuChorus" data-track="chorus" title="編集メニュー" disabled>編集</button>
             <button class="teb-btn teb-edit" id="editClipChorus" title="クリップ編集モード（つかんで動かす）">✋</button>
             <button class="teb-btn teb-fx" id="fxToggleChorus" title="エフェクト">FX</button>
@@ -1963,8 +1998,6 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
             <span class="teb-sep"></span>
             <button class="teb-btn teb-ab" id="tebSetAChorus" data-track="chorus" title="A地点を設定" disabled>A</button>
             <button class="teb-btn teb-ab" id="tebSetBChorus" data-track="chorus" title="B地点を設定" disabled>B</button>
-            <span class="teb-sep"></span>
-            <button class="teb-btn teb-restart" id="tebRestartChorus" data-track="chorus" title="最初に戻る">⏮</button>
           </div>
           <div class="track-edit-bar-row">
             <span style="font-size:9px;color:var(--muted);font-weight:700;white-space:nowrap;flex-shrink:0">🎚 全体シフト</span>
@@ -5900,11 +5933,14 @@ function createExtraTrackHTML(id, emoji, name){
           <div class="recording-wave-note">● 録音中…</div>
         </div>
         <div class="track-edit-bar" id="editBar${c1}" data-track="${id}">
+          <!-- 再生・停止 専用行 -->
+          <div class="track-transport-row">
+            <span class="tt-time" id="timeLabel${c1}">--:--.--</span>
+            <button class="tt-btn tt-play" id="tebPlay${c1}" title="カーソル位置から再生" disabled>▶ 再生</button>
+            <button class="tt-btn tt-stop" id="tebStop${c1}" title="停止">■ 停止</button>
+            <button class="tt-btn" id="tebRestart${c1}" data-track="${id}" title="最初に戻る">⏮</button>
+          </div>
           <div class="track-edit-bar-row">
-            <span class="track-time-label" id="timeLabel${c1}">--:--.--</span>
-            <button class="teb-btn teb-play" id="tebPlay${c1}" title="カーソル位置から再生" disabled>▶</button>
-            <button class="teb-btn teb-stop-play" id="tebStop${c1}" title="停止">■</button>
-            <span class="teb-sep"></span>
             <button class="teb-btn teb-menu" id="tebMenu${c1}" data-track="${id}" title="編集メニュー" disabled>編集</button>
             <button class="teb-btn teb-edit" id="editClip${c1}" title="クリップ編集モード">✋</button>
             <button class="teb-btn teb-undo" id="tebUndo${c1}" title="元に戻す" disabled>↩</button>
@@ -5918,8 +5954,6 @@ function createExtraTrackHTML(id, emoji, name){
             <span class="teb-sep"></span>
             <button class="teb-btn teb-ab" id="tebSetA${c1}" data-track="${id}" title="A地点を設定" disabled>A</button>
             <button class="teb-btn teb-ab" id="tebSetB${c1}" data-track="${id}" title="B地点を設定" disabled>B</button>
-            <span class="teb-sep"></span>
-            <button class="teb-btn teb-restart" id="tebRestart${c1}" data-track="${id}" title="最初に戻る">⏮</button>
           </div>
           <div class="track-edit-bar-row">
             <span style="font-size:9px;color:var(--muted);font-weight:700;white-space:nowrap;flex-shrink:0">🎚 全体シフト</span>
