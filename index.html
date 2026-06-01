@@ -6271,16 +6271,34 @@ function drawMiniTrackWave(canvasEl, track, labelColor){
     cctx.beginPath(); cctx.moveTo(px,0); cctx.lineTo(px,h); cctx.stroke();
   }
 
-  if(buffer && activeBufferType === track && selectedStart!==null && selectedEnd!==null && selectedEnd > selectedStart){
-    const selStartSec = offsetSec + buffer.duration * selectedStart;
-    const selEndSec = offsetSec + buffer.duration * selectedEnd;
-    const clippedStart = Math.max(selStartSec, viewStartSec);
-    const clippedEnd = Math.min(selEndSec, viewEndSec);
-    if(clippedEnd > clippedStart){
-      const x1=((clippedStart-viewStartSec)/viewDur)*w;
-      const x2=((clippedEnd-viewStartSec)/viewDur)*w;
-      cctx.fillStyle="rgba(79,140,255,.28)";
-      cctx.fillRect(x1,0,x2-x1,h);
+  // ── AB選択範囲：各トラック自身の選択を描く（アクティブでなくても表示） ──
+  const tSt = (typeof getTrackState === "function") ? getTrackState(track) : null;
+  let selS = tSt ? tSt.selStart : null;
+  let selE = tSt ? tSt.selEnd : null;
+  // アクティブトラックはグローバル選択（編集中のリアルタイム値）を優先
+  if(activeBufferType === track){
+    selS = selectedStart;
+    selE = selectedEnd;
+  }
+  if(buffer && selS!==null && selE!==null){
+    const lo = Math.min(selS, selE);
+    const hi = Math.max(selS, selE);
+    if(hi > lo){
+      const selStartSec = offsetSec + buffer.duration * lo;
+      const selEndSec = offsetSec + buffer.duration * hi;
+      const clippedStart = Math.max(selStartSec, viewStartSec);
+      const clippedEnd = Math.min(selEndSec, viewEndSec);
+      if(clippedEnd > clippedStart){
+        const x1=((clippedStart-viewStartSec)/viewDur)*w;
+        const x2=((clippedEnd-viewStartSec)/viewDur)*w;
+        // 黄色の半透明で塗りつぶし＋両端に縦線
+        cctx.fillStyle="rgba(250,204,21,.30)";
+        cctx.fillRect(x1,0,x2-x1,h);
+        cctx.strokeStyle="rgba(250,204,21,.95)";
+        cctx.lineWidth = 2 * devicePixelRatio;
+        cctx.beginPath(); cctx.moveTo(x1,0); cctx.lineTo(x1,h); cctx.stroke();
+        cctx.beginPath(); cctx.moveTo(x2,0); cctx.lineTo(x2,h); cctx.stroke();
+      }
     }
   }
 }
