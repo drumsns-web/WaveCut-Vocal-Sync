@@ -1639,7 +1639,7 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
       <button id="refreshOutputBtn">出力デバイス更新</button>
       <button id="applyOutputBtn" class="primary">出力先を適用</button>
     </div>
-    <div id="outputStatus" class="info" style="margin-top:6px">MV7などUSB-Cマイク使用時、PCスピーカーに固定したい場合はここで選択して「適用」してください。</div>
+    <div id="outputStatus" class="info" style="margin-top:6px">💡 SHURE MV7 / MV88 などイヤホン端子付きマイクを接続すると、音がマイク側に出て聞こえないことがあります。その場合は上の一覧から「PCのスピーカー」を選んで「出力先を適用」を押してください（録音中も維持されます）。</div>
   </div>
 </section>
 
@@ -2679,19 +2679,26 @@ function ensureAudioContext(){
 
 async function applyAudioOutputSinkId(sinkId){
   ensureAudioContext();
+  let applied = false;
+  // AudioContext.setSinkId（トラック再生・ミックス再生の出力先）
   try{
     if(typeof audioContext.setSinkId === "function"){
       await audioContext.setSinkId(sinkId || "");
-      return true;
+      applied = true;
     }
+  }catch(e){
+    console.warn("audioContext.setSinkId failed:", e);
+  }
+  // audio要素のsetSinkId（プレビュー再生の出力先）も必ず合わせる
+  try{
     if(audioEl && typeof audioEl.setSinkId === "function"){
       await audioEl.setSinkId(sinkId || "");
+      applied = true;
     }
-    return false;
   }catch(e){
-    console.warn("setSinkId failed:", e);
-    return false;
+    console.warn("audioEl.setSinkId failed:", e);
   }
+  return applied;
 }
 
 async function loadAudioOutputs(){
@@ -3463,6 +3470,12 @@ async function startTrackRecording(track){
     alert("マイクをONにできませんでした: " + e.message);
     stopCurrentMicStream();
     return;
+  }
+
+  // マイク接続（getUserMedia）後は出力先がデバイス側に切り替わることがあるため、
+  // 選択中の出力先（PCスピーカー等）を再適用する。MV88などイヤホン端子付きマイク対策。
+  if(preferredSinkId){
+    await applyAudioOutputSinkId(preferredSinkId).catch(()=>{});
   }
 
   mediaRecorder = new MediaRecorder(currentStream);
