@@ -2114,8 +2114,9 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
 
   <div class="track-mini-controls" style="margin-top:10px">
     <button id="trackAllPlayBtn" class="primary" disabled>▶ 全曲再生</button>
-    <button id="trackStackPlayBtn" disabled>▶ チェックのみ</button>
     <button id="trackStackStopBtn" disabled>■ 停止</button>
+    <button id="trackRestartAllBtn" disabled>⏮ 最初に戻る</button>
+    <button id="trackStackPlayBtn" disabled>▶ チェックのみ</button>
     <button id="trackStackMixBtn" class="green" disabled>MIX確定</button>
   </div>
 
@@ -6385,7 +6386,9 @@ function updateTrackLaneInfo(){
   if(trackCheckLabelChorus) trackCheckLabelChorus.classList.toggle("disabled", !chorusBuffer);
   if(trackStackPlayBtn) trackStackPlayBtn.disabled = !((trackSelectMain&&trackSelectMain.checked&&mainBuffer) || (trackSelectTake&&trackSelectTake.checked&&takeBuffer) || (trackSelectChorus&&trackSelectChorus.checked&&chorusBuffer));
   if(trackAllPlayBtn) trackAllPlayBtn.disabled = !(mainBuffer || takeBuffer || chorusBuffer || karaokeVideoTrack);
-  if(trackStackStopBtn) trackStackStopBtn.disabled = !(mainBuffer || takeBuffer || chorusBuffer);
+  if(trackStackStopBtn) trackStackStopBtn.disabled = !(mainBuffer || takeBuffer || chorusBuffer || karaokeVideoTrack);
+  const _restartBtn = document.getElementById("trackRestartAllBtn");
+  if(_restartBtn) _restartBtn.disabled = !(mainBuffer || takeBuffer || chorusBuffer || karaokeVideoTrack);
   if(trackStackMixBtn) trackStackMixBtn.disabled = !(mainBuffer && (takeBuffer || chorusBuffer));
   updateTrackVolumeLabels();
 }
@@ -8668,6 +8671,30 @@ if(trackStackStopBtn){
     const video = document.getElementById("karaokeVideo");
     if(video){ try{ video.pause(); }catch(_){} }
     fileStatus.innerHTML = "再生を停止しました。";
+  };
+}
+// ⏮ 全トラック最初に戻る（停止して各トラックのカーソルと動画を先頭へ）
+const trackRestartAllBtn = document.getElementById("trackRestartAllBtn");
+if(trackRestartAllBtn){
+  trackRestartAllBtn.onclick = ()=>{
+    stopTrackPlayback();
+    audioEl.pause();
+    // 全トラックのプレイヘッドを先頭に
+    ['main','take','chorus'].forEach(tr=>{
+      const st = getTrackState(tr);
+      if(st) st.playheadRatio = 0;
+    });
+    if(typeof extraTracks !== "undefined"){
+      extraTracks.forEach(t=>{ const st=getTrackState(t.id); if(st) st.playheadRatio = 0; });
+    }
+    // Wave Edit のカーソルも先頭へ
+    playheadRatio = 0;
+    // 動画も先頭へ
+    const video = document.getElementById("karaokeVideo");
+    if(video){ try{ video.pause(); video.currentTime = 0; }catch(_){} }
+    if(typeof drawStackedTimelines === "function") drawStackedTimelines();
+    if(typeof updateButtons === "function") updateButtons();
+    fileStatus.innerHTML = "⏮ 最初に戻りました。";
   };
 }
 if(trackStackMixBtn){
