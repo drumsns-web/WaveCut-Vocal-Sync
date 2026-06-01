@@ -812,6 +812,10 @@ audio{width:100%;margin:8px 0}
   background:linear-gradient(180deg,#34d399,#059669) !important;
   border-color:rgba(52,211,153,.5) !important;color:#001b10 !important;
 }
+.tt-btn.tt-play.tt-playing{
+  background:rgba(248,113,113,.18) !important;
+  border-color:rgba(248,113,113,.45) !important;color:#fca5a5 !important;
+}
 .tt-btn.tt-stop{
   flex:1;
   background:rgba(248,113,113,.16) !important;
@@ -1852,9 +1856,9 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
           <!-- 再生・停止 専用行 -->
           <div class="track-transport-row">
             <span class="tt-time" id="timeLabelTake">--:--.--</span>
-            <button class="tt-btn tt-play" id="tebPlayTake" title="カーソル位置から再生" disabled>▶ 再生</button>
-            <button class="tt-btn tt-stop" id="tebStopTake" title="停止">■ 停止</button>
+            <button class="tt-btn tt-play" id="tebPlayTake" title="再生 / 停止" disabled>▶ 再生</button>
             <button class="tt-btn" id="tebRestartTake" data-track="take" title="最初に戻る">⏮</button>
+            <button class="tt-btn tt-stop" id="tebStopTake" style="display:none">■ 停止</button>
           </div>
           <div class="track-edit-bar-row">
             <button class="teb-btn teb-menu" id="tebMenuTake" data-track="take" title="編集メニュー" disabled>編集</button>
@@ -1978,9 +1982,9 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
           <!-- 再生・停止 専用行 -->
           <div class="track-transport-row">
             <span class="tt-time" id="timeLabelChorus">--:--.--</span>
-            <button class="tt-btn tt-play" id="tebPlayChorus" title="カーソル位置から再生" disabled>▶ 再生</button>
-            <button class="tt-btn tt-stop" id="tebStopChorus" title="停止">■ 停止</button>
+            <button class="tt-btn tt-play" id="tebPlayChorus" title="再生 / 停止" disabled>▶ 再生</button>
             <button class="tt-btn" id="tebRestartChorus" data-track="chorus" title="最初に戻る">⏮</button>
+            <button class="tt-btn tt-stop" id="tebStopChorus" style="display:none">■ 停止</button>
           </div>
           <div class="track-edit-bar-row">
             <button class="teb-btn teb-menu" id="tebMenuChorus" data-track="chorus" title="編集メニュー" disabled>編集</button>
@@ -2382,6 +2386,7 @@ let trackPlaybackNodes = [];
 let trackPlaybackRaf = null;
 let trackPlaybackStartAt = 0;
 let trackPlaybackDuration = 0;
+let currentPlaybackTrack = null; // 現在再生中のトラックID（トグルボタン用）
 // 再生中のゲインノードを track別に保持 → 音量スライダーでリアルタイム反映
 let trackPlaybackGains = { main:null, take:null, chorus:null };
 let trackPlaybackPanners = {};
@@ -5936,9 +5941,9 @@ function createExtraTrackHTML(id, emoji, name){
           <!-- 再生・停止 専用行 -->
           <div class="track-transport-row">
             <span class="tt-time" id="timeLabel${c1}">--:--.--</span>
-            <button class="tt-btn tt-play" id="tebPlay${c1}" title="カーソル位置から再生" disabled>▶ 再生</button>
-            <button class="tt-btn tt-stop" id="tebStop${c1}" title="停止">■ 停止</button>
+            <button class="tt-btn tt-play" id="tebPlay${c1}" title="再生 / 停止" disabled>▶ 再生</button>
             <button class="tt-btn" id="tebRestart${c1}" data-track="${id}" title="最初に戻る">⏮</button>
+            <button class="tt-btn tt-stop" id="tebStop${c1}" style="display:none">■ 停止</button>
           </div>
           <div class="track-edit-bar-row">
             <button class="teb-btn teb-menu" id="tebMenu${c1}" data-track="${id}" title="編集メニュー" disabled>編集</button>
@@ -8241,13 +8246,29 @@ function installTrackEditMenuButtons(track){
 function setupTrackEditBar(track){
   const c = cap(track);
 
-  // ▶ この位置から再生
+  // ▶/⏸ 再生・停止トグル
   const playBtn = document.getElementById(`tebPlay${c}`);
+  function setPlayBtnState(playing){
+    if(!playBtn) return;
+    if(playing){
+      playBtn.textContent = "■ 停止";
+      playBtn.classList.add("tt-playing");
+    }else{
+      playBtn.textContent = "▶ 再生";
+      playBtn.classList.remove("tt-playing");
+    }
+  }
   if(playBtn) playBtn.onclick = async ()=>{
+    // 再生中（このトラック）なら停止
+    if(currentPlaybackTrack === track && trackPlaybackNodes.length){
+      stopTrackPlayback();
+      audioEl.pause();
+      fileStatus.textContent = "停止しました。";
+      return;
+    }
     const buf = bufferForTrack(track);
     if(!buf) return;
     const st = getTrackState(track);
-    const offsetSec = getTrackOffsetMs(track) / 1000;
     const startInBuf = buf.duration * st.playheadRatio;
     ensureAudioContext();
     if(audioContext.state === "suspended") await audioContext.resume();
@@ -8266,12 +8287,29 @@ function setupTrackEditBar(track){
     trackPlaybackGains[track] = gain;
     trackPlaybackStartAt = startAt;
     trackPlaybackDuration = buf.duration - startInBuf;
-    fileStatus.textContent = `▶ ${track === "main" ? "トラック1" : track === "take" ? "トラック2" : track === "chorus" ? "トラック3" : "トラック"} 再生中...`;
+    currentPlaybackTrack = track;
+    setPlayBtnState(true);
+    fileStatus.textContent = `▶ ${trackDisplayName(track)} 再生中...`;
     const remain = (buf.duration - startInBuf + 0.2) * 1000;
-    setTimeout(()=>{ trackPlaybackNodes=[]; fileStatus.textContent="再生完了。"; }, remain);
+    src.onended = ()=>{
+      if(currentPlaybackTrack === track){
+        currentPlaybackTrack = null;
+        setPlayBtnState(false);
+      }
+    };
+    setTimeout(()=>{
+      trackPlaybackNodes=[];
+      if(currentPlaybackTrack === track){
+        currentPlaybackTrack = null;
+        setPlayBtnState(false);
+        fileStatus.textContent="再生完了。";
+      }
+    }, remain);
   };
+  // トラック別に再生状態をリセットする関数を公開（stopTrackPlaybackから呼ぶ）
+  if(playBtn) playBtn._setPlayState = setPlayBtnState;
 
-  // ■ 停止
+  // ■ 停止（隠しボタン・互換用）
   const stopBtn_ = document.getElementById(`tebStop${c}`);
   if(stopBtn_) stopBtn_.onclick = ()=>{ stopTrackPlayback(); audioEl.pause(); fileStatus.textContent="停止しました。"; };
 
@@ -8397,6 +8435,12 @@ function stopTrackPlayback(){
   trackPlaybackNodes = [];
   trackPlaybackGains = { main:null, take:null, chorus:null };
   if(trackPlaybackRaf){ cancelAnimationFrame(trackPlaybackRaf); trackPlaybackRaf = null; }
+  // 全トラックの再生ボタンを「▶ 再生」に戻す
+  currentPlaybackTrack = null;
+  document.querySelectorAll(".tt-btn.tt-play").forEach(btn=>{
+    if(typeof btn._setPlayState === "function") btn._setPlayState(false);
+    else { btn.textContent = "▶ 再生"; btn.classList.remove("tt-playing"); }
+  });
   drawStackedTimelines();
 }
 
