@@ -3511,8 +3511,9 @@ async function startTrackRecording(track){
   playheadRatio = 0;
   recordTarget.value = track;
 
+  let recStream;
   try{
-    currentStream = await ensureMicStream();
+    recStream = await ensureMicStream();
   }catch(e){
     alert("マイクをONにできませんでした: " + e.message);
     stopCurrentMicStream();
@@ -3525,7 +3526,7 @@ async function startTrackRecording(track){
     await applyAudioOutputSinkId(preferredSinkId).catch(()=>{});
   }
 
-  mediaRecorder = new MediaRecorder(currentStream);
+  mediaRecorder = new MediaRecorder(recStream);
   mediaRecorder.ondataavailable = e=>{ if(e.data.size>0) recordedChunks.push(e.data); };
 
   mediaRecorder.onstop = async()=>{
@@ -3563,6 +3564,8 @@ async function startTrackRecording(track){
       endLiveRecordingWave();
       stopCurrentMicStream();
       setTrackRecordingUI(track, false);
+      // 録音が終わったらマイクは自動オフ（iPhone上部の収録表示を消す）
+      updateMicStatus(false, "マイク：OFF（録音すると自動でONになります）");
     }
   };
 
