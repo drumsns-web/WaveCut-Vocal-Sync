@@ -3188,6 +3188,10 @@ function stopCurrentMicStream(){
 
 async function ensureMicStream(){
   ensureAudioContext();
+  // iOS Safari対策：AudioContextがsuspendedだとマイク経路が無音になるため、必ず再開する
+  if(audioContext.state === "suspended"){
+    try{ await audioContext.resume(); }catch(_){}
+  }
 
   if(currentStream && currentStream.getAudioTracks().some(t=>t.readyState === "live")){
     updateMicStatus(true, "マイク：ON");
@@ -3495,6 +3499,10 @@ async function startKaraokePlaybackDuringRecord(){
 // ─── トラック別録音ロジック ───────────────────────────────────────
 async function startTrackRecording(track){
   ensureAudioContext();
+  // iOS Safari対策：録音開始のタップ内で必ずAudioContextを再開しておく
+  if(audioContext.state === "suspended"){
+    try{ await audioContext.resume(); }catch(_){}
+  }
   recordedChunks = [];
   selectedStart = null;
   selectedEnd = null;
