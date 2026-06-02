@@ -3058,8 +3058,18 @@ function startMicLevelMeter(sourceOrStream){
     }
     micLevelData = new Uint8Array(micAnalyser.fftSize);
 
+    let _drawFrameCount = 0;
     const draw = ()=>{
       if(!micAnalyser || !micLevelData) return;
+      // カラオケ動画が再生中のときは描画を間引いて動画のカクつきを防ぐ
+      const kv = document.getElementById("karaokeVideo");
+      const videoPlaying = kv && karaokeVideoTrack && !kv.paused && !kv.ended;
+      _drawFrameCount++;
+      if(videoPlaying && (_drawFrameCount % 2 !== 0)){
+        // 動画再生中は1フレームおきにスキップ（描画負荷を半減）
+        micLevelAnimationId = requestAnimationFrame(draw);
+        return;
+      }
       micAnalyser.getByteTimeDomainData(micLevelData);
       const w = micLevelCanvas.width, h = micLevelCanvas.height;
       micLevelCtx.clearRect(0,0,w,h);
