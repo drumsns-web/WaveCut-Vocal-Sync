@@ -9175,8 +9175,14 @@ document.addEventListener("keydown", (e) => {
   function open(track){
     currentTrack = track;
     titleEl.textContent = NAMES[track] || track;
-    const inp = document.getElementById("trackVolume"+cap(track));
-    const val = inp ? Number(inp.value) : 100;
+    let val;
+    if(track === "main" && karaokeVideoTrack === "main"){
+      // トラック1（動画）は動画音量を表示
+      val = Math.round(karaokeVideoVolume * 100);
+    }else{
+      const inp = document.getElementById("trackVolume"+cap(track));
+      val = inp ? Number(inp.value) : 100;
+    }
     slider.value = val;
     bigVal.textContent = val;
     popup.style.display  = "block";
@@ -9222,6 +9228,17 @@ document.addEventListener("keydown", (e) => {
     if(inp)   inp.value = v;
     if(label) label.textContent = v;
     if(btn){ const sp=btn.querySelector("span"); if(sp) sp.textContent=v; }
+    // トラック1（カラオケ動画）の場合は動画の音量を変える
+    if(currentTrack === "main" && karaokeVideoTrack === "main"){
+      karaokeVideoVolume = v/100;
+      const video = document.getElementById("karaokeVideo");
+      if(video) video.volume = karaokeVideoVolume;
+      // 動画音量スライダーの表示も合わせる
+      const kvSlider = document.getElementById("karaokeVideoVol");
+      const kvLabel  = document.getElementById("karaokeVideoVolLabel");
+      if(kvSlider) kvSlider.value = v;
+      if(kvLabel)  kvLabel.textContent = v + "%";
+    }
     // 再生中のゲインノードへ即時反映
     if(trackPlaybackGains && trackPlaybackGains[currentTrack] && audioContext){
       try{
