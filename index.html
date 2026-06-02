@@ -2353,6 +2353,8 @@ let activeBufferType = "main";
 let karaokeVideoUrl = null;   // Blob URL（動画プレビュー用）
 let karaokeVideoTrack = null; // どのトラックに動画があるか（"main" 等 / null=動画なし）
 let karaokeVideoVolume = 1.0; // 動画の音量（0〜1）
+let karaokeVideoSourceNode = null; // 動画→WebAudio接続（iOSで音量制御するため）
+let karaokeVideoGainNode = null;
 let mainFxBaked = false;
 let takeFxBaked = false;
 let chorusFxBaked = false;
@@ -4657,6 +4659,41 @@ function updateKaraokeVideoLabel(){
   }
 }
 
+// 動画をWeb Audioに接続して音量制御できるようにする（iOSのvideo.volume無効対策）
+// 一度だけ接続。接続後は video の音は GainNode 経由で出る。
+function ensureKaraokeVideoAudioRoute(){
+  const video = document.getElementById("karaokeVideo");
+  if(!video) return false;
+  if(karaokeVideoSourceNode) return true; // 接続済み
+  try{
+    ensureAudioContext();
+    if(audioContext.state === "suspended"){ audioContext.resume().catch(()=>{}); }
+    karaokeVideoSourceNode = audioContext.createMediaElementSource(video);
+    karaokeVideoGainNode = audioContext.createGain();
+    karaokeVideoGainNode.gain.value = karaokeVideoVolume;
+    karaokeVideoSourceNode.connect(karaokeVideoGainNode);
+    karaokeVideoGainNode.connect(audioContext.destination);
+    return true;
+  }catch(e){
+    console.warn("video audio route failed:", e);
+    karaokeVideoSourceNode = null;
+    karaokeVideoGainNode = null;
+    return false;
+  }
+}
+
+// 動画の音量を適用（GainNodeがあればそちら、なければvideo.volume）
+function applyKaraokeVideoVolume(){
+  const video = document.getElementById("karaokeVideo");
+  if(karaokeVideoGainNode && audioContext){
+    try{
+      karaokeVideoGainNode.gain.setTargetAtTime(karaokeVideoVolume, audioContext.currentTime, 0.01);
+    }catch(_){ try{ karaokeVideoGainNode.gain.value = karaokeVideoVolume; }catch(__){} }
+  }
+  // video.volume も一応セット（PC/Androidでは効く）
+  if(video){ try{ video.volume = karaokeVideoVolume; }catch(_){} }
+}
+
 // 動画音量スライダーのセットアップ
 (function setupKaraokeVideoVolume(){
   function init(){
@@ -4668,11 +4705,18 @@ function updateKaraokeVideoLabel(){
     function apply(){
       const v = Number(slider.value);
       karaokeVideoVolume = v / 100;
-      if(video) video.volume = karaokeVideoVolume;
+      applyKaraokeVideoVolume();
       if(label) label.textContent = v + "%";
     }
     slider.addEventListener("input", apply);
     if(reset) reset.onclick = ()=>{ slider.value = 100; apply(); };
+    // 動画再生時にWeb Audio接続を試みる（ユーザー操作内で）
+    if(video){
+      video.addEventListener("play", ()=>{
+        ensureKaraokeVideoAudioRoute();
+        applyKaraokeVideoVolume();
+      }, { once:false });
+    }
     apply();
   }
   if(document.readyState === "loading"){
@@ -9231,8 +9275,7 @@ document.addEventListener("keydown", (e) => {
     // トラック1（カラオケ動画）の場合は動画の音量を変える
     if(currentTrack === "main" && karaokeVideoTrack === "main"){
       karaokeVideoVolume = v/100;
-      const video = document.getElementById("karaokeVideo");
-      if(video) video.volume = karaokeVideoVolume;
+      if(typeof applyKaraokeVideoVolume === "function") applyKaraokeVideoVolume();
       // 動画音量スライダーの表示も合わせる
       const kvSlider = document.getElementById("karaokeVideoVol");
       const kvLabel  = document.getElementById("karaokeVideoVolLabel");
