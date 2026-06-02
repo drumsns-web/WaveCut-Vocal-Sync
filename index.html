@@ -9587,7 +9587,10 @@ function _updateWaveEditBadge(track){
     const buf = bufferForTrack(track);
     if(!buf) return;
     const st = getTrackState(track);
-    const startInBuf = buf.duration * (st.playheadRatio || 0);
+    let ratio = st.playheadRatio || 0;
+    // 再生位置が末尾付近なら先頭から再生（末尾だと無音になるため）
+    if(ratio >= 0.999) ratio = 0;
+    const startInBuf = Math.max(0, Math.min(buf.duration - 0.01, buf.duration * ratio));
     ensureAudioContext();
     if(audioContext.state==='suspended') await audioContext.resume();
     stopTrackPlayback();
