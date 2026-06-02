@@ -4713,13 +4713,8 @@ function applyKaraokeVideoVolume(){
     }
     slider.addEventListener("input", apply);
     if(reset) reset.onclick = ()=>{ slider.value = 100; apply(); };
-    // 動画再生時にWeb Audio接続を試みる（ユーザー操作内で）
-    if(video){
-      video.addEventListener("play", ()=>{
-        ensureKaraokeVideoAudioRoute();
-        applyKaraokeVideoVolume();
-      }, { once:false });
-    }
+    // 注意：動画のWeb Audio接続(createMediaElementSource)は、iOSで他トラックの
+    // 再生音を止める副作用があるため、自動では行わない。動画音量はvideo.volumeで制御。
     apply();
   }
   if(document.readyState === "loading"){
