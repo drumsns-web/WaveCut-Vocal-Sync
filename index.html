@@ -817,6 +817,10 @@ audio{width:100%;margin:8px 0}
   background:rgba(248,113,113,.18) !important;
   border-color:rgba(248,113,113,.45) !important;color:#fca5a5 !important;
 }
+.tt-btn.tt-marker{
+  background:rgba(251,191,36,.15) !important;
+  border-color:rgba(251,191,36,.4) !important;color:#fbbf24 !important;
+}
 .tt-btn.tt-stop{
   flex:1;
   background:rgba(248,113,113,.16) !important;
@@ -1859,6 +1863,7 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
             <span class="tt-time" id="timeLabelTake">--:--.--</span>
             <button class="tt-btn tt-play" id="tebPlayTake" title="再生 / 停止" disabled>▶ 再生</button>
             <button class="tt-btn" id="tebRestartTake" data-track="take" title="最初に戻る">⏮</button>
+            <button class="tt-btn tt-marker" id="tebMarkerTake" data-track="take" title="現在位置にマークを置く">📍</button>
             <button class="tt-btn tt-stop" id="tebStopTake" style="display:none">■ 停止</button>
           </div>
           <div class="track-edit-bar-row">
@@ -1985,6 +1990,7 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
             <span class="tt-time" id="timeLabelChorus">--:--.--</span>
             <button class="tt-btn tt-play" id="tebPlayChorus" title="再生 / 停止" disabled>▶ 再生</button>
             <button class="tt-btn" id="tebRestartChorus" data-track="chorus" title="最初に戻る">⏮</button>
+            <button class="tt-btn tt-marker" id="tebMarkerChorus" data-track="chorus" title="現在位置にマークを置く">📍</button>
             <button class="tt-btn tt-stop" id="tebStopChorus" style="display:none">■ 停止</button>
           </div>
           <div class="track-edit-bar-row">
@@ -2118,6 +2124,10 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
     <button id="trackRestartAllBtn" disabled>⏮ 最初に戻る</button>
     <button id="trackStackPlayBtn" disabled>▶ チェックのみ</button>
     <button id="trackStackMixBtn" class="green" disabled>MIX確定</button>
+  </div>
+  <div class="track-mini-controls" style="margin-top:6px">
+    <button id="alignMarkerBtn" disabled title="トラック2と3のマーク（📍）が縦に揃うよう自動でずらします">🎯 マークでトラック2・3を揃える</button>
+    <button id="clearMarkersBtn" title="マークを消す">📍 マーク消去</button>
   </div>
 
   <!-- ダミー（JS互換） -->
@@ -2382,6 +2392,8 @@ let initialEditState = null;
 let initialEditLabel = "";
 let takeOffsetMs = 0;
 let chorusOffsetMs = 0;
+let takeMarkerSec = null;   // トラック2のマーカー位置（トラック内の秒、null=なし）
+let chorusMarkerSec = null; // トラック3のマーカー位置（トラック内の秒、null=なし）
 let karaokePlaybackDuringRecord = null;
 let karaokePlaybackSource = null;
 let karaokePlaybackGain = null;
@@ -2936,6 +2948,53 @@ function getTrackOffsetMs(track){
   if(track === "chorus") return chorusOffsetMs;
   if(isExtraTrack(track)){ const t = getExtraTrack(track); return t ? t.offsetMs : 0; }
   return 0;
+}
+
+// ── マーカー機能（トラック2・3の頭出し位置を揃える）────────────
+// 現在のプレイヘッド位置にマーカーを設定
+function setTrackMarker(track){
+  const buf = bufferForTrack(track);
+  if(!buf) return;
+  const st = getTrackState(track);
+  const sec = buf.duration * (st.playheadRatio || 0);
+  if(track === "take") takeMarkerSec = sec;
+  else if(track === "chorus") chorusMarkerSec = sec;
+  if(typeof drawStackedTimelines === "function") drawStackedTimelines();
+  if(fileStatus) fileStatus.textContent = `📍 ${trackDisplayName(track)} にマークを置きました（${formatTime(sec)}）`;
+  updateMarkerAlignButton();
+}
+function clearTrackMarker(track){
+  if(track === "take") takeMarkerSec = null;
+  else if(track === "chorus") chorusMarkerSec = null;
+  if(typeof drawStackedTimelines === "function") drawStackedTimelines();
+  updateMarkerAlignButton();
+}
+// トラック2・3のマーカーが縦に揃うようオフセットを調整
+function alignTracksByMarker(){
+  if(takeMarkerSec == null || chorusMarkerSec == null){
+    if(fileStatus) fileStatus.textContent = "トラック2と3の両方にマークを置いてください。";
+    return;
+  }
+  // トラック2のマーカー絶対位置に、トラック3のマーカーを合わせる
+  // 新 chorusOffset(ms) = takeOffsetMs + (takeMarkerSec - chorusMarkerSec)*1000
+  let newChorusOffset = takeOffsetMs + (takeMarkerSec - chorusMarkerSec) * 1000;
+  let newTakeOffset = takeOffsetMs;
+  // オフセットが負になる場合は両方を底上げして非負に保つ
+  if(newChorusOffset < 0){
+    newTakeOffset = takeOffsetMs - newChorusOffset;
+    newChorusOffset = 0;
+  }
+  takeOffsetMs = Math.round(newTakeOffset);
+  chorusOffsetMs = Math.round(newChorusOffset);
+  if(typeof rebuildTrackBuffer === "function"){ /* オフセットは描画と再生で参照 */ }
+  invalidateWaveformCache();
+  if(typeof drawStackedTimelines === "function") drawStackedTimelines();
+  if(typeof updateButtons === "function") updateButtons();
+  if(fileStatus) fileStatus.textContent = `🎯 マークの位置でトラック2と3を揃えました。`;
+}
+function updateMarkerAlignButton(){
+  const btn = document.getElementById("alignMarkerBtn");
+  if(btn) btn.disabled = !(takeMarkerSec != null && chorusMarkerSec != null);
 }
 function getTrackVolume(track){
   let el;
@@ -6430,6 +6489,29 @@ function drawMiniTrackWave(canvasEl, track, labelColor){
     cctx.beginPath(); cctx.moveTo(px,0); cctx.lineTo(px,h); cctx.stroke();
   }
 
+  // ── マーカー（頭出し位置を揃えるための目印）──
+  let markerSec = null;
+  if(track === "take") markerSec = takeMarkerSec;
+  else if(track === "chorus") markerSec = chorusMarkerSec;
+  if(markerSec != null){
+    const markerAbs = offsetSec + markerSec;
+    if(markerAbs >= viewStartSec && markerAbs <= viewEndSec){
+      const mx = ((markerAbs - viewStartSec)/viewDur)*w;
+      cctx.strokeStyle = "#fbbf24";
+      cctx.lineWidth = 2 * devicePixelRatio;
+      cctx.setLineDash([5*devicePixelRatio, 4*devicePixelRatio]);
+      cctx.beginPath(); cctx.moveTo(mx,0); cctx.lineTo(mx,h); cctx.stroke();
+      cctx.setLineDash([]);
+      // 上部に小さな▼マーク
+      cctx.fillStyle = "#fbbf24";
+      cctx.beginPath();
+      cctx.moveTo(mx - 5*devicePixelRatio, 0);
+      cctx.lineTo(mx + 5*devicePixelRatio, 0);
+      cctx.lineTo(mx, 7*devicePixelRatio);
+      cctx.closePath(); cctx.fill();
+    }
+  }
+
   // ── AB選択範囲：各トラック自身の選択を描く（アクティブでなくても表示） ──
   const tSt = (typeof getTrackState === "function") ? getTrackState(track) : null;
   let selS = tSt ? tSt.selStart : null;
@@ -8484,6 +8566,10 @@ function setupTrackEditBar(track){
   const stopBtn_ = document.getElementById(`tebStop${c}`);
   if(stopBtn_) stopBtn_.onclick = ()=>{ stopTrackPlayback(); audioEl.pause(); fileStatus.textContent="停止しました。"; };
 
+  // 📍 マーク（現在位置にマーカーを置く）
+  const markerBtn = document.getElementById(`tebMarker${c}`);
+  if(markerBtn) markerBtn.onclick = ()=>{ setTrackMarker(track); };
+
   // ✂ カット（クリップ分裂方式：選択範囲を削除、後ろの音は位置を保持）
   const cutBtn_ = document.getElementById(`tebCut${c}`);
   if(cutBtn_) cutBtn_.onclick = ()=>performTrackCut(track);
@@ -8794,6 +8880,21 @@ if(trackStackStopBtn){
     fileStatus.innerHTML = "再生を停止しました。";
   };
 }
+// 🎯 マークで揃える / マーク消去
+const alignMarkerBtn = document.getElementById("alignMarkerBtn");
+if(alignMarkerBtn){
+  alignMarkerBtn.onclick = ()=>{ alignTracksByMarker(); };
+}
+const clearMarkersBtn = document.getElementById("clearMarkersBtn");
+if(clearMarkersBtn){
+  clearMarkersBtn.onclick = ()=>{
+    takeMarkerSec = null; chorusMarkerSec = null;
+    if(typeof drawStackedTimelines === "function") drawStackedTimelines();
+    updateMarkerAlignButton();
+    if(fileStatus) fileStatus.textContent = "マークを消去しました。";
+  };
+}
+
 // ⏮ 全トラック最初に戻る（停止して各トラックのカーソルと動画を先頭へ）
 const trackRestartAllBtn = document.getElementById("trackRestartAllBtn");
 if(trackRestartAllBtn){
