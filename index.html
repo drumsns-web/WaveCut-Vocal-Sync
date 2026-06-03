@@ -2077,8 +2077,8 @@ button.purple{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; co
     </div>
   </div>
 
-  <div class="add-track-row" style="display:none">
-    <button id="addTrackBtn" class="add-track-btn">＋ トラック追加</button>
+  <div class="add-track-row">
+    <button id="addTrackBtn" class="add-track-btn">＋ 音源トラックを追加（カラオケ音源・ハモリ等）</button>
     <span id="trackCountInfo" class="track-count-info">3 / 10 トラック</span>
   </div>
 
@@ -5511,7 +5511,11 @@ function scaleBuffer(buffer, gain){
 }
 
 function buildVocalSyncMix(){
-  return buildSelectedTrackMix({main:true, take:true, chorus:true});
+  const sel = {main:true, take:true, chorus:true};
+  if(typeof extraTracks !== "undefined"){
+    extraTracks.forEach(t=>{ sel[t.id] = true; });
+  }
+  return buildSelectedTrackMix(sel);
 }
 
 function buildSelectedTrackMix(selection){
@@ -5520,6 +5524,14 @@ function buildSelectedTrackMix(selection){
   if(selection.main && mainBuffer) tracks.push({track:"main", buffer:mainBuffer, offsetMs:0, gain:getTrackVolume("main")});
   if(selection.take && takeBuffer) tracks.push({track:"take", buffer:takeBuffer, offsetMs:takeOffsetMs, gain:getTrackVolume("take")});
   if(selection.chorus && chorusBuffer) tracks.push({track:"chorus", buffer:chorusBuffer, offsetMs:chorusOffsetMs, gain:getTrackVolume("chorus")});
+  // 追加トラックもミックスに含める
+  if(typeof extraTracks !== "undefined"){
+    extraTracks.forEach(t=>{
+      if(!selection[t.id]) return;
+      const buf = buildTrackBufferFromClips(t.id);
+      if(buf) tracks.push({track:t.id, buffer:buf, offsetMs:t.offsetMs||0, gain:getTrackVolume(t.id)});
+    });
+  }
   if(!tracks.length) return null;
   const channels = Math.max(...tracks.map(t=>t.buffer.numberOfChannels));
   const rate = tracks[0].buffer.sampleRate;
